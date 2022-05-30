@@ -1,4 +1,4 @@
-from lib.MatrixBuilder import MatrixBuilder
+from logic.MatrixBuilder import MatrixBuilder
 
 def stamp_line(Y: MatrixBuilder, Vr_from, Vr_to, Vi_from, Vi_to, G, B):
     #From Bus - Real

@@ -2,7 +2,7 @@ from __future__ import division
 from itertools import count
 import math
 import typing
-from lib.MatrixBuilder import MatrixBuilder
+from logic.MatrixBuilder import MatrixBuilder
 
 class Bus:
     def __init__(self,

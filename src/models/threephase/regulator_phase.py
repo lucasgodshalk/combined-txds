@@ -1,6 +1,6 @@
-from anoeds.global_vars import global_vars
+
 import math
-from anoeds.models.edge import Edge
+from models.threephase.edge import Edge
 
 class RegulatorPhase(Edge):
     

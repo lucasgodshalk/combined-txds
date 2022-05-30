@@ -1,10 +1,10 @@
 from __future__ import division
 from itertools import count
-from lib.MatrixBuilder import MatrixBuilder
-from models.Branches import TX_LARGE_G, TX_LARGE_B
-from models.Buses import _all_bus_key
+from logic.MatrixBuilder import MatrixBuilder
+from models.positiveseq.Branches import TX_LARGE_G, TX_LARGE_B
+from models.positiveseq.Buses import _all_bus_key
 import math
-from models.shared import stamp_line
+from models.positiveseq.shared import stamp_line
 
 
 class Transformers:

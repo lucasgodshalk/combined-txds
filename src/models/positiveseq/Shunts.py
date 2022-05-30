@@ -1,7 +1,7 @@
 from __future__ import division
 from itertools import count
-from lib.MatrixBuilder import MatrixBuilder
-from models.Buses import _all_bus_key
+from logic.MatrixBuilder import MatrixBuilder
+from models.positiveseq.Buses import _all_bus_key
 
 class Shunts:
     _ids = count(0)

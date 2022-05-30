@@ -1,8 +1,8 @@
 from __future__ import division
 from itertools import count
-from lib.MatrixBuilder import MatrixBuilder
-from models.Buses import _all_bus_key
-from models.Loads import calculate_PQ_dIr_dVi, calculate_PQ_dIr_dVr
+from logic.MatrixBuilder import MatrixBuilder
+from models.positiveseq.Buses import _all_bus_key
+from models.positiveseq.Loads import calculate_PQ_dIr_dVi, calculate_PQ_dIr_dVr
 
 class Generators:
     _ids = count(0)

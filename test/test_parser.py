@@ -2,18 +2,18 @@
 # import anoeds.parser
 import numpy as np
 from anoeds.anoeds_parser import Parser
-from anoeds.models.resistive_load import ResistiveLoad
-from anoeds.models.pq_load import PQLoad
-from anoeds.models.transmission_line import TransmissionLine
-from anoeds.models.infinite_source import InfiniteSource
-from anoeds.models.bus_slack import SlackBus
-from anoeds.models.transformer import Transformer
-from anoeds.models.regulator import Regulator
+from models.threephase.resistive_load import ResistiveLoad
+from models.threephase.pq_load import PQLoad
+from models.threephase.transmission_line import TransmissionLine
+from models.threephase.infinite_source import InfiniteSource
+from models.threephase.bus_slack import SlackBus
+from models.threephase.transformer import Transformer
+from models.threephase.regulator import Regulator
 from anoeds.powerflowrunner import PowerFlowRunner
 import os
 from pprint import pprint
 
-from anoeds.models.transmission_line_triplex import TriplexTransmissionLine
+from models.threephase.transmission_line_triplex import TriplexTransmissionLine
 
 
 CURR_DIR = os.path.realpath(os.path.dirname(__file__))

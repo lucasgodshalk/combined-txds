@@ -1,15 +1,15 @@
 from typing import List
 import numpy as np
-from lib.settings import Settings
-from models.Buses import Bus
-from models.Generators import Generators
-from models.Slack import Slack
+from logic.PowerFlowSettings import PowerFlowSettings
+from models.positiveseq.Buses import Bus
+from models.positiveseq.Generators import Generators
+from models.positiveseq.Slack import Slack
 
 BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0
 BUS_Q_FLAT = -1
 
-def initialize_postive_seq(Y_size, buses: List[Bus], generators: List[Generators], slacks: List[Slack], settings: Settings):
+def initialize_postive_seq(Y_size, buses: List[Bus], generators: List[Generators], slacks: List[Slack], settings: PowerFlowSettings):
     v_init = np.zeros(Y_size)
 
     for bus in buses:

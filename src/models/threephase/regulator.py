@@ -1,5 +1,5 @@
 from collections import defaultdict
-from anoeds.global_vars import global_vars
+
 import math
 
 class Regulator():

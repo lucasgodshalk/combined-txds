@@ -1,9 +1,9 @@
 from __future__ import division
 from itertools import count
 
-from lib.MatrixBuilder import MatrixBuilder
-from models.Buses import _all_bus_key
-from models.shared import stamp_line
+from logic.MatrixBuilder import MatrixBuilder
+from models.positiveseq.Buses import _all_bus_key
+from models.positiveseq.shared import stamp_line
 
 TX_LARGE_G = 20
 TX_LARGE_B = 20

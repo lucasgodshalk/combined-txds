@@ -11,14 +11,14 @@
 """
 
 import time
+from logic.global_vars import global_vars
 
-from models.Buses import Bus
+from models.positiveseq.Buses import Bus
 
 import parsers.data_classes as data_classes
 
 import parsers.Data as Data  # pared down/modified version of data.py from
 # https://github.com/GOCompetition/Evaluation/blob/master/data.py
-from lib.global_vars import global_vars
 
 
 # also see this document for provided values for each type of entity:

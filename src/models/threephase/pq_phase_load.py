@@ -1,6 +1,6 @@
 from collections import defaultdict
-from anoeds.models.bus import Bus
-from anoeds.global_vars import global_vars
+from models.threephase.bus import Bus
+
 from sympy import symbols, diff
 
 

@@ -1,6 +1,6 @@
 import math
 import time
-from NetworkModel import TxNetworkModel
+from logic.NetworkModel import TxNetworkModel
 from logic.initialize import initialize_postive_seq
 from logic.PowerFlowSettings import PowerFlowSettings
 from parsers.parser import parse_raw

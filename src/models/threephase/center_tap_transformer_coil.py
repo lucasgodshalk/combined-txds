@@ -1,4 +1,4 @@
-from anoeds.models.edge import Edge
+from models.threephase.edge import Edge
 
 class CenterTapTransformerCoil(Edge):
     

@@ -1,8 +1,9 @@
 import math
 from typing import List
 import pandas as pd
-from lib.settings import Settings
-from models.Buses import Bus
+from logic.PowerFlowSettings import PowerFlowSettings
+from models.positiveseq.Buses import Bus
+
 
 class GeneratorResult:
     def __init__(self, generator, P, Q, is_slack):
@@ -86,7 +87,7 @@ class PowerFlowResults:
         return largest[-3:]
 
 
-def process_results(raw_data, v_final, duration_seconds, settings: Settings):
+def process_results(raw_data, v_final, duration_seconds, settings: PowerFlowSettings):
     bus_results = []
     
     for bus in raw_data['buses']:

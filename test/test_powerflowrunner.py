@@ -1,7 +1,7 @@
 # import pytest as pt
 from anoeds.anoeds_parser import Parser
 from anoeds.powerflowrunner import PowerFlowRunner
-from anoeds.models.resistive_load import ResistiveLoad
+from models.threephase.resistive_load import ResistiveLoad
 import os
 from pprint import pprint
 import numpy as np

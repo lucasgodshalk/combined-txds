@@ -1,8 +1,8 @@
 from collections import defaultdict
 import numpy as np
-from anoeds.models.transmission_line_phase import TransmissionLinePhase
-from anoeds.models.edge import Edge
-from anoeds.global_vars import global_vars
+from models.threephase.transmission_line_phase import TransmissionLinePhase
+from models.threephase.edge import Edge
+
 from copy import copy
 
 class TransmissionLine():

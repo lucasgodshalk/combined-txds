@@ -1,6 +1,6 @@
 import numpy as np
-from anoeds.models.transmission_line_phase import TransmissionLinePhase
-from anoeds.models.edge import Edge
+from models.threephase.transmission_line_phase import TransmissionLinePhase
+from models.threephase.edge import Edge
 
 class TriplexTransmissionLine():
     

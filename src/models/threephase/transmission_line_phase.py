@@ -1,5 +1,5 @@
-from anoeds.models.edge import Edge
-from anoeds.global_vars import global_vars
+from models.threephase.edge import Edge
+
 import numpy as np
 
 class TransmissionLinePhase(Edge):

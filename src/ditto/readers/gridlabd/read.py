@@ -20,24 +20,24 @@ try:
 except ImportError:
     from xml import etree
 
-from anoeds.ditto.compat import ModuleType
-from anoeds.ditto.store import Store
-from anoeds.ditto.models.node import Node
-from anoeds.ditto.models.power_source import PowerSource
-from anoeds.ditto.models.line import Line
-from anoeds.ditto.models.load import Load
-from anoeds.ditto.models.phase_load import PhaseLoad
-from anoeds.ditto.models.regulator import Regulator
-from anoeds.ditto.models.wire import Wire
-from anoeds.ditto.models.capacitor import Capacitor
-from anoeds.ditto.models.phase_capacitor import PhaseCapacitor
-from anoeds.ditto.models.powertransformer import PowerTransformer
-from anoeds.ditto.models.winding import Winding
-from anoeds.ditto.models.phase_winding import PhaseWinding
+from ditto.compat import ModuleType
+from ditto.store import Store
+from ditto.models.node import Node
+from ditto.models.power_source import PowerSource
+from ditto.models.line import Line
+from ditto.models.load import Load
+from ditto.models.phase_load import PhaseLoad
+from ditto.models.regulator import Regulator
+from ditto.models.wire import Wire
+from ditto.models.capacitor import Capacitor
+from ditto.models.phase_capacitor import PhaseCapacitor
+from ditto.models.powertransformer import PowerTransformer
+from ditto.models.winding import Winding
+from ditto.models.phase_winding import PhaseWinding
 
-from anoeds.ditto.formats.gridlabd import gridlabd
-from anoeds.ditto.formats.gridlabd import base
-from anoeds.ditto.models.base import Unicode
+from ditto.formats.gridlabd import gridlabd
+from ditto.formats.gridlabd import base
+from ditto.models.base import Unicode
 
 from ..abstract_reader import AbstractReader
 

@@ -1,5 +1,4 @@
-from anoeds.global_vars import global_vars
-from anoeds.models.bus import Bus
+from models.threephase.bus import Bus
 
 class PhaseCapacitor(Bus):
 

@@ -1,7 +1,7 @@
 from __future__ import division
 from itertools import count
-from lib.MatrixBuilder import MatrixBuilder
-from models.Buses import _all_bus_key
+from logic.MatrixBuilder import MatrixBuilder
+from models.positiveseq.Buses import _all_bus_key
 
 def calculate_PQ_dIr_dVr(Vr, Vi, P, Q):
     return (P * (Vi**2 - Vr**2) - 2 * Q * Vr * Vi) / (Vr**2 + Vi**2)**2

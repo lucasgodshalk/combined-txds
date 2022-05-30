@@ -3,39 +3,37 @@ import os
 from itertools import count
 import math
 import numpy as np
-from NetworkModel import DxNetworkModel
+from logic.NetworkModel import DxNetworkModel
 
-from anoeds.ditto.readers.gridlabd.read import Reader
-from anoeds.ditto.store import Store
-import anoeds.ditto.models.load
+from ditto.readers.gridlabd.read import Reader
+from ditto.store import Store
+import ditto.models.load
 
-from anoeds.models.pq_load import PQLoad
-from anoeds.models.pq_phase_load import PQPhaseLoad
-from anoeds.models.bus import Bus
-from anoeds.models.bus_slack import SlackBus
-from anoeds.models.infinite_source import InfiniteSource
-from anoeds.models.transformer import Transformer
-from anoeds.models.center_tap_transformer import CenterTapTransformer
-from anoeds.models.center_tap_transformer_coil import CenterTapTransformerCoil
-from anoeds.models.transformer_phase_coil import TransformerPhaseCoil
-from anoeds.models.transmission_line import TransmissionLine
-from anoeds.models.transmission_line_triplex import TriplexTransmissionLine
-from anoeds.simulation_state import SimulationState
-from anoeds.models.primary_transformer_coil import PrimaryTransformerCoil
-from anoeds.models.secondary_transformer_coil import SecondaryTransformerCoil
-from anoeds.models.capacitor import Capacitor
-from anoeds.models.capacitor_phase import PhaseCapacitor
-from anoeds.models.fuse import Fuse
-from anoeds.models.fuse_phase import FusePhase
+from models.threephase.pq_load import PQLoad
+from models.threephase.pq_phase_load import PQPhaseLoad
+from models.threephase.bus import Bus
+from models.threephase.bus_slack import SlackBus
+from models.threephase.infinite_source import InfiniteSource
+from models.threephase.transformer import Transformer
+from models.threephase.center_tap_transformer import CenterTapTransformer
+from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
+from models.threephase.transformer_phase_coil import TransformerPhaseCoil
+from models.threephase.transmission_line import TransmissionLine
+from models.threephase.transmission_line_triplex import TriplexTransmissionLine
+from models.threephase.primary_transformer_coil import PrimaryTransformerCoil
+from models.threephase.secondary_transformer_coil import SecondaryTransformerCoil
+from models.threephase.capacitor import Capacitor
+from models.threephase.capacitor_phase import PhaseCapacitor
+from models.threephase.fuse import Fuse
+from models.threephase.fuse_phase import FusePhase
 
-from anoeds.global_vars import global_vars
-from anoeds.models.resistive_load import ResistiveLoad
-from anoeds.models.resistive_phase_load import ResistivePhaseLoad
-from anoeds.models.switch import Switch
-from anoeds.models.switch_phase import SwitchPhase
-from anoeds.models.regulator import Regulator
-from anoeds.models.regulator_phase import RegulatorPhase
-from anoeds.models.transmission_line_phase import TransmissionLinePhase
+from models.threephase.resistive_load import ResistiveLoad
+from models.threephase.resistive_phase_load import ResistivePhaseLoad
+from models.threephase.switch import Switch
+from models.threephase.switch_phase import SwitchPhase
+from models.threephase.regulator import Regulator
+from models.threephase.regulator_phase import RegulatorPhase
+from models.threephase.transmission_line_phase import TransmissionLinePhase
 
 class Parser:
     # Angles in degrees associated with different phases
@@ -79,8 +77,8 @@ class Parser:
     def create_buses(self, simulation_state):
         for model in self.ditto_store.models:
 
-            if isinstance(model, anoeds.ditto.models.node.Node) or isinstance(model, anoeds.ditto.models.power_source.PowerSource):
-                if isinstance(model, anoeds.ditto.models.power_source.PowerSource) or (hasattr(model, "bustype") and model._bustype == "SWING"):
+            if isinstance(model, ditto.models.node.Node) or isinstance(model, ditto.models.power_source.PowerSource):
+                if isinstance(model, ditto.models.power_source.PowerSource) or (hasattr(model, "bustype") and model._bustype == "SWING"):
                     infinite_source = InfiniteSource()
                 else:
                     infinite_source = None
@@ -133,7 +131,7 @@ class Parser:
     def create_loads(self, simulation_state):
         # Go through the ditto store for each load object
         for model in self.ditto_store.models:
-            if isinstance(model, anoeds.ditto.models.load.Load):
+            if isinstance(model, ditto.models.load.Load):
                 if any(phaseload.model == 2 for phaseload in model.phase_loads):
                     # Model a simple Resistive load
                     resistive_load = ResistiveLoad()
@@ -205,7 +203,7 @@ class Parser:
     def create_transformers(self, simulation_state):
         # Go through the ditto store for each transformer object
         for model in self.ditto_store.models:
-            if isinstance(model, anoeds.ditto.models.powertransformer.PowerTransformer):
+            if isinstance(model, ditto.models.powertransformer.PowerTransformer):
                 if model.is_center_tap:
                     self.create_center_tap_transformer(model, simulation_state)
                 elif len(model.windings) != 2:
@@ -346,7 +344,7 @@ class Parser:
     
     def create_capacitors(self, simulation_state):
         for model in self.ditto_store.models:
-            if isinstance(model, anoeds.ditto.models.capacitor.Capacitor):
+            if isinstance(model, ditto.models.capacitor.Capacitor):
                 cap = Capacitor()
                 gld_cap = self.all_gld_objects[model.name]
                 for phase_capacitor in model.phase_capacitors:
@@ -360,7 +358,7 @@ class Parser:
 
     def create_regulators(self, simulation_state):
         for model in self.ditto_store.models:
-            if isinstance(model, anoeds.ditto.models.regulator.Regulator):
+            if isinstance(model, ditto.models.regulator.Regulator):
                 if len(model.windings) != 2:
                     raise Exception("Only 2 windings currently supported")
                 if not (len(model.windings[0].phase_windings) == len(model.windings[1].phase_windings) == 3):
@@ -398,7 +396,7 @@ class Parser:
     def create_transmission_lines(self, simulation_state):
         # Go through the ditto store for each line object
         for model in self.ditto_store.models:
-            if isinstance(model, anoeds.ditto.models.line.Line):
+            if isinstance(model, ditto.models.line.Line):
                 # Check for fuses, some are encoded as zero-length lines with no features
                 if model.is_fuse:
                     fuse = Fuse("CLOSED")

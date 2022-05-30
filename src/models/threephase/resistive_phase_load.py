@@ -1,7 +1,7 @@
 import math
 import numpy as np
-from anoeds.models.bus import Bus
-from anoeds.global_vars import global_vars
+from models.threephase.bus import Bus
+
 
 # A toy class which models a load as a simple resistor
 class ResistivePhaseLoad(Bus):
