@@ -1,0 +1,53 @@
+// A swing bus representing an infinite voltage source, and a disconnected load
+
+/////////////////////////////////////////////
+// BEGIN
+/////////////////////////////////////////////
+
+module tape;
+
+clock {
+    timestamp '2000-01-01 0:00:00';
+    timezone EST+5EDT;
+}
+
+
+module powerflow {
+    solver_method NR;
+    NR_matrix_file "y_matrix_printout.txt";
+    NR_matrix_output_interval PER_CALL;
+    NR_matrix_output_references true;
+};
+
+
+object node {
+    name node1;
+    phases "ABCN";
+    nominal_voltage 2400;
+    bustype SWING;
+    // object recorder {
+    //     file node1_voltages.csv;
+    //     interval 60;
+    //     property voltage_A, voltage_B, voltage_C;
+    // };
+}
+
+
+object load {
+    name load1;
+    phases "ABCN";
+    constant_power_A +1800000.000+871779.789j;
+    constant_power_B +1800000.000+871779.789j;
+    constant_power_C +1800000.000+871779.789j;
+    nominal_voltage 2400;
+    // object recorder {
+    //     file load1_voltages.csv;
+    //     interval 10000;
+    //     property measured_voltage_A, measured_voltage_B, measured_voltage_C;
+    // };
+}
+
+
+///////////////////////////////
+// END
+///////////////////////////////

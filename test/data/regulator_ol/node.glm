@@ -1,0 +1,113 @@
+#set iteration_limit=100000;
+
+module powerflow {
+	solver_method NR;
+	line_capacitance false;
+	}
+	
+// object voltdump {
+//     filename voltage.csv;
+// 	mode RECT;
+// }
+
+object node { //650 {
+      name n650;
+      phases "ABCN";
+      bustype SWING;
+      voltage_A 2401.7771;
+      voltage_B -1200.8886-2080.000j;
+      voltage_C -1200.8886+2080.000j;
+      nominal_voltage 2401.7771;
+} 
+
+
+object regulator_configuration:75 { 
+     name feeder_reg_cfg; 
+     Control OUTPUT_VOLTAGE; 
+     band_center 7500.0; 
+     band_width 120; 
+     connect_type WYE_WYE; 
+     time_delay 30; 
+     raise_taps 16; 
+     lower_taps 16; 
+     regulation 0.10; 
+     tap_pos_A 0; 
+     tap_pos_B 0; 
+     tap_pos_C 0; 
+} 
+
+object regulator:74 { 
+     name fregn650n630; 
+     from n650; 
+     to n630; 
+     phases ABC; 
+     configuration feeder_reg_cfg; 
+}  
+
+
+object node { //630 {
+     name n630;
+     phases "ABCN";
+     voltage_A 2401.7771+0j;
+     voltage_B -1200.8886-2080.000j;
+     voltage_C -1200.8886+2080.000j;
+     nominal_voltage 2401.7771;
+}
+
+object overhead_line { //630632 {
+     phases "ABCN";
+     name line_630-632;
+     from n630;
+     to l632;
+     length 2000;
+     configuration lc601;
+}
+
+object line_configuration {
+	name lc601;
+	conductor_A olc6010;
+	conductor_B olc6010;
+	conductor_C olc6010;
+	conductor_N olc6020;
+	spacing ls500601;
+}
+
+
+object line_spacing {
+	name ls500601;
+	distance_AB 2.5;
+	distance_AC 4.5;
+	distance_BC 7.0;
+	distance_BN 5.656854;
+	distance_AN 4.272002;
+	distance_CN 5.0;
+	distance_AE 28.0;
+	distance_BE 28.0;
+	distance_CE 28.0;
+	distance_NE 24.0;
+}
+
+// Phase Conductor for 601: 556,500 26/7 ACSR
+object overhead_line_conductor {
+	name olc6010;
+	geometric_mean_radius 0.031300;
+	diameter 0.927 in;
+	resistance 0.185900;
+}
+
+// Phase Conductor for 602: 4/0 6/1 ACSR
+object overhead_line_conductor {
+	name olc6020;
+	geometric_mean_radius 0.00814;
+	diameter 0.56 in;
+	resistance 0.592000;
+}
+
+object load {
+     name l632;
+     phases "ABCN";
+     constant_power_A 11333.333+6666.6667j;
+     constant_power_B 44000+25333.3333j;
+     constant_power_C 78000+45333.3333j;
+     nominal_voltage 2401.7771;
+}

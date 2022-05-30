@@ -1,0 +1,228 @@
+#set iteration_limit=100000;
+
+clock {
+	timezone EST+5EDT;
+	starttime '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}
+
+module powerflow {
+	solver_method NR;
+	line_capacitance false;
+	}
+module assert;
+
+// object voltdump {
+//     filename IEEE_13_core_voltage.csv;
+// 	mode RECT;
+// }
+
+// Phase Conductor for 601: 556,500 26/7 ACSR
+object overhead_line_conductor {
+	name olc6010;
+	geometric_mean_radius 0.031300;
+	diameter 0.927 in;
+	resistance 0.185900;
+}
+
+// Phase Conductor for 602: 4/0 6/1 ACSR
+object overhead_line_conductor {
+	name olc6020;
+	geometric_mean_radius 0.00814;
+	diameter 0.56 in;
+	resistance 0.592000;
+}
+
+object line_spacing {
+	name ls500601;
+	distance_AB 2.5;
+	distance_AC 4.5;
+	distance_BC 7.0;
+	distance_BN 5.656854;
+	distance_AN 4.272002;
+	distance_CN 5.0;
+	distance_AE 28.0;
+	distance_BE 28.0;
+	distance_CE 28.0;
+	distance_NE 24.0;
+}
+
+object line_configuration {
+	name lc601;
+	conductor_A olc6010;
+	conductor_B olc6010;
+	conductor_C olc6010;
+	conductor_N olc6020;
+	spacing ls500601;
+}
+
+object overhead_line { //630632 {
+     phases "ABCN";
+     name line_630-632;
+     from n630;
+     to n632;
+     length 2000;
+     configuration lc601;
+}
+
+//Split line for distributed load
+object overhead_line { //6326321 {
+     phases "ABCN";
+     name line_632-6321;
+     from n632;
+     to l6321;
+     length 500;
+     configuration lc601;
+}
+
+object overhead_line { //6321671 {
+     phases "ABCN";
+     name line_6321-671;
+    from l6321;
+     to l671;
+     length 1500;
+     configuration lc601;
+}
+//End split line
+ 
+object node { //630 {
+     name n630;
+     phases "ABCN";
+     voltage_A 2401.7771+0j;
+     voltage_B -1200.8886-2080.000j;
+     voltage_C -1200.8886+2080.000j;
+     nominal_voltage 2401.7771;
+}
+ 
+object node { //632 {
+     name n632;
+     phases "ABCN";
+     voltage_A 2401.7771;
+     voltage_B -1200.8886-2080.000j;
+     voltage_C -1200.8886+2080.000j;
+     nominal_voltage 2401.7771;
+	//  object complex_assert {
+	// 	target voltage_A;
+	// 	value 2452.21-2.49d;
+	// 	within 5;
+	//  };	 object complex_assert {
+	// 	target voltage_B;
+	// 	value 2502.56-121.72d;
+	// 	within 5;
+	//  };	 object complex_assert {
+	// 	target voltage_C;
+	// 	value 2443.56+117.83d;
+	// 	within 5;
+	//  };
+}
+
+
+object load { //6321 {
+     name l6321;
+     phases "ABCN";
+     voltage_A 2401.7771;
+     voltage_B -1200.8886-2080.000j;
+     voltage_C -1200.8886+2080.000j;
+     constant_power_A 11333.333+6666.6667j;
+     constant_power_B 44000+25333.3333j;
+     constant_power_C 78000+45333.3333j;
+     nominal_voltage 2401.7771;
+}
+
+object load { //6711 {
+     name l6711;
+     parent l671;
+     phases "ABC";
+     voltage_A 2401.7771;
+     voltage_B -1200.8886-2080.000j;
+     voltage_C -1200.8886+2080.000j;
+     constant_power_A 5666.6667+3333.3333j;
+     constant_power_B 22000+12666.6667j;
+     constant_power_C 39000+22666.6667j;
+     nominal_voltage 2401.7771;
+}
+
+object node { //650 {
+      name n650;
+      phases "ABCN";
+      bustype SWING;
+      voltage_A 2401.7771;
+      voltage_B -1200.8886-2080.000j;
+      voltage_C -1200.8886+2080.000j;
+      nominal_voltage 2401.7771;
+	//  object complex_assert {
+	// 	target voltage_A;
+	// 	value 2401.7771;
+	// 	within 5;
+	//  };	 object complex_assert {
+	// 	target voltage_B;
+	// 	value 2401.7771-120.0d;
+	// 	within 5;
+	//  };	 object complex_assert {
+	// 	target voltage_C;
+	// 	value 2401.7771+120.0d;
+	// 	within 5;
+	//  };
+} 
+ 
+object load { //671 {
+     name l671;
+     phases "ABCD";
+     voltage_A 2401.7771;
+     voltage_B -1200.8886-2080.000j;
+     voltage_C -1200.8886+2080.000j;
+     constant_power_A 385000+220000j;
+     constant_power_B 385000+220000j;
+     constant_power_C 385000+220000j;
+     nominal_voltage 2401.7771;
+    // 	object complex_assert {
+    // 		target voltage_A;
+    // 		within 5;
+    // 		value 2377.76-5.3d;
+    // 	};
+    // 	object complex_assert {
+    // 		target voltage_B;
+    // 		within 5;
+    // 		value 2526.67-122.34d;
+    // 	};
+    // 	object complex_assert {
+    // 		target voltage_C;
+    // 		within 8;
+    // 		value 2348.46+116.02d;
+	// };
+}
+
+// Regulator
+object regulator_configuration {
+	name regconfig6506321;
+	connect_type 1;
+	band_center 122.000;
+	band_width 2.0;
+	time_delay 30.0;
+	raise_taps 16;
+	lower_taps 16;
+	current_transducer_ratio 700;
+	power_transducer_ratio 20;
+	compensator_r_setting_A 3.0;
+	compensator_r_setting_B 3.0;
+	compensator_r_setting_C 3.0;
+	compensator_x_setting_A 9.0;
+	compensator_x_setting_B 9.0;
+	compensator_x_setting_C 9.0;
+	CT_phase "ABC";
+	PT_phase "ABC";
+	regulation 0.10;
+	Control MANUAL;
+	Type A;
+	tap_pos_A 10;
+	tap_pos_B 8;
+	tap_pos_C 11;
+}
+  
+object regulator {
+	 name fregn650n630;
+	 phases "ABC";
+	 from n650;
+	 to n630;
+	 configuration regconfig6506321;
+}
