@@ -23,7 +23,7 @@ class NRSolver:
 
     def solve(self, Y, J):
         if self.settings.use_sparse:
-            return spsolve(Y, J)
+            return spsolve(Y, np.asarray(J, dtype=np.float64))
         else:
             return np.linalg.solve(Y, J)
 

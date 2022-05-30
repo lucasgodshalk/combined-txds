@@ -38,7 +38,7 @@ class MatrixBuilder:
             raise Exception("Solver was not fully utilized. Garbage data remains")
 
         if self.settings.use_sparse:
-            matrix = csc_matrix((self._val, (self._row, self._col)))
+            matrix = csc_matrix((self._val, (self._row, self._col)), dtype=np.float64)
         else:
             matrix = np.zeros((self.size_Y, self.size_Y))
 
