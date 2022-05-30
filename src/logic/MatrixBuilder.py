@@ -1,10 +1,10 @@
 import math
 from scipy.sparse import csc_matrix
 import numpy as np
-from lib.settings import Settings
+from logic.PowerFlowSettings import PowerFlowSettings
 
 class MatrixBuilder:
-    def __init__(self, settings: Settings, size_Y) -> None:
+    def __init__(self, settings: PowerFlowSettings, size_Y) -> None:
         self.settings = settings
         self._row = []
         self._col = []

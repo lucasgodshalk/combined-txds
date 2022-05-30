@@ -9,7 +9,7 @@ BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0
 BUS_Q_FLAT = -1
 
-def initialize(Y_size, buses: List[Bus], generators: List[Generators], slacks: List[Slack], settings: Settings):
+def initialize_postive_seq(Y_size, buses: List[Bus], generators: List[Generators], slacks: List[Slack], settings: Settings):
     v_init = np.zeros(Y_size)
 
     for bus in buses:

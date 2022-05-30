@@ -1,128 +1,86 @@
-import numpy as np
-from scipy.sparse.linalg import spsolve
-from lib.MatrixBuilder import MatrixBuilder
-from lib.settings import Settings
+import math
+import time
+from NetworkModel import TxNetworkModel
+from logic.initialize import initialize_postive_seq
+from logic.PowerFlowSettings import PowerFlowSettings
+from parsers.parser import parse_raw
+from itertools import count
+from parsers.anoeds_parser import Parser
+from powerflowrunner import PowerFlowRunner
 
-
-V_DIFF_MAX = 1
-V_MAX = 2
-V_MIN = -2
-TX_ITERATIONS = 1000
-TX_SCALE = 1.0 / TX_ITERATIONS
-
-class NRSolver:
-
-    def __init__(self, settings: Settings, raw_data, size_Y):
+class PowerFlow:
+    def __init__(self, netlist, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
+        self.netlist = netlist
         self.settings = settings
-        self.size_Y = size_Y
 
-        self.buses = raw_data['buses']
-        self.slack = raw_data['slack']
-        self.generator = raw_data['generators']
-        self.transformer = raw_data['xfmrs']
-        self.branch = raw_data['branches']
-        self.shunt = raw_data['shunts']
-        self.load = raw_data['loads']
+    def execute(self):
+        print("Running power flow solver...")
 
-        self.linear_elments = self.branch + self.shunt + self.transformer + self.slack
+        start_time = time.perf_counter_ns()
 
-        if settings.infeasibility_analysis:
-            self.linear_elments += self.buses
+        node_index = count(0)
 
-        self.nonlinear_elements = self.generator + self.load
+        (network_model, v_init, size_Y) = self.create_network(node_index)
 
-        self.bus_mask = [False] * size_Y
-        for bus in self.buses:
-            self.bus_mask[bus.node_Vr] = True
-            self.bus_mask[bus.node_Vi] = True
+        powerflow = PowerFlow(self.settings, network_model, size_Y)
 
-    def solve(self, Y, J):
-        if self.settings.use_sparse:
-            return spsolve(Y, J)
+        is_success, v_final, iteration_num, tx_factor = powerflow.run_powerflow(v_init)
+
+        if is_success:
+            print(f'Power flow solver converged after {iteration_num} iterations.')
         else:
-            return np.linalg.solve(Y, J)
+            print(f'Power flow solver FAILED after {iteration_num} iterations (tx-factor {tx_factor}).')
 
-    def apply_limiting(self, v_next, v_previous, diff):
-        #Voltage limiting
-        diff_clip = np.clip(diff, -V_DIFF_MAX, V_DIFF_MAX)
-        v_next_clip = np.clip(v_previous + diff_clip, V_MIN, V_MAX)
+        end_time = time.perf_counter_ns()
 
-        v_next[self.bus_mask] = v_next_clip[self.bus_mask]
+        duration_seconds = (end_time * 1.0 - start_time * 1.0) / math.pow(10, 9)
 
-        return v_next
+        print(f'Ran for {"{:.3f}".format(duration_seconds)} seconds')
 
-    def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
-        for element in self.linear_elments:
-            element.stamp_primal_linear(Y, J, tx_factor)
+        #results = process_results(raw_data, v_final, duration_seconds, settings)
 
-        if self.settings.infeasibility_analysis:
-            for element in self.linear_elments:
-                element.stamp_dual_linear(Y, J, tx_factor)
+        #return (is_success, results)
+    
+    def create_network(self, node_index):
+        if ".glm" in self.netlist:
+            return self.create_three_phase_network(node_index)
+        elif ".RAW" in self.netlist:
+            return self.create_positive_seq_network(node_index)
+        else:
+            raise Exception("Invalid netlist file format")
 
-    def stamp_nonlinear(self, Y: MatrixBuilder, J, v_previous):
-        for element in self.nonlinear_elements:
-            element.stamp_primal_nonlinear(Y, J, v_previous)
+    def create_three_phase_network(self, node_index):
+        parser = Parser(self.netlist)
 
-        if self.settings.infeasibility_analysis:
-            for element in self.nonlinear_elements:
-                element.stamp_dual_nonlinear(Y, J, v_previous)
+        network_model = parser.parse()
 
-    def run_powerflow(self, v_init):
-        tx_factor = TX_ITERATIONS if self.settings.tx_stepping else 0
+        powerflowrunner = PowerFlowRunner(self.netlist, self.settings)
+        powerflowrunner.reset_v_estimate(network_model)
 
-        iterations = 0
-        v_next = np.copy(v_init)
-        is_success = False
+        v_init = powerflowrunner.v_estimate
 
-        while tx_factor >= 0:
-            if tx_factor % 10 == 0:
-                print(f'Tx factor: {tx_factor}')
+        return (network_model, v_init, network_model.J_length)
 
-            is_success, v_final, iteration_num = self.run_powerflow_inner(v_init, tx_factor * TX_SCALE)
-            iterations = iteration_num + 1
-            tx_factor -= 1
-            v_next = v_final
 
-            if not is_success:
-                break
+    def create_positive_seq_network(self, node_index):
+        raw_data = parse_raw(self.netlist)
 
-        return (is_success, v_next, iterations, tx_factor * TX_SCALE)
+        buses = raw_data['buses']
+        slack = raw_data['slack']
+        transformers = raw_data['xfmrs']
+        generators = raw_data['generators']
 
-    def run_powerflow_inner(self, v_init, tx_factor):
+        for ele in buses + slack + transformers:
+            ele.assign_nodes(node_index, self.settings.infeasibility_analysis)
+        
+        size_Y = next(node_index)
 
-        v_previous = np.copy(v_init)
+        v_init = initialize_postive_seq(size_Y, buses, generators, slack, self.settings)
 
-        Y = MatrixBuilder(self.settings, self.size_Y)
-        J_linear = [0] * len(v_init)
+        network_model = TxNetworkModel(raw_data, self.settings.infeasibility_analysis)
 
-        self.stamp_linear(Y, J_linear, tx_factor)
+        return (network_model, v_init, size_Y)
 
-        linear_index = Y.get_usage()
 
-        for iteration_num in range(self.settings.max_iters):
-            J = J_linear.copy()
-
-            self.stamp_nonlinear(Y, J, v_previous)
-
-            Y.assert_valid(check_zeros=True)
-
-            v_next = self.solve(Y.to_matrix(), J)
-
-            if np.isnan(v_next).any():
-                raise Exception("Error solving linear system")
-
-            diff = v_next - v_previous
-
-            err = abs(diff)
-
-            err_max = err.max()
-            
-            if err_max < self.settings.tolerance:
-                return (True, v_next, iteration_num)
-            elif self.settings.V_limiting and err_max > self.settings.tolerance:
-                v_next = self.apply_limiting(v_next, v_previous, diff)
-
-            v_previous = v_next
-            Y.clear(retain_idx=linear_index)
-
-        return (False, v_next, iteration_num)
+    
+    

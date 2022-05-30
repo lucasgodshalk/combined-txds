@@ -3,6 +3,7 @@ import os
 from itertools import count
 import math
 import numpy as np
+from NetworkModel import DxNetworkModel
 
 from anoeds.ditto.readers.gridlabd.read import Reader
 from anoeds.ditto.store import Store
@@ -58,7 +59,7 @@ class Parser:
         self.all_gld_objects = gld_reader.all_gld_objects
 
         # Create a SimulationState object to populate and return
-        simulation_state = SimulationState()
+        simulation_state = DxNetworkModel()
 
         self.create_buses(simulation_state)
 
@@ -201,8 +202,6 @@ class Parser:
                 # TODO add cases for other types (ZIP, etc)
                 
                     
-
-    
     def create_transformers(self, simulation_state):
         # Go through the ditto store for each transformer object
         for model in self.ditto_store.models:
