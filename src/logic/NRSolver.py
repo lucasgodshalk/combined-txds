@@ -16,10 +16,10 @@ class NRSolver:
         self.size_Y = size_Y
         self.network_model = network_model
 
-        self.bus_mask = [False] * size_Y
-        for bus in self.buses:
-            self.bus_mask[bus.node_Vr] = True
-            self.bus_mask[bus.node_Vi] = True
+        #self.bus_mask = [False] * size_Y
+        #for bus in self.buses:
+        #    self.bus_mask[bus.node_Vr] = True
+        #    self.bus_mask[bus.node_Vi] = True
 
     def solve(self, Y, J):
         if self.settings.use_sparse:

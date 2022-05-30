@@ -1,12 +1,13 @@
 import math
 import time
+from logic.NRSolver import NRSolver
 from logic.NetworkModel import TxNetworkModel
 from logic.initialize import initialize_postive_seq
 from logic.PowerFlowSettings import PowerFlowSettings
-from parsers.parser import parse_raw
+from logic.parsers.parser import parse_raw
 from itertools import count
-from parsers.anoeds_parser import Parser
-from powerflowrunner import PowerFlowRunner
+from logic.parsers.anoeds_parser import Parser
+from logic.powerflowrunner import PowerFlowRunner
 
 class PowerFlow:
     def __init__(self, netlist, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
@@ -22,7 +23,7 @@ class PowerFlow:
 
         (network_model, v_init, size_Y) = self.create_network(node_index)
 
-        powerflow = PowerFlow(self.settings, network_model, size_Y)
+        powerflow = NRSolver(self.settings, network_model, size_Y)
 
         is_success, v_final, iteration_num, tx_factor = powerflow.run_powerflow(v_init)
 

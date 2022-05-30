@@ -20,7 +20,7 @@ from models.positiveseq.Generators import Generators
 from models.positiveseq.Loads import Loads
 from models.positiveseq.Slack import Slack
 from models.positiveseq.Shunts import Shunts
-from parsers.parse_transformers import TwoWindingXfmrs, ThreeWindingXfmrs
+from logic.parsers.parse_transformers import TwoWindingXfmrs, ThreeWindingXfmrs
 
 class GenType(Enum):
     Generation = 1

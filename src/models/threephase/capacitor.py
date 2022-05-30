@@ -7,7 +7,7 @@ class Capacitor():
 
     def stamp_primal(self, Y, J, v_estimate, tx_factor, state):
         for phase_capacitor in self.phase_capacitors:
-            phase_capacitor.collect_Y_stamps(state, v_estimate)
+            phase_capacitor.stamp_primal(Y, J, v_estimate, tx_factor, state)
         
     def calculate_residuals(self, state, v):
         residual_contributions = defaultdict(lambda: 0)

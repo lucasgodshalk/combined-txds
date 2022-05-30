@@ -1,5 +1,5 @@
-from logic.PowerFlow import PowerFlow
 from logic.PowerFlowSettings import PowerFlowSettings
+from logic.PowerFlow import PowerFlow
 
 # path to the grid network RAW file
 #casename = 'testcases/GS-4_prior_solution.RAW'
@@ -8,13 +8,14 @@ from logic.PowerFlowSettings import PowerFlowSettings
 #casename = 'testcases/ACTIVSg500_prior_solution_fixed.RAW'
 #casename = 'testcases/PEGASE-9241_flat_start.RAW'
 #casename = 'testcases/PEGASE-13659_flat_start.RAW'
-casename = 'test/testcases/GS-4_stressed.RAW'
+#casename = 'test/testcases/GS-4_stressed.RAW'
 #casename = 'testcases/IEEE-14_stressed_1.RAW'
 #casename = 'testcases/IEEE-14_stressed_2_fixed.RAW'
+casename = 'test/data/gc_12_47_1/node.glm'
 
 print(f'Testcase: {casename.replace("testcases/", "")}')
 
-settings = PowerFlowSettings(max_iters=100, flat_start=False, infeasibility_analysis=True, tx_stepping=False, V_limiting=False)
+settings = PowerFlowSettings(max_iters=100, flat_start=False, infeasibility_analysis=False, tx_stepping=False, V_limiting=False)
 
 powerflow = PowerFlow(casename, settings)
 
