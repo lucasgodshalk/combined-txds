@@ -11,9 +11,8 @@ TX_SCALE = 1.0 / TX_ITERATIONS
 
 class NRSolver:
 
-    def __init__(self, settings: PowerFlowSettings, network_model, size_Y):
+    def __init__(self, settings: PowerFlowSettings, network_model):
         self.settings = settings
-        self.size_Y = size_Y
         self.network_model = network_model
 
         #self.bus_mask = [False] * size_Y
@@ -22,10 +21,7 @@ class NRSolver:
         #    self.bus_mask[bus.node_Vi] = True
 
     def solve(self, Y, J):
-        if self.settings.use_sparse:
-            return spsolve(Y, np.asarray(J, dtype=np.float64))
-        else:
-            return np.linalg.solve(Y, J)
+        return spsolve(Y, np.asarray(J, dtype=np.float64))
 
     def apply_limiting(self, v_next, v_previous, diff):
         #Voltage limiting
@@ -77,7 +73,7 @@ class NRSolver:
 
         v_previous = np.copy(v_init)
 
-        Y = MatrixBuilder(self.settings, self.size_Y)
+        Y = MatrixBuilder(self.settings)
         J_linear = [0] * len(v_init)
 
         self.stamp_linear(Y, J_linear, tx_factor)

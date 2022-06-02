@@ -4,14 +4,13 @@ import numpy as np
 from logic.PowerFlowSettings import PowerFlowSettings
 
 class MatrixBuilder:
-    def __init__(self, settings: PowerFlowSettings, size_Y) -> None:
+    def __init__(self, settings: PowerFlowSettings) -> None:
         self.settings = settings
         self._row = []
         self._col = []
         self._val = []
         self._index = 0
         self._max_index = 0
-        self.size_Y = size_Y
 
     def stamp(self, row, column, value):
         if math.isnan(value) or value == None:
@@ -37,15 +36,7 @@ class MatrixBuilder:
         if self.settings.debug and self._max_index != self._index:
             raise Exception("Solver was not fully utilized. Garbage data remains")
 
-        if self.settings.use_sparse:
-            matrix = csc_matrix((self._val, (self._row, self._col)), dtype=np.float64)
-        else:
-            matrix = np.zeros((self.size_Y, self.size_Y))
-
-            for idx in range(self._max_index):
-                matrix[self._row[idx], self._col[idx]] += self._val[idx]
-
-        return matrix
+        return csc_matrix((self._val, (self._row, self._col)), dtype=np.float64)
 
     def assert_valid(self, check_zeros=False):
         if not self.settings.debug:

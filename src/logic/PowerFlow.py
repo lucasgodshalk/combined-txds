@@ -19,9 +19,7 @@ class PowerFlow:
 
         start_time = time.perf_counter_ns()
 
-        node_index = count(0)
-
-        (network_model, v_init, size_Y) = self.create_network(node_index)
+        (network_model, v_init, size_Y) = self.create_network()
 
         powerflow = NRSolver(self.settings, network_model, size_Y)
 
@@ -50,7 +48,7 @@ class PowerFlow:
         else:
             raise Exception("Invalid netlist file format")
 
-    def create_three_phase_network(self, node_index):
+    def create_three_phase_network(self):
         parser = Parser(self.netlist)
 
         network_model = parser.parse()
@@ -63,7 +61,9 @@ class PowerFlow:
         return (network_model, v_init, network_model.J_length)
 
 
-    def create_positive_seq_network(self, node_index):
+    def create_positive_seq_network(self):
+        node_index = count(0)
+
         raw_data = parse_raw(self.netlist)
 
         buses = raw_data['buses']
