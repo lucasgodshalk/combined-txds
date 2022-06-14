@@ -3,7 +3,7 @@ import os
 from itertools import count
 import math
 import numpy as np
-from logic.NetworkModel import DxNetworkModel
+from logic.networkmodel import DxNetworkModel
 
 from ditto.readers.gridlabd.read import Reader
 from ditto.store import Store

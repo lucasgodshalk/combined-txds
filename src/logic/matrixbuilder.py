@@ -1,7 +1,7 @@
 import math
 from scipy.sparse import csc_matrix
 import numpy as np
-from logic.PowerFlowSettings import PowerFlowSettings
+from logic.powerflowsettings import PowerFlowSettings
 
 class MatrixBuilder:
     def __init__(self, settings: PowerFlowSettings) -> None:

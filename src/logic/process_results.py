@@ -1,8 +1,8 @@
 import math
 from typing import List
 import pandas as pd
-from logic.PowerFlowSettings import PowerFlowSettings
-from models.positiveseq.Buses import Bus
+from logic.powerflowsettings import PowerFlowSettings
+from models.positiveseq.buses import Bus
 
 
 class GeneratorResult:

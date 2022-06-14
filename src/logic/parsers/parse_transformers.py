@@ -10,7 +10,7 @@
 import math
 import copy
 
-from models.positiveseq.Transformers import Transformers
+from models.positiveseq.transformers import Transformers
 
 class TwoWindingXfmrs:
 
