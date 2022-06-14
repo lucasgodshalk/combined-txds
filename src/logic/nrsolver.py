@@ -10,9 +10,6 @@ class NRSolver:
         self.network_model = network_model
         self.v_limiting = v_limiting
 
-    def solve(self, Y, J):
-        return spsolve(Y, np.asarray(J, dtype=np.float64))
-
     def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
         for element in self.network_model.get_NR_invariant_elements():
             element.stamp_primal(Y, J, None, tx_factor, self.network_model)
@@ -46,7 +43,7 @@ class NRSolver:
 
             Y.assert_valid(check_zeros=True)
 
-            v_next = self.solve(Y.to_matrix(), J)
+            v_next = spsolve(Y.to_matrix(), np.asarray(J, dtype=np.float64))
 
             if np.isnan(v_next).any():
                 raise Exception("Error solving linear system")
