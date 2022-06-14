@@ -26,6 +26,19 @@ class NRSolver:
             for element in self.network_model.get_NR_variable_elements():
                 element.stamp_dual(Y, J, v_previous, tx_factor, self.network_model)
 
+    def calculate_residuals(self, v):
+        all_elements = self.network_model.get_NR_invariant_elements() + self.network_model.get_NR_variable_elements()
+
+        residuals = np.zeros(len(v))
+
+        for element in all_elements:
+            for (index, value) in element.calculate_residuals(self.network_model, v).items():
+                residuals[index] += value
+
+        max_residual = np.amax(np.abs(residuals))
+
+        print("Maximum residual: " + str(max_residual))
+
     def run_powerflow(self, v_init, tx_factor):
         v_previous = np.copy(v_init)
 
@@ -55,6 +68,8 @@ class NRSolver:
             err_max = err.max()
             
             if err_max < self.settings.tolerance:
+                self.calculate_residuals(v_next)
+
                 return (True, v_next, iteration_num)
             elif self.v_limiting != None and err_max > self.settings.tolerance:
                 v_next = self.v_limiting.apply_limiting(v_next, v_previous, diff)

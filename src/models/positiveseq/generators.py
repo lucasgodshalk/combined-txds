@@ -165,4 +165,5 @@ class Generators:
 
         J[self.bus.node_lambda_Q] += -dQ_k + dQ_dVr_k * V_r + dQ_dVi_k * V_i + dQ_dLr_k * lambda_r + dQ_dLi_k * lambda_i
 
-
+    def calculate_residuals(self, network_model, v):
+        return {}

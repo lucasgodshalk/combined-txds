@@ -60,4 +60,5 @@ class Slack:
         Y.stamp(self.slack_lambda_Ir, self.bus.node_lambda_Vr, 1)
         Y.stamp(self.slack_lambda_Ii, self.bus.node_lambda_Vi, 1)
 
-
+    def calculate_residuals(self, network_model, v):
+        return {}

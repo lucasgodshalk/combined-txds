@@ -70,3 +70,6 @@ class Shunts:
         scaled_B = self.B * (1 - tx_factor)
 
         return (scaled_G, scaled_B)
+
+    def calculate_residuals(self, network_model, v):
+        return {}

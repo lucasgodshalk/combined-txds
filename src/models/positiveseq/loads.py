@@ -110,3 +110,6 @@ class Loads:
         Y.stamp(self.bus.node_lambda_Vi, self.bus.node_lambda_Vi, dVi_dLi_k)
 
         J[self.bus.node_lambda_Vi] += -dVi_k + dVi_dVr_k * V_r + dVi_dVi_k * V_i + dVi_dLr_k * lambda_r + dVi_dLi_k * lambda_i
+
+    def calculate_residuals(self, network_model, v):
+        return {}

@@ -165,4 +165,5 @@ class Transformers:
 
         return (scaled_tr * math.cos(scaled_angle), scaled_tr * math.sin(scaled_angle), scaled_G, scaled_B)
 
-
+    def calculate_residuals(self, network_model, v):
+        return {}

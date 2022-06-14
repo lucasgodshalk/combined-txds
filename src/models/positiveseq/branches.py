@@ -90,6 +90,9 @@ class Branches:
         scaled_B_line = self.B_line * (1 - tx_factor)
 
         return (scaled_G, scaled_B, scaled_B_line)
+    
+    def calculate_residuals(self, network_model, v):
+        return {}
         
 
 
