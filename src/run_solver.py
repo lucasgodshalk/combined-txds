@@ -5,8 +5,8 @@ from logic.powerflow import PowerFlow
 #casename = 'testcases/GS-4_prior_solution.RAW'
 #casename = 'testcases/IEEE-14_prior_solution.RAW'
 #casename = 'test/testcases/IEEE-118_prior_solution.RAW'
-#casename = 'test/testcases/ACTIVSg500_prior_solution_fixed.RAW'
-casename = 'test/testcases/PEGASE-9241_flat_start.RAW'
+casename = 'test/testcases/ACTIVSg500_prior_solution_fixed.RAW'
+#casename = 'test/testcases/PEGASE-9241_flat_start.RAW'
 #casename = 'testcases/PEGASE-13659_flat_start.RAW'
 #casename = 'test/testcases/GS-4_stressed.RAW'
 #casename = 'testcases/IEEE-14_stressed_1.RAW'
@@ -15,7 +15,7 @@ casename = 'test/testcases/PEGASE-9241_flat_start.RAW'
 
 print(f'Testcase: {casename.replace("testcases/", "")}')
 
-settings = PowerFlowSettings(max_iters=100, flat_start=False, infeasibility_analysis=False, tx_stepping=False, V_limiting=False)
+settings = PowerFlowSettings(max_iters=100, flat_start=False, infeasibility_analysis=False, tx_stepping=False, voltage_limiting=False)
 
 powerflow = PowerFlow(casename, settings)
 

@@ -3,6 +3,8 @@ from itertools import count
 
 class TxNetworkModel():
     def __init__(self, raw_data, infeasibility_analysis):
+        self.is_three_phase = False
+
         self.buses = raw_data['buses']
         self.slack = raw_data['slack']
         self.generator = raw_data['generators']
@@ -30,6 +32,8 @@ class DxNetworkModel():
     OMEGA = 2 * pi * 60
 
     def __init__(self):
+        self.is_three_phase = True
+
         # The next index of J to use
         self.next_var_idx = count(0)
         self.J_length = 0

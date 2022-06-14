@@ -9,6 +9,7 @@ from logic.parsers.parser import parse_raw
 from itertools import count
 from logic.parsers.anoeds_parser import Parser
 from logic.powerflowrunner import PowerFlowRunner
+from logic.v_limiting import PositiveSeqVoltageLimiting
 
 class PowerFlow:
     def __init__(self, netlist, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
@@ -20,9 +21,13 @@ class PowerFlow:
 
         start_time = time.perf_counter_ns()
 
-        (network_model, v_init) = self.create_network()
+        (network_model, v_init, size_Y) = self.create_network()
 
-        nrsolver = NRSolver(self.settings, network_model)
+        v_limiting = None
+        if not network_model.is_three_phase and self.settings.voltage_limiting:
+            v_limiting = PositiveSeqVoltageLimiting(network_model.buses, size_Y)
+
+        nrsolver = NRSolver(self.settings, network_model, v_limiting)
 
         homotopy_controller = HomotopyController(self.settings, nrsolver)
 
@@ -61,7 +66,7 @@ class PowerFlow:
 
         v_init = powerflowrunner.v_estimate
 
-        return (network_model, v_init)
+        return (network_model, v_init, network_model.J_length)
 
 
     def create_positive_seq_network(self):
@@ -83,7 +88,7 @@ class PowerFlow:
 
         network_model = TxNetworkModel(raw_data, self.settings.infeasibility_analysis)
 
-        return (network_model, v_init)
+        return (network_model, v_init, size_Y)
 
 
     
