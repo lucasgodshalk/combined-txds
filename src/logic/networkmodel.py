@@ -1,9 +1,13 @@
 from cmath import pi
 from itertools import count
 
-class TxNetworkModel():
+class NetworkModel():
+    def __init__(self, is_three_phase: bool) -> None:
+        self.is_three_phase = is_three_phase
+
+class TxNetworkModel(NetworkModel):
     def __init__(self, raw_data, infeasibility_analysis):
-        self.is_three_phase = False
+        NetworkModel.__init__(self, is_three_phase=False)
 
         self.buses = raw_data['buses']
         self.slack = raw_data['slack']
@@ -26,13 +30,13 @@ class TxNetworkModel():
     def get_NR_variable_elements(self):
         return self.nonlinear_elements
 
-class DxNetworkModel():
+class DxNetworkModel(NetworkModel):
     # The id of the node connected to ground
     GROUND_NODE = -1
     OMEGA = 2 * pi * 60
 
     def __init__(self):
-        self.is_three_phase = True
+        NetworkModel.__init__(self, is_three_phase=True)
 
         # The next index of J to use
         self.next_var_idx = count(0)
