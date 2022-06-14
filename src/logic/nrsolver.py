@@ -48,29 +48,7 @@ class NRSolver:
             for element in self.network_model.get_NR_variable_elements():
                 element.stamp_dual(Y, J, v_previous, tx_factor, self.network_model)
 
-    def run_powerflow(self, v_init):
-        tx_factor = TX_ITERATIONS if self.settings.tx_stepping else 0
-
-        iterations = 0
-        v_next = np.copy(v_init)
-        is_success = False
-
-        while tx_factor >= 0:
-            if tx_factor % 10 == 0:
-                print(f'Tx factor: {tx_factor}')
-
-            is_success, v_final, iteration_num = self.run_powerflow_inner(v_init, tx_factor * TX_SCALE)
-            iterations = iteration_num + 1
-            tx_factor -= 1
-            v_next = v_final
-
-            if not is_success:
-                break
-
-        return (is_success, v_next, iterations, tx_factor * TX_SCALE)
-
-    def run_powerflow_inner(self, v_init, tx_factor):
-
+    def run_powerflow(self, v_init, tx_factor):
         v_previous = np.copy(v_init)
 
         Y = MatrixBuilder(self.settings)

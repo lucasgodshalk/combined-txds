@@ -1,5 +1,6 @@
 import math
 import time
+from logic.homotopycontroller import HomotopyController
 from logic.nrsolver import NRSolver
 from logic.networkmodel import TxNetworkModel
 from logic.initialize import initialize_postive_seq
@@ -21,9 +22,11 @@ class PowerFlow:
 
         (network_model, v_init) = self.create_network()
 
-        powerflow = NRSolver(self.settings, network_model)
+        nrsolver = NRSolver(self.settings, network_model)
 
-        is_success, v_final, iteration_num, tx_factor = powerflow.run_powerflow(v_init)
+        homotopy_controller = HomotopyController(self.settings, nrsolver)
+
+        is_success, v_final, iteration_num, tx_factor = homotopy_controller.run_powerflow(v_init)
 
         if is_success:
             print(f'Power flow solver converged after {iteration_num} iterations.')
