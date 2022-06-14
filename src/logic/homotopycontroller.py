@@ -11,6 +11,11 @@ class HomotopyController:
         self.nrsolver = nrsolver
 
     def run_powerflow(self, v_init):
+        #optimistically try to solve without homotopy first.
+        is_success, v_final, iteration_num = self.nrsolver.run_powerflow(v_next, 0)
+        if is_success:
+            return (is_success, v_final, iteration_num)
+
         tx_factor = TX_ITERATIONS if self.settings.tx_stepping else 0
 
         iterations = 0
