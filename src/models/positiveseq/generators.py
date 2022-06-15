@@ -1,8 +1,22 @@
 from __future__ import division
 from itertools import count
+from sympy import symbols
+from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.buses import _all_bus_key
-from models.positiveseq.loads import calculate_PQ_dIr_dVi, calculate_PQ_dIr_dVr
+
+constants = P, Vset = symbols('P V_set')
+primals = Vr, Vi, Q = symbols('V_r V_i Q')
+duals = Lr, Li, LQ = symbols('lambda_r lambda_i lambda_Q')
+
+F_Vr = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
+F_Vi = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
+F_Q = Vset ** 2 - Vr ** 2 - Vi ** 2
+
+lagrange = Lr * F_Vr + Li * F_Vi + LQ * F_Q
+
+lh = LagrangeHandler(lagrange, constants, primals, duals)
 
 class Generators:
     _ids = count(0)
@@ -46,124 +60,52 @@ class Generators:
         self.Qmax = -Qmax / 100
         self.Qmin = -Qmin / 100
 
+        self.stamper = None
+
+    def build_stamper(self):
+        if self.stamper != None:
+            return
+        
+        #Somewhat counter-intuitive, but the row mapping is swapped for primals <-> duals
+        row_map = {}
+        row_map[Vr] = self.bus.node_lambda_Vr
+        row_map[Vi] = self.bus.node_lambda_Vi
+        row_map[Q] = self.bus.node_lambda_Q
+        row_map[Lr] = self.bus.node_Vr
+        row_map[Li] = self.bus.node_Vi
+        row_map[LQ] = self.bus.node_Q
+
+        col_map = {}
+        col_map[Vr] = self.bus.node_Vr
+        col_map[Vi] = self.bus.node_Vi
+        col_map[Q] = self.bus.node_Q
+        col_map[Lr] = self.bus.node_lambda_Vr
+        col_map[Li] = self.bus.node_lambda_Vi
+        col_map[LQ] = self.bus.node_lambda_Q
+
+        self.stamper = LagrangeStamper(lh, row_map, col_map)
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+        self.build_stamper()
+
         Q_k = v_previous[self.bus.node_Q]
         Vr_k = v_previous[self.bus.node_Vr]
         Vi_k = v_previous[self.bus.node_Vi]
 
-        #Real current
-        dIr_dQ_k = Vi_k / (Vr_k ** 2 + Vi_k ** 2)
-        dIr_dVr_k = calculate_PQ_dIr_dVr(Vr_k, Vi_k, self.P, Q_k)
-        dIr_dVi_k = calculate_PQ_dIr_dVi(Vr_k, Vi_k, self.P, Q_k)
-
-        Y.stamp(self.bus.node_Vr, self.bus.node_Q, dIr_dQ_k)
-        Y.stamp(self.bus.node_Vr, self.bus.node_Vr, dIr_dVr_k)
-        Y.stamp(self.bus.node_Vr, self.bus.node_Vi, dIr_dVi_k)
-
-        Ir_k = (self.P * Vr_k + Q_k * Vi_k) / (Vr_k ** 2 + Vi_k ** 2)
-
-        J[self.bus.node_Vr] += -Ir_k + dIr_dQ_k * Q_k + dIr_dVr_k * Vr_k + dIr_dVi_k * Vi_k
-
-        #Imaginary current
-        dIi_dQ_k = -Vr_k / (Vr_k ** 2 + Vi_k ** 2)
-        dIi_dVr_k = dIr_dVi_k
-        dIi_dVi_k = -dIr_dVr_k
-
-        Y.stamp(self.bus.node_Vi, self.bus.node_Q, dIi_dQ_k)
-        Y.stamp(self.bus.node_Vi, self.bus.node_Vr, dIi_dVr_k)
-        Y.stamp(self.bus.node_Vi, self.bus.node_Vi, dIi_dVi_k)
-
-        Ii_k = (self.P * Vi_k - Q_k * Vr_k) / (Vr_k ** 2 + Vi_k ** 2)
-
-        J[self.bus.node_Vi] += -Ii_k + dIi_dQ_k * Q_k + dIi_dVr_k * Vr_k + dIi_dVi_k * Vi_k
-
-        #Vset equation
-        dVset_dVr = -2 * Vr_k
-        dVset_dVi = -2 * Vi_k
-
-        Y.stamp(self.bus.node_Q, self.bus.node_Vr, dVset_dVr)
-        Y.stamp(self.bus.node_Q, self.bus.node_Vi, dVset_dVi)
-
-        VSet_k = self.Vset ** 2 - Vr_k ** 2 - Vi_k ** 2
-
-        J[self.bus.node_Q] += -VSet_k + dVset_dVr * Vr_k + dVset_dVi * Vi_k
+        self.stamper.stamp_primal(Y, J, (self.P, self.Vset), (Vr_k, Vi_k, Q_k), (0, 0, 0))
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        Q = v_previous[self.bus.node_Q]
+        self.build_stamper()
+
+        Q_k = v_previous[self.bus.node_Q]
         V_r = v_previous[self.bus.node_Vr]
         V_i = v_previous[self.bus.node_Vi]
         lambda_r = v_previous[self.bus.node_lambda_Vr]
         lambda_i = v_previous[self.bus.node_lambda_Vi]
         lambda_Q = v_previous[self.bus.node_lambda_Q]
 
-        #Real Lambda
-
-        dVr_k = -Q*lambda_i/(V_i**2 + V_r**2) - 2*V_r*lambda_Q - 2*V_r*lambda_i*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**2 - 2*V_r*lambda_r*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**2 + lambda_r*self.P/(V_i**2 + V_r**2)
-
-        dVr_dVr_k = 4*Q*V_r*lambda_i/(V_i**2 + V_r**2)**2 + 8*V_r**2*lambda_i*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**3 + 8*V_r**2*lambda_r*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**3 - 4*V_r*lambda_r*self.P/(V_i**2 + V_r**2)**2 - 2*lambda_Q - 2*lambda_i*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**2 - 2*lambda_r*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**2
-
-        dVr_dVi_k = 2*Q*V_i*lambda_i/(V_i**2 + V_r**2)**2 - 2*Q*V_r*lambda_r/(V_i**2 + V_r**2)**2 + 8*V_i*V_r*lambda_i*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**3 + 8*V_i*V_r*lambda_r*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**3 - 2*V_i*lambda_r*self.P/(V_i**2 + V_r**2)**2 - 2*V_r*lambda_i*self.P/(V_i**2 + V_r**2)**2
-
-        dVr_dQ_k = -2*V_i*V_r*lambda_r/(V_i**2 + V_r**2)**2 + 2*V_r**2*lambda_i/(V_i**2 + V_r**2)**2 - lambda_i/(V_i**2 + V_r**2)
-
-        dVr_dLr_k = -2*V_r*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**2 + self.P/(V_i**2 + V_r**2)
-
-        dVr_dLi_k = -Q/(V_i**2 + V_r**2) - 2*V_r*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**2
-
-        dVr_dLQ_k = -2*V_r
-
-        Y.stamp(self.bus.node_lambda_Vr, self.bus.node_Vr, dVr_dVr_k)
-        Y.stamp(self.bus.node_lambda_Vr, self.bus.node_Vi, dVr_dVi_k)
-        Y.stamp(self.bus.node_lambda_Vr, self.bus.node_Q, dVr_dQ_k)
-        Y.stamp(self.bus.node_lambda_Vr, self.bus.node_lambda_Vr, dVr_dLr_k)
-        Y.stamp(self.bus.node_lambda_Vr, self.bus.node_lambda_Vi, dVr_dLi_k)
-        Y.stamp(self.bus.node_lambda_Vr, self.bus.node_lambda_Q, dVr_dLQ_k)
-
-        J[self.bus.node_lambda_Vr] += -dVr_k + dVr_dVr_k * V_r + dVr_dVi_k * V_i + dVr_dQ_k * Q + dVr_dLr_k * lambda_r + dVr_dLi_k * lambda_i + dVr_dLQ_k * lambda_Q
-
-        #Imaginary Lambda
-        
-        dVi_k = Q*lambda_r/(V_i**2 + V_r**2) - 2*V_i*lambda_Q - 2*V_i*lambda_i*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**2 - 2*V_i*lambda_r*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**2 + lambda_i*self.P/(V_i**2 + V_r**2)
-
-        dVi_dVr_k = 2*Q*V_i*lambda_i/(V_i**2 + V_r**2)**2 - 2*Q*V_r*lambda_r/(V_i**2 + V_r**2)**2 + 8*V_i*V_r*lambda_i*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**3 + 8*V_i*V_r*lambda_r*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**3 - 2*V_i*lambda_r*self.P/(V_i**2 + V_r**2)**2 - 2*V_r*lambda_i*self.P/(V_i**2 + V_r**2)**2
-
-        dVi_dVi_k = -4*Q*V_i*lambda_r/(V_i**2 + V_r**2)**2 + 8*V_i**2*lambda_i*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**3 + 8*V_i**2*lambda_r*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**3 - 4*V_i*lambda_i*self.P/(V_i**2 + V_r**2)**2 - 2*lambda_Q - 2*lambda_i*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**2 - 2*lambda_r*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**2
-
-        dVi_dQ_k = -2*V_i**2*lambda_r/(V_i**2 + V_r**2)**2 + 2*V_i*V_r*lambda_i/(V_i**2 + V_r**2)**2 + lambda_r/(V_i**2 + V_r**2)
-
-        dVi_dLr_k = Q/(V_i**2 + V_r**2) - 2*V_i*(Q*V_i + V_r*self.P)/(V_i**2 + V_r**2)**2
-
-        dVi_dLi_k = -2*V_i*(-Q*V_r + V_i*self.P)/(V_i**2 + V_r**2)**2 + self.P/(V_i**2 + V_r**2)
-
-        dVi_dLQ_k = -2*V_i
-
-        Y.stamp(self.bus.node_lambda_Vi, self.bus.node_Vr, dVi_dVr_k)
-        Y.stamp(self.bus.node_lambda_Vi, self.bus.node_Vi, dVi_dVi_k)
-        Y.stamp(self.bus.node_lambda_Vi, self.bus.node_Q, dVi_dQ_k)
-        Y.stamp(self.bus.node_lambda_Vi, self.bus.node_lambda_Vr, dVi_dLr_k)
-        Y.stamp(self.bus.node_lambda_Vi, self.bus.node_lambda_Vi, dVi_dLi_k)
-        Y.stamp(self.bus.node_lambda_Vi, self.bus.node_lambda_Q, dVi_dLQ_k)
-
-        J[self.bus.node_lambda_Vi] += -dVi_k + dVi_dVr_k * V_r + dVi_dVi_k * V_i + dVi_dQ_k * Q + dVi_dLr_k * lambda_r + dVi_dLi_k * lambda_i + dVi_dLQ_k * lambda_Q
-
-        # Vset Lambda
-
-        dQ_k = V_i*lambda_r/(V_i**2 + V_r**2) - V_r*lambda_i/(V_i**2 + V_r**2)
-
-        dQ_dVr_k = -2*V_i*V_r*lambda_r/(V_i**2 + V_r**2)**2 + 2*V_r**2*lambda_i/(V_i**2 + V_r**2)**2 - lambda_i/(V_i**2 + V_r**2)
-
-        dQ_dVi_k = -2*V_i**2*lambda_r/(V_i**2 + V_r**2)**2 + 2*V_i*V_r*lambda_i/(V_i**2 + V_r**2)**2 + lambda_r/(V_i**2 + V_r**2)
-
-        dQ_dLr_k = V_i/(V_i**2 + V_r**2)
-
-        dQ_dLi_k = -V_r/(V_i**2 + V_r**2)
-
-        Y.stamp(self.bus.node_lambda_Q, self.bus.node_Vr, dQ_dVr_k)
-        Y.stamp(self.bus.node_lambda_Q, self.bus.node_Vi, dQ_dVi_k)
-        Y.stamp(self.bus.node_lambda_Q, self.bus.node_lambda_Vr, dQ_dLr_k)
-        Y.stamp(self.bus.node_lambda_Q, self.bus.node_lambda_Vi, dQ_dLi_k)
-
-        J[self.bus.node_lambda_Q] += -dQ_k + dQ_dVr_k * V_r + dQ_dVi_k * V_i + dQ_dLr_k * lambda_r + dQ_dLi_k * lambda_i
+        self.stamper.stamp_dual(Y, J, (self.P, self.Vset), (V_r, V_i, Q_k), (lambda_r, lambda_i, lambda_Q))
 
     def calculate_residuals(self, network_model, v):
         return {}
+

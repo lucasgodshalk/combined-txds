@@ -13,7 +13,9 @@ class MatrixBuilder:
         self._max_index = 0
 
     def stamp(self, row, column, value):
-        if math.isnan(value) or value == None:
+        if value == 0:
+            return
+        elif math.isnan(value) or value == None:
             raise Exception("Invalid value")
 
         if self._index == self._max_index:
