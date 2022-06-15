@@ -99,6 +99,9 @@ class Bus:
         Y.stamp(self.node_Ir_inf, self.node_Ir_inf, 2)
         Y.stamp(self.node_Ii_inf, self.node_Ii_inf, 2)
 
+    def calculate_residuals(self, network_model, v):
+        return {}
+
 _all_bus_key: typing.Dict[int, Bus]
 _all_bus_key = {}
 _idsAllBuses = count(1)
