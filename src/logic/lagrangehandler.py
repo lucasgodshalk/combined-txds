@@ -61,24 +61,24 @@ class LagrangeHandler:
 
     def evaluate_primals(self, constant_vals, primal_vals, dual_vals):
         values = constant_vals + primal_vals + dual_vals
-        return self.evaluate_set(self.duals, values)
+        return self.__evaluate_set(self.duals, values)
 
     def evaluate_duals(self, constant_vals, primal_vals, dual_vals):
         values = constant_vals + primal_vals + dual_vals
-        return self.evaluate_set(self.primals, values)
+        return self.__evaluate_set(self.primals, values)
 
-    def evaluate_set(self, set, values):
+    def __evaluate_set(self, set, values):
         components = {}
 
         for primal in set:
             if self.is_nonlinear:
-                d = {}
+                second_order_results = {}
                 for second_order in self.variables:
-                    d[second_order] = self.second_order_evals[(primal, second_order)](*values)
+                    second_order_results[second_order] = self.second_order_evals[(primal, second_order)](*values)
                 
                 kth_sum = self.kth_sum_evals[primal](*values)
 
-                components[primal] = (kth_sum, d)
+                components[primal] = (kth_sum, second_order_results)
             else:
                 val = self.first_order_evals[primal](*values)
                 components[primal] = val

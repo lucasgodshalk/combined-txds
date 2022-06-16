@@ -62,7 +62,7 @@ class Generators:
 
         self.stamper = None
 
-    def build_stamper(self):
+    def try_build_stamper(self):
         if self.stamper != None:
             return
         
@@ -86,25 +86,12 @@ class Generators:
         self.stamper = LagrangeStamper(lh, row_map, col_map)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        self.build_stamper()
-
-        Q_k = v_previous[self.bus.node_Q]
-        Vr_k = v_previous[self.bus.node_Vr]
-        Vi_k = v_previous[self.bus.node_Vi]
-
-        self.stamper.stamp_primal(Y, J, (self.P, self.Vset), (Vr_k, Vi_k, Q_k), (0, 0, 0))
+        self.try_build_stamper()
+        self.stamper.stamp_primal(Y, J, [self.P, self.Vset], v_previous)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        self.build_stamper()
-
-        Q_k = v_previous[self.bus.node_Q]
-        V_r = v_previous[self.bus.node_Vr]
-        V_i = v_previous[self.bus.node_Vi]
-        lambda_r = v_previous[self.bus.node_lambda_Vr]
-        lambda_i = v_previous[self.bus.node_lambda_Vi]
-        lambda_Q = v_previous[self.bus.node_lambda_Q]
-
-        self.stamper.stamp_dual(Y, J, (self.P, self.Vset), (V_r, V_i, Q_k), (lambda_r, lambda_i, lambda_Q))
+        self.try_build_stamper()
+        self.stamper.stamp_dual(Y, J, [self.P, self.Vset], v_previous)
 
     def calculate_residuals(self, network_model, v):
         return {}
