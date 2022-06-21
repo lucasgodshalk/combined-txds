@@ -9,7 +9,7 @@ import math
 
 constants = [Vrset, Viset] = symbols("Vrset Viset")
 
-variables = [Vr, Vi, Isr, Isi] = symbols("Vr Vi I_Sr I_Si")
+primals = [Vr, Vi, Isr, Isi] = symbols("Vr Vi I_Sr I_Si")
 
 duals = [Lr, Li, Lsr, Lsi] = symbols("lambda_Vr lambda_Vi lambda_Sr lambda_Si")
 
@@ -22,7 +22,7 @@ eqns = [
 
 lagrange = np.dot(duals, eqns)
 
-lh = LagrangeHandler(lagrange, constants, variables, duals)
+lh = LagrangeHandler(lagrange, constants, primals, duals)
 
 class Slack:
 

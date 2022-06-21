@@ -77,10 +77,7 @@ class DerivativeEntry:
         self.constant_expr = constant_expr
         self.variable_exprs = variable_exprs
 
-        if constant_expr != 0:
-            self.constant_eval = lambdify(lambda_inputs, constant_expr)
-        else:
-            self.constant_eval = return_zero
+        self.constant_eval = lambdify(lambda_inputs, constant_expr)
 
         self.variable_evals = {}
         for var, derivative in variable_exprs.items():
@@ -88,11 +85,12 @@ class DerivativeEntry:
             if derivative != 0:
                 self.variable_evals[var] = lambdify(lambda_inputs, derivative)
 
-    def evaluate(self, *args):
-        yield (None, self.constant_eval(*args))
+    def get_evals(self):
+        if self.constant_expr != 0:
+            yield (None, self.constant_eval)
 
         for (variable, func) in self.variable_evals.items():
-            yield(variable, func(*args))
+            yield(variable, func)
 
 class LagrangeHandler:
     def __init__(self, lagrange, constant_symbols, primal_symbols, dual_symbols) -> None:
@@ -113,22 +111,3 @@ class LagrangeHandler:
             constant_expr, variable_exprs = split_expr(derivative, self.variables)
 
             self.derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, lambda_inputs)
-
-    def evaluate_primals(self, constant_vals, primal_vals, dual_vals):
-        values = constant_vals + primal_vals + dual_vals
-        return self.__evaluate_set(self.duals, values)
-
-    def evaluate_duals(self, constant_vals, primal_vals, dual_vals):
-        values = constant_vals + primal_vals + dual_vals
-        return self.__evaluate_set(self.primals, values)
-
-    def __evaluate_set(self, target_derivatives, values):
-        components = []
-
-        for variable in target_derivatives:
-            entry = self.derivatives[variable]
-
-            for (secondary_variable, result) in entry.evaluate(*values):
-                components.append((variable, secondary_variable, result))
-        
-        return components
