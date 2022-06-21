@@ -8,10 +8,9 @@ class StampEntry:
         self.eval_func = eval_func
 
 class LagrangeStamper:
-    def __init__(self, handler: LagrangeHandler, index_row_map: dict, index_col_map: dict) -> None:
+    def __init__(self, handler: LagrangeHandler, index_map: dict) -> None:
         self.handler = handler
-        self.index_row_map = index_row_map
-        self.index_col_map = index_col_map
+        self.index_map = index_map
 
         self.empty_primals = [None] * len(self.handler.primals)
         self.empty_duals = [None] * len(self.handler.duals)
@@ -26,9 +25,9 @@ class LagrangeStamper:
 
             for (yth_variable, eval) in entry.get_evals():
                 if yth_variable == None:
-                    components.append((self.index_row_map[row_var], None, eval))
+                    components.append((self.index_map[row_var], None, eval))
                 else:
-                    components.append((self.index_row_map[row_var], self.index_col_map[yth_variable], eval))
+                    components.append((self.index_map[row_var], self.index_map[yth_variable], eval))
         
         return components
     
@@ -48,11 +47,11 @@ class LagrangeStamper:
 
         primal_vals = []
         for primal in self.handler.primals:
-            primal_vals.append(v_prev[self.index_col_map[primal]])
+            primal_vals.append(v_prev[self.index_map[primal]])
 
         dual_vals = []
         for dual in self.handler.duals:
-            dual_vals.append(v_prev[self.index_col_map[dual]])
+            dual_vals.append(v_prev[self.index_map[dual]])
 
         return (primal_vals, dual_vals)
 

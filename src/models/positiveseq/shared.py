@@ -26,28 +26,17 @@ lagrange = np.dot(duals, eqns)
 lh = LagrangeHandler(lagrange, constants, primals, duals)
 
 def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_idx, Li_from_idx, Lr_to_idx, Li_to_idx):
-    #Somewhat counter-intuitive, but the row mapping is swapped for primals <-> duals
-    row_map = {}
-    row_map[Vr_from] = Lr_from_idx
-    row_map[Vi_from] = Li_from_idx
-    row_map[Vr_to] = Lr_to_idx
-    row_map[Vi_to] = Li_to_idx
-    row_map[Lr_from] = Vr_from_idx
-    row_map[Li_from] = Vi_from_idx
-    row_map[Lr_to] = Vr_to_idx
-    row_map[Li_to] = Vi_to_idx
+    index_map = {}
+    index_map[Vr_from] = Vr_from_idx
+    index_map[Vi_from] = Vi_from_idx
+    index_map[Vr_to] = Vr_to_idx
+    index_map[Vi_to] = Vi_to_idx
+    index_map[Lr_from] = Lr_from_idx
+    index_map[Li_from] = Li_from_idx
+    index_map[Lr_to] = Lr_to_idx
+    index_map[Li_to] = Li_to_idx
 
-    col_map = {}
-    col_map[Vr_from] = Vr_from_idx
-    col_map[Vi_from] = Vi_from_idx
-    col_map[Vr_to] = Vr_to_idx
-    col_map[Vi_to] = Vi_to_idx
-    col_map[Lr_from] = Lr_from_idx
-    col_map[Li_from] = Li_from_idx
-    col_map[Lr_to] = Lr_to_idx
-    col_map[Li_to] = Li_to_idx
-
-    return LagrangeStamper(lh, row_map, col_map)
+    return LagrangeStamper(lh, index_map)
 
 
 def stamp_line(Y: MatrixBuilder, Vr_from, Vr_to, Vi_from, Vi_to, G, B):

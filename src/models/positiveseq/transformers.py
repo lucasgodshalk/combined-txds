@@ -86,39 +86,22 @@ class Transformers:
         if self.xfrmr_stamper != None:
             return
         
-        #Somewhat counter-intuitive, but the row mapping is swapped for primals <-> duals
-        row_map = {}
-        row_map[Vr_from] = self.from_bus.node_lambda_Vr
-        row_map[Vi_from] = self.from_bus.node_lambda_Vi
-        row_map[Ir_prim] = self.node_primary_Lambda_Ir
-        row_map[Ii_prim] = self.node_primary_Lambda_Ii
-        row_map[Vr_sec] = self.node_secondary_Lambda_Vr
-        row_map[Vi_sec] = self.node_secondary_Lambda_Vi
+        index_map = {}
+        index_map[Vr_from] = self.from_bus.node_Vr
+        index_map[Vi_from] = self.from_bus.node_Vi
+        index_map[Ir_prim] = self.node_primary_Ir
+        index_map[Ii_prim] = self.node_primary_Ii
+        index_map[Vr_sec] = self.node_secondary_Vr
+        index_map[Vi_sec] = self.node_secondary_Vi
 
-        row_map[Lr_from] = self.from_bus.node_Vr
-        row_map[Li_from] = self.from_bus.node_Vi
-        row_map[Lir_prim] = self.node_primary_Ir
-        row_map[Lii_prim] = self.node_primary_Ii
-        row_map[Lvr_sec] = self.node_secondary_Vr
-        row_map[Lvi_sec] = self.node_secondary_Vi
+        index_map[Lr_from] = self.from_bus.node_lambda_Vr
+        index_map[Li_from] = self.from_bus.node_lambda_Vi
+        index_map[Lir_prim] = self.node_primary_Lambda_Ir
+        index_map[Lii_prim] = self.node_primary_Lambda_Ii
+        index_map[Lvr_sec] = self.node_secondary_Lambda_Vr
+        index_map[Lvi_sec] = self.node_secondary_Lambda_Vi
 
-
-        col_map = {}
-        col_map[Vr_from] = self.from_bus.node_Vr
-        col_map[Vi_from] = self.from_bus.node_Vi
-        col_map[Ir_prim] = self.node_primary_Ir
-        col_map[Ii_prim] = self.node_primary_Ii
-        col_map[Vr_sec] = self.node_secondary_Vr
-        col_map[Vi_sec] = self.node_secondary_Vi
-
-        col_map[Lr_from] = self.from_bus.node_lambda_Vr
-        col_map[Li_from] = self.from_bus.node_lambda_Vi
-        col_map[Lir_prim] = self.node_primary_Lambda_Ir
-        col_map[Lii_prim] = self.node_primary_Lambda_Ii
-        col_map[Lvr_sec] = self.node_secondary_Lambda_Vr
-        col_map[Lvi_sec] = self.node_secondary_Lambda_Vi
-
-        self.xfrmr_stamper = LagrangeStamper(xfrmr_lh, row_map, col_map)
+        self.xfrmr_stamper = LagrangeStamper(xfrmr_lh, index_map)
 
         self.losses_stamper = build_line_stamper(
             self.node_secondary_Vr, 

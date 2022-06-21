@@ -58,28 +58,17 @@ class Slack:
         if self.stamper != None:
             return
         
-        #Somewhat counter-intuitive, but the row mapping is swapped for primals <-> duals
-        row_map = {}
-        row_map[Vr] = self.bus.node_lambda_Vr
-        row_map[Vi] = self.bus.node_lambda_Vi
-        row_map[Isr] = self.slack_lambda_Ir
-        row_map[Isi] = self.slack_lambda_Ii
-        row_map[Lr] = self.bus.node_Vr
-        row_map[Li] = self.bus.node_Vi
-        row_map[Lsr] = self.slack_Ir
-        row_map[Lsi] = self.slack_Ii
+        index_map = {}
+        index_map[Vr] = self.bus.node_Vr
+        index_map[Vi] = self.bus.node_Vi
+        index_map[Isr] = self.slack_Ir
+        index_map[Isi] = self.slack_Ii
+        index_map[Lr] = self.bus.node_lambda_Vr
+        index_map[Li] = self.bus.node_lambda_Vi
+        index_map[Lsr] = self.slack_lambda_Ir
+        index_map[Lsi] = self.slack_lambda_Ii
 
-        col_map = {}
-        col_map[Vr] = self.bus.node_Vr
-        col_map[Vi] = self.bus.node_Vi
-        col_map[Isr] = self.slack_Ir
-        col_map[Isi] = self.slack_Ii
-        col_map[Lr] = self.bus.node_lambda_Vr
-        col_map[Li] = self.bus.node_lambda_Vi
-        col_map[Lsr] = self.slack_lambda_Ir
-        col_map[Lsi] = self.slack_lambda_Ii
-
-        self.stamper = LagrangeStamper(lh, row_map, col_map)
+        self.stamper = LagrangeStamper(lh, index_map)
 
     def assign_nodes(self, node_index, optimization_enabled):
         self.slack_Ir = next(node_index)

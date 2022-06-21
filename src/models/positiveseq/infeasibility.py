@@ -25,20 +25,13 @@ class InfeasibilityCurrent:
         self.node_Ir_inf = next(node_index)
         self.node_Ii_inf = next(node_index)
 
-        #Somewhat counter-intuitive, but the row mapping is swapped for primals <-> duals
-        row_map = {}
-        row_map[Iir] = self.bus.node_lambda_Vr
-        row_map[Iii] = self.bus.node_lambda_Vi
-        row_map[Lr] = self.node_Ir_inf
-        row_map[Li] = self.node_Ii_inf
+        index_map = {}
+        index_map[Iir] = self.node_Ir_inf
+        index_map[Iii] = self.node_Ii_inf
+        index_map[Lr] = self.bus.node_lambda_Vr
+        index_map[Li] = self.bus.node_lambda_Vi
 
-        col_map = {}
-        col_map[Iir] = self.node_Ir_inf
-        col_map[Iii] = self.node_Ii_inf
-        col_map[Lr] = self.bus.node_lambda_Vr
-        col_map[Li] = self.bus.node_lambda_Vi
-
-        self.stamper = LagrangeStamper(lh, row_map, col_map)
+        self.stamper = LagrangeStamper(lh, index_map)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         self.stamper.stamp_primal(Y, J, [], v_previous)

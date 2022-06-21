@@ -73,27 +73,17 @@ class Branches:
             self.to_bus.node_lambda_Vi
             )
 
-        row_map = {}
-        row_map[Vr_from] = self.from_bus.node_lambda_Vr
-        row_map[Vi_from] = self.from_bus.node_lambda_Vi
-        row_map[Vr_to] = self.to_bus.node_lambda_Vr 
-        row_map[Vi_to] = self.to_bus.node_lambda_Vi
-        row_map[Lr_from] = self.from_bus.node_Vr
-        row_map[Li_from] = self.from_bus.node_Vi
-        row_map[Lr_to] = self.to_bus.node_Vr
-        row_map[Li_to] = self.to_bus.node_Vi
+        index_map = {}
+        index_map[Vr_from] = self.from_bus.node_Vr
+        index_map[Vi_from] = self.from_bus.node_Vi
+        index_map[Vr_to] = self.to_bus.node_Vr
+        index_map[Vi_to] = self.to_bus.node_Vi
+        index_map[Lr_from] = self.from_bus.node_lambda_Vr
+        index_map[Li_from] = self.from_bus.node_lambda_Vi
+        index_map[Lr_to] = self.to_bus.node_lambda_Vr
+        index_map[Li_to] = self.to_bus.node_lambda_Vi
 
-        col_map = {}
-        col_map[Vr_from] = self.from_bus.node_Vr
-        col_map[Vi_from] = self.from_bus.node_Vi
-        col_map[Vr_to] = self.to_bus.node_Vr
-        col_map[Vi_to] = self.to_bus.node_Vi
-        col_map[Lr_from] = self.from_bus.node_lambda_Vr
-        col_map[Li_from] = self.from_bus.node_lambda_Vi
-        col_map[Lr_to] = self.to_bus.node_lambda_Vr
-        col_map[Li_to] = self.to_bus.node_lambda_Vi
-
-        self.shunt_stamper = LagrangeStamper(shunt_lh, row_map, col_map)
+        self.shunt_stamper = LagrangeStamper(shunt_lh, index_map)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         if not self.status:

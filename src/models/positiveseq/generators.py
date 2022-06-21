@@ -66,24 +66,15 @@ class Generators:
         if self.stamper != None:
             return
         
-        #Somewhat counter-intuitive, but the row mapping is swapped for primals <-> duals
-        row_map = {}
-        row_map[Vr] = self.bus.node_lambda_Vr
-        row_map[Vi] = self.bus.node_lambda_Vi
-        row_map[Q] = self.bus.node_lambda_Q
-        row_map[Lr] = self.bus.node_Vr
-        row_map[Li] = self.bus.node_Vi
-        row_map[LQ] = self.bus.node_Q
+        index_map = {}
+        index_map[Vr] = self.bus.node_Vr
+        index_map[Vi] = self.bus.node_Vi
+        index_map[Q] = self.bus.node_Q
+        index_map[Lr] = self.bus.node_lambda_Vr
+        index_map[Li] = self.bus.node_lambda_Vi
+        index_map[LQ] = self.bus.node_lambda_Q
 
-        col_map = {}
-        col_map[Vr] = self.bus.node_Vr
-        col_map[Vi] = self.bus.node_Vi
-        col_map[Q] = self.bus.node_Q
-        col_map[Lr] = self.bus.node_lambda_Vr
-        col_map[Li] = self.bus.node_lambda_Vi
-        col_map[LQ] = self.bus.node_lambda_Q
-
-        self.stamper = LagrangeStamper(lh, row_map, col_map)
+        self.stamper = LagrangeStamper(lh, index_map)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         self.try_build_stamper()
