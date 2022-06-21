@@ -1,11 +1,39 @@
 from __future__ import division
 from itertools import count
+import numpy as np
+from sympy import symbols
+from sympy import cos
+from sympy import sin
+from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.branches import TX_LARGE_G, TX_LARGE_B
+from models.positiveseq.shared import TX_LARGE_G, TX_LARGE_B
 from models.positiveseq.buses import _all_bus_key
 import math
-from models.positiveseq.shared import stamp_line
+from models.positiveseq.shared import build_line_stamper, stamp_line
 
+constants = tr, ang, tx_factor = symbols('tr ang tx_factor')
+primals = [Vr_from, Vi_from, Ir_prim, Ii_prim, Vr_sec, Vi_sec] = symbols('V_r V_i I_pri\,r I_pri\,i V_sec\,r V_sec\,i')
+duals = [Lr_from, Li_from, Lir_prim, Lii_prim, Lvr_sec, Lvi_sec] = symbols('lambda_r lambda_i lambda_pri\,Ir lambda_pri\,Ii lambda_sec\,Vr lambda_sec\,Vi')
+
+scaled_tr = tr + (1 - tr) * tx_factor 
+scaled_angle = ang - ang * tx_factor
+
+scaled_trcos = scaled_tr * cos(scaled_angle)
+scaled_trsin = scaled_tr * sin(scaled_angle)
+
+eqns = [
+    Ir_prim,
+    Ii_prim,
+    Vr_from - scaled_trcos * Vr_sec + scaled_trsin * Vi_sec,
+    Vi_from - scaled_trcos * Vi_sec - scaled_trsin * Vr_sec,
+    -scaled_trcos * Ir_prim - scaled_trsin * Ii_prim,
+    -scaled_trcos * Ii_prim + scaled_trsin * Ir_prim
+]
+
+lagrange = np.dot(duals, eqns)
+
+xfrmr_lh = LagrangeHandler(lagrange, constants, primals, duals)
 
 class Transformers:
     _ids = count(0)
@@ -51,6 +79,58 @@ class Transformers:
 
         self.status = status
 
+        self.xfrmr_stamper = None
+        self.losses_stamper = None
+
+    def try_build_stamper(self):
+        if self.xfrmr_stamper != None:
+            return
+        
+        #Somewhat counter-intuitive, but the row mapping is swapped for primals <-> duals
+        row_map = {}
+        row_map[Vr_from] = self.from_bus.node_lambda_Vr
+        row_map[Vi_from] = self.from_bus.node_lambda_Vi
+        row_map[Ir_prim] = self.node_primary_Lambda_Ir
+        row_map[Ii_prim] = self.node_primary_Lambda_Ii
+        row_map[Vr_sec] = self.node_secondary_Lambda_Vr
+        row_map[Vi_sec] = self.node_secondary_Lambda_Vi
+
+        row_map[Lr_from] = self.from_bus.node_Vr
+        row_map[Li_from] = self.from_bus.node_Vi
+        row_map[Lir_prim] = self.node_primary_Ir
+        row_map[Lii_prim] = self.node_primary_Ii
+        row_map[Lvr_sec] = self.node_secondary_Vr
+        row_map[Lvi_sec] = self.node_secondary_Vi
+
+
+        col_map = {}
+        col_map[Vr_from] = self.from_bus.node_Vr
+        col_map[Vi_from] = self.from_bus.node_Vi
+        col_map[Ir_prim] = self.node_primary_Ir
+        col_map[Ii_prim] = self.node_primary_Ii
+        col_map[Vr_sec] = self.node_secondary_Vr
+        col_map[Vi_sec] = self.node_secondary_Vi
+
+        col_map[Lr_from] = self.from_bus.node_lambda_Vr
+        col_map[Li_from] = self.from_bus.node_lambda_Vi
+        col_map[Lir_prim] = self.node_primary_Lambda_Ir
+        col_map[Lii_prim] = self.node_primary_Lambda_Ii
+        col_map[Lvr_sec] = self.node_secondary_Lambda_Vr
+        col_map[Lvi_sec] = self.node_secondary_Lambda_Vi
+
+        self.xfrmr_stamper = LagrangeStamper(xfrmr_lh, row_map, col_map)
+
+        self.losses_stamper = build_line_stamper(
+            self.node_secondary_Vr, 
+            self.node_secondary_Vi, 
+            self.to_bus.node_Vr, 
+            self.to_bus.node_Vi,
+            self.node_secondary_Lambda_Vr, 
+            self.node_secondary_Lambda_Vi, 
+            self.to_bus.node_lambda_Vr, 
+            self.to_bus.node_lambda_Vi
+            )
+
     def assign_nodes(self, node_index, infeasibility_analysis):
         self.node_primary_Ir = next(node_index)
         self.node_primary_Ii = next(node_index)
@@ -69,101 +149,17 @@ class Transformers:
         if not self.status:
             return
 
-        (trcos, trsin, G, B) = self.get_scaled_constants(tx_factor)
-
-        ###Primary Winding Current
-
-        #Real
-        Y.stamp(self.from_bus.node_Vr, self.node_primary_Ir, 1)
-
-        #Imaginary
-        Y.stamp(self.from_bus.node_Vi, self.node_primary_Ii, 1)
-
-        ###Primary Winding Voltage
-
-        #Real
-        Y.stamp(self.node_primary_Ir, self.from_bus.node_Vr, 1)
-        Y.stamp(self.node_primary_Ir, self.node_secondary_Vr, -trcos)
-        Y.stamp(self.node_primary_Ir, self.node_secondary_Vi, trsin)
-
-
-        #Imaginary
-        Y.stamp(self.node_primary_Ii, self.from_bus.node_Vi, 1)
-        Y.stamp(self.node_primary_Ii, self.node_secondary_Vi, -trcos)
-        Y.stamp(self.node_primary_Ii, self.node_secondary_Vr, -trsin)
-
-        ###Secondary Winding Current
-
-        #Real
-        Y.stamp(self.node_secondary_Vr, self.node_primary_Ir, -trcos)
-        Y.stamp(self.node_secondary_Vr, self.node_primary_Ii, -trsin)
-
-        #Imaginary
-        Y.stamp(self.node_secondary_Vi, self.node_primary_Ii, -trcos)
-        Y.stamp(self.node_secondary_Vi, self.node_primary_Ir, trsin)
-
-        ###Secondary Losses
-
-        Vr_from = self.node_secondary_Vr
-        Vi_from = self.node_secondary_Vi
-        Vr_to = self.to_bus.node_Vr
-        Vi_to = self.to_bus.node_Vi
-
-        stamp_line(Y, Vr_from, Vr_to, Vi_from, Vi_to, G, B)
+        self.try_build_stamper()
+        self.xfrmr_stamper.stamp_primal(Y, J, [self.tr, self.ang_rad, tx_factor], v_previous)
+        self.losses_stamper.stamp_primal(Y, J, [self.G_loss, self.B_loss, tx_factor], v_previous)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         if not self.status:
             return
 
-        (trcos, trsin, G, B) = self.get_scaled_constants(tx_factor)
-
-        ###Primary Winding Current
-
-        #Real
-        Y.stamp(self.from_bus.node_lambda_Vr, self.node_primary_Lambda_Ir, 1)
-
-        #Imaginary
-        Y.stamp(self.from_bus.node_lambda_Vi, self.node_primary_Lambda_Ii, 1)
-
-        ###Primary Winding Voltage
-
-        #Real
-        Y.stamp(self.node_primary_Lambda_Ir, self.from_bus.node_lambda_Vr, 1)
-        Y.stamp(self.node_primary_Lambda_Ir, self.node_secondary_Lambda_Vr, -trcos)
-        Y.stamp(self.node_primary_Lambda_Ir, self.node_secondary_Lambda_Vi, trsin)
-
-
-        #Imaginary
-        Y.stamp(self.node_primary_Lambda_Ii, self.from_bus.node_lambda_Vi, 1)
-        Y.stamp(self.node_primary_Lambda_Ii, self.node_secondary_Lambda_Vi, -trcos)
-        Y.stamp(self.node_primary_Lambda_Ii, self.node_secondary_Lambda_Vr, -trsin)
-
-        ###Secondary Winding Current
-
-        #Real
-        Y.stamp(self.node_secondary_Lambda_Vr, self.node_primary_Lambda_Ir, -trcos)
-        Y.stamp(self.node_secondary_Lambda_Vr, self.node_primary_Lambda_Ii, -trsin)
-
-        #Imaginary
-        Y.stamp(self.node_secondary_Lambda_Vi, self.node_primary_Lambda_Ii, -trcos)
-        Y.stamp(self.node_secondary_Lambda_Vi, self.node_primary_Lambda_Ir, trsin)
-
-        ###Secondary Losses
-
-        Vr_from = self.node_secondary_Lambda_Vr
-        Vi_from = self.node_secondary_Lambda_Vi
-        Vr_to = self.to_bus.node_lambda_Vr
-        Vi_to = self.to_bus.node_lambda_Vi
-
-        stamp_line(Y, Vr_from, Vr_to, Vi_from, Vi_to, G, -B)
-    
-    def get_scaled_constants(self, tx_factor):
-        scaled_tr = self.tr + (1 - self.tr) * tx_factor 
-        scaled_angle = self.ang_rad - self.ang_rad * tx_factor
-        scaled_G = self.G_loss + TX_LARGE_G * self.G_loss * tx_factor
-        scaled_B = self.B_loss + TX_LARGE_B * self.B_loss * tx_factor
-
-        return (scaled_tr * math.cos(scaled_angle), scaled_tr * math.sin(scaled_angle), scaled_G, scaled_B)
+        self.try_build_stamper()
+        self.xfrmr_stamper.stamp_dual(Y, J, [self.tr, self.ang_rad, tx_factor], v_previous)
+        self.losses_stamper.stamp_dual(Y, J, [self.G_loss, self.B_loss, tx_factor], v_previous)
 
     def calculate_residuals(self, network_model, v):
         return {}

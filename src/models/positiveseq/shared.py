@@ -1,4 +1,54 @@
+import numpy as np
+from sympy import symbols
+from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
+
+TX_LARGE_G = 20
+TX_LARGE_B = 20
+
+constants = G, B, tx_factor = symbols('G B tx_factor')
+primals = [Vr_from, Vi_from, Vr_to, Vi_to] = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
+duals = [Lr_from, Li_from, Lr_to, Li_to] = symbols('lambda_from\,r lambda_from\,i lambda_to\,r lambda_to\,i')
+
+scaled_G = G + TX_LARGE_G * G * tx_factor
+scaled_B = B + TX_LARGE_B * B * tx_factor
+
+eqns = [
+    scaled_G * Vr_from - scaled_G * Vr_to + scaled_B * Vi_from - scaled_B * Vi_to,
+    scaled_G * Vi_from - scaled_G * Vi_to - scaled_B * Vr_from + scaled_B * Vr_to,
+    scaled_G * Vr_to - scaled_G * Vr_from + scaled_B * Vi_to - scaled_B * Vi_from,
+    scaled_G * Vi_to - scaled_G * Vi_from - scaled_B * Vr_to + scaled_B * Vr_from   
+]
+
+lagrange = np.dot(duals, eqns)
+
+lh = LagrangeHandler(lagrange, constants, primals, duals)
+
+def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_idx, Li_from_idx, Lr_to_idx, Li_to_idx):
+    #Somewhat counter-intuitive, but the row mapping is swapped for primals <-> duals
+    row_map = {}
+    row_map[Vr_from] = Lr_from_idx
+    row_map[Vi_from] = Li_from_idx
+    row_map[Vr_to] = Lr_to_idx
+    row_map[Vi_to] = Li_to_idx
+    row_map[Lr_from] = Vr_from_idx
+    row_map[Li_from] = Vi_from_idx
+    row_map[Lr_to] = Vr_to_idx
+    row_map[Li_to] = Vi_to_idx
+
+    col_map = {}
+    col_map[Vr_from] = Vr_from_idx
+    col_map[Vi_from] = Vi_from_idx
+    col_map[Vr_to] = Vr_to_idx
+    col_map[Vi_to] = Vi_to_idx
+    col_map[Lr_from] = Lr_from_idx
+    col_map[Li_from] = Li_from_idx
+    col_map[Lr_to] = Lr_to_idx
+    col_map[Li_to] = Li_to_idx
+
+    return LagrangeStamper(lh, row_map, col_map)
+
 
 def stamp_line(Y: MatrixBuilder, Vr_from, Vr_to, Vi_from, Vi_to, G, B):
     #From Bus - Real
