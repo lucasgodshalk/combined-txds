@@ -81,11 +81,11 @@ class Slack:
 
         self.stamper = LagrangeStamper(lh, row_map, col_map)
 
-    def assign_nodes(self, node_index, infeasibility_analysis):
+    def assign_nodes(self, node_index, optimization_enabled):
         self.slack_Ir = next(node_index)
         self.slack_Ii = next(node_index)
 
-        if infeasibility_analysis:
+        if optimization_enabled:
             self.slack_lambda_Ir = next(node_index)
             self.slack_lambda_Ii = next(node_index)
 

@@ -131,13 +131,13 @@ class Transformers:
             self.to_bus.node_lambda_Vi
             )
 
-    def assign_nodes(self, node_index, infeasibility_analysis):
+    def assign_nodes(self, node_index, optimization_enabled):
         self.node_primary_Ir = next(node_index)
         self.node_primary_Ii = next(node_index)
         self.node_secondary_Vr = next(node_index)
         self.node_secondary_Vi = next(node_index)
 
-        if not infeasibility_analysis:
+        if not optimization_enabled:
             return
         
         self.node_primary_Lambda_Ir = next(node_index)

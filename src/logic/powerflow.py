@@ -86,10 +86,9 @@ class PowerFlow:
             optimization_enabled = True
             for bus in buses:
                 inf_current = InfeasibilityCurrent(bus)
-                inf_current.assign_nodes(node_index, self.settings.infeasibility_analysis)
                 infeasibility_currents.append(inf_current)
 
-        for ele in buses + slack + transformers:
+        for ele in buses + slack + transformers + infeasibility_currents:
             ele.assign_nodes(node_index, optimization_enabled)
 
         size_Y = next(node_index)

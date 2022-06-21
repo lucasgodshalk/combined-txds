@@ -64,7 +64,7 @@ class Bus:
         else:
             return (None, None)
 
-    def assign_nodes(self, node_index, infeasibility_analysis):
+    def assign_nodes(self, node_index, optimization_enabled):
         self.node_Vr = next(node_index)
         self.node_Vi = next(node_index)
 
@@ -72,7 +72,7 @@ class Bus:
         if self.Type == 2:
             self.node_Q = next(node_index)
 
-        if not infeasibility_analysis:
+        if not optimization_enabled:
             return
 
         self.node_lambda_Vr = next(node_index)
