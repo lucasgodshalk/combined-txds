@@ -78,29 +78,9 @@ class Bus:
         self.node_lambda_Vr = next(node_index)
         self.node_lambda_Vi = next(node_index)
 
-        self.node_Ir_inf = next(node_index)
-        self.node_Ii_inf = next(node_index)
-
         # If PV Bus
         if self.Type == 2:
             self.node_lambda_Q = next(node_index)
-
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        #Infeasibility current KCL contribution
-        Y.stamp(self.node_Vr, self.node_Ir_inf, 1)
-        Y.stamp(self.node_Vi, self.node_Ii_inf, 1)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        #dX portion
-        Y.stamp(self.node_Ir_inf, self.node_lambda_Vr, 1)
-        Y.stamp(self.node_Ii_inf, self.node_lambda_Vi, 1)
-
-        #Objective function portion
-        Y.stamp(self.node_Ir_inf, self.node_Ir_inf, 2)
-        Y.stamp(self.node_Ii_inf, self.node_Ii_inf, 2)
-
-    def calculate_residuals(self, network_model, v):
-        return {}
 
 _all_bus_key: typing.Dict[int, Bus]
 _all_bus_key = {}

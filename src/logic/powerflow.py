@@ -10,6 +10,7 @@ from itertools import count
 from logic.parsers.anoeds_parser import Parser
 from logic.powerflowrunner import PowerFlowRunner
 from logic.v_limiting import PositiveSeqVoltageLimiting
+from models.positiveseq.infeasibility import InfeasibilityCurrent
 
 class PowerFlow:
     def __init__(self, netlist, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
@@ -79,14 +80,23 @@ class PowerFlow:
         transformers = raw_data['xfmrs']
         generators = raw_data['generators']
 
+        optimization_enabled = False
+        infeasibility_currents = []
+        if self.settings.infeasibility_analysis:
+            optimization_enabled = True
+            for bus in buses:
+                inf_current = InfeasibilityCurrent(bus)
+                inf_current.assign_nodes(node_index, self.settings.infeasibility_analysis)
+                infeasibility_currents.append(inf_current)
+
         for ele in buses + slack + transformers:
-            ele.assign_nodes(node_index, self.settings.infeasibility_analysis)
-        
+            ele.assign_nodes(node_index, optimization_enabled)
+
         size_Y = next(node_index)
 
         v_init = initialize_postive_seq(size_Y, buses, generators, slack, self.settings)
 
-        network_model = TxNetworkModel(raw_data, self.settings.infeasibility_analysis)
+        network_model = TxNetworkModel(raw_data, infeasibility_currents)
 
         return (network_model, v_init, size_Y)
 

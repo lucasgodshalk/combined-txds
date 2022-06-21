@@ -6,7 +6,7 @@ class NetworkModel():
         self.is_three_phase = is_three_phase
 
 class TxNetworkModel(NetworkModel):
-    def __init__(self, raw_data, infeasibility_analysis):
+    def __init__(self, raw_data, extra_linear_elements):
         NetworkModel.__init__(self, is_three_phase=False)
 
         self.buses = raw_data['buses']
@@ -17,10 +17,7 @@ class TxNetworkModel(NetworkModel):
         self.shunt = raw_data['shunts']
         self.load = raw_data['loads']
 
-        self.linear_elments = self.branch + self.shunt + self.transformer + self.slack
-
-        if infeasibility_analysis:
-            self.linear_elments += self.buses
+        self.linear_elments = self.branch + self.shunt + self.transformer + self.slack + extra_linear_elements
 
         self.nonlinear_elements = self.generator + self.load
 
