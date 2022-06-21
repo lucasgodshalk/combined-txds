@@ -11,24 +11,28 @@ from models.positiveseq.shared import stamp_line
 TX_LARGE_G = 20
 TX_LARGE_B = 20
 
-constants = G, B, B_line = symbols('G B B_line')
+constants = G, B, B_line, tx_factor = symbols('G B B_line tx_factor')
 primals = [Vr_from, Vi_from, Vr_to, Vi_to] = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
 duals = [Lr_from, Li_from, Lr_to, Li_to] = symbols('lambda_from\,r lambda_from\,i lambda_to\,r lambda_to\,i')
 
+scaled_G = G + TX_LARGE_G * G * tx_factor
+scaled_B = B + TX_LARGE_B * B * tx_factor
+scaled_B_line = B_line * (1 - tx_factor)
+
 branch_eqns = [
-    G * Vr_from - G * Vr_to + B * Vi_from - B * Vi_to,
-    G * Vi_from - G * Vi_to - B * Vr_from + B * Vr_to,
-    G * Vr_to - G * Vr_from + B * Vi_to - B * Vi_from,
-    G * Vi_to - G * Vi_from - B * Vr_to + B * Vr_from   
+    scaled_G * Vr_from - scaled_G * Vr_to + scaled_B * Vi_from - scaled_B * Vi_to,
+    scaled_G * Vi_from - scaled_G * Vi_to - scaled_B * Vr_from + scaled_B * Vr_to,
+    scaled_G * Vr_to - scaled_G * Vr_from + scaled_B * Vi_to - scaled_B * Vi_from,
+    scaled_G * Vi_to - scaled_G * Vi_from - scaled_B * Vr_to + scaled_B * Vr_from   
 ]
 
 lagrange = np.dot(duals, branch_eqns)
 
 shunt_eqns = [
-    -B_line * Vi_from,
-    B_line * Vr_from,
-    -B_line * Vi_to,
-    B_line * Vr_to,    
+    -scaled_B_line * Vi_from,
+    scaled_B_line * Vr_from,
+    -scaled_B_line * Vi_to,
+    scaled_B_line * Vr_to,    
 ]
 
 lagrange += np.dot(duals, shunt_eqns)
@@ -98,26 +102,15 @@ class Branches:
         if not self.status:
             return
 
-        (scaled_G, scaled_B, scaled_B_line) = self.get_scaled_conductances(tx_factor)
-        
         self.try_build_stamper()
-        self.stamper.stamp_primal(Y, J, [scaled_G, scaled_B, scaled_B_line], v_previous)
+        self.stamper.stamp_primal(Y, J, [self.G, self.B, self.B_line, tx_factor], v_previous)
     
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         if not self.status:
             return
         
-        (scaled_G, scaled_B, scaled_B_line) = self.get_scaled_conductances(tx_factor)
-
         self.try_build_stamper()
-        self.stamper.stamp_dual(Y, J, [scaled_G, scaled_B, scaled_B_line], v_previous)
-    
-    def get_scaled_conductances(self, tx_factor):
-        scaled_G = self.G + TX_LARGE_G * self.G * tx_factor
-        scaled_B = self.B + TX_LARGE_B * self.B * tx_factor
-        scaled_B_line = self.B_line * (1 - tx_factor)
-
-        return (scaled_G, scaled_B, scaled_B_line)
+        self.stamper.stamp_dual(Y, J, [self.G, self.B, self.B_line, tx_factor], v_previous)
     
     def calculate_residuals(self, network_model, v):
         return {}
