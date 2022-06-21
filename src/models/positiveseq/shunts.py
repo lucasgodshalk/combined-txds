@@ -1,7 +1,27 @@
 from __future__ import division
 from itertools import count
+import numpy as np
+from sympy import symbols
+from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.buses import _all_bus_key
+
+constants = G, B, tx_factor = symbols('G B tx_factor')
+primals = [Vr, Vi] = symbols('Vr Vi')
+duals = [Lr, Li] = symbols('lambda_r lambda_i')
+
+scaled_G = G * (1 - tx_factor)
+scaled_B = B * (1 - tx_factor)
+
+eqns = [
+    scaled_G * Vr - scaled_B * Vi,
+    scaled_G * Vi + scaled_B * Vr
+]
+
+lagrange = np.dot(duals, eqns)
+
+lh = LagrangeHandler(lagrange, constants, primals, duals)
 
 class Shunts:
     _ids = count(0)
@@ -43,33 +63,34 @@ class Shunts:
         self.G = G_MW / 100
         self.B = B_MVAR / 100
 
+        self.stamper = None
+
+    def try_build_stamper(self):
+        if self.stamper != None:
+            return
+        
+        #Somewhat counter-intuitive, but the row mapping is swapped for primals <-> duals
+        row_map = {}
+        row_map[Vr] = self.bus.node_lambda_Vr
+        row_map[Vi] = self.bus.node_lambda_Vi
+        row_map[Lr] = self.bus.node_Vr
+        row_map[Li] = self.bus.node_Vi
+
+        col_map = {}
+        col_map[Vr] = self.bus.node_Vr
+        col_map[Vi] = self.bus.node_Vi
+        col_map[Lr] = self.bus.node_lambda_Vr
+        col_map[Li] = self.bus.node_lambda_Vi
+
+        self.stamper = LagrangeStamper(lh, row_map, col_map)
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        (scaled_G, scaled_B) = self.get_scaled_conductances(tx_factor)
-
-        #Real
-        Y.stamp(self.bus.node_Vr, self.bus.node_Vr, scaled_G)
-        Y.stamp(self.bus.node_Vr, self.bus.node_Vi, -scaled_B)
-
-        #Imaginary
-        Y.stamp(self.bus.node_Vi, self.bus.node_Vr, scaled_B)
-        Y.stamp(self.bus.node_Vi, self.bus.node_Vi, scaled_G)
+        self.try_build_stamper()
+        self.stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        (scaled_G, scaled_B) = self.get_scaled_conductances(tx_factor)
-
-        #Real
-        Y.stamp(self.bus.node_lambda_Vr, self.bus.node_lambda_Vr, scaled_G)
-        Y.stamp(self.bus.node_lambda_Vr, self.bus.node_lambda_Vi, scaled_B)
-
-        #Imaginary
-        Y.stamp(self.bus.node_lambda_Vi, self.bus.node_lambda_Vr, -scaled_B)
-        Y.stamp(self.bus.node_lambda_Vi, self.bus.node_lambda_Vi, scaled_G)
-
-    def get_scaled_conductances(self, tx_factor):
-        scaled_G = self.G * (1 - tx_factor)
-        scaled_B = self.B * (1 - tx_factor)
-
-        return (scaled_G, scaled_B)
+        self.try_build_stamper()
+        self.stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
 
     def calculate_residuals(self, network_model, v):
         return {}
