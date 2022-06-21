@@ -15,8 +15,14 @@ class MatrixBuilder:
     def stamp(self, row, column, value):
         if value == 0:
             return
-        elif math.isnan(value) or value == None:
-            raise Exception("Invalid value")
+
+        if self.settings.debug:
+            if type(row) != int:
+                raise Exception("Invalid row index")
+            elif type(column) != int:
+                raise Exception("Invalid column index")
+            elif math.isnan(value) or value == None or (type(value) != int and type(value) != float and type(value) != np.float64):
+                raise Exception("Invalid value")
 
         if self._index == self._max_index:
             self._row.append(row)
