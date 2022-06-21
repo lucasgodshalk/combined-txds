@@ -9,16 +9,22 @@ class LagrangeStamper:
     
     def stamp_primal(self, Y: MatrixBuilder, J, constant_vals, v_prev):
         primal_vals, dual_vals = self.__extract_kth_primals_duals(v_prev)
-        derivatives = self.handler.evaluate_primals(constant_vals, primal_vals, dual_vals)
-        self.__stamp_set(Y, J, self.handler.duals, derivatives)
+        results = self.handler.evaluate_primals(constant_vals, primal_vals, dual_vals)
+        self.__stamp_set(Y, J, results)
 
     def stamp_dual(self, Y: MatrixBuilder, J, constant_vals, v_prev):
         primal_vals, dual_vals = self.__extract_kth_primals_duals(v_prev)
-        derivatives = self.handler.evaluate_duals(constant_vals, primal_vals, dual_vals)
-        self.__stamp_set(Y, J, self.handler.primals, derivatives)
+        results = self.handler.evaluate_duals(constant_vals, primal_vals, dual_vals)
+        self.__stamp_set(Y, J, results)
     
     def __extract_kth_primals_duals(self, v_prev):
+        if v_prev is None:
+            primal_vals = [None] * len(self.handler.primals)
+            dual_vals = [None] * len(self.handler.duals)
+            return (primal_vals, dual_vals)
+
         primal_vals = []
+        
         for primal in self.handler.primals:
             primal_vals.append(v_prev[self.index_col_map[primal]])
 
@@ -28,12 +34,9 @@ class LagrangeStamper:
 
         return (primal_vals, dual_vals)
 
-    def __stamp_set(self, Y: MatrixBuilder, J, variable_set, derivatives):
-        for target_variable in variable_set:
-            if self.handler.is_nonlinear:
-                J[self.index_row_map[target_variable]] += derivatives[target_variable][0]
-
-                for variable in self.handler.variables:
-                    Y.stamp(self.index_row_map[target_variable], self.index_col_map[variable], derivatives[target_variable][1][variable])
+    def __stamp_set(self, Y: MatrixBuilder, J, results):
+        for (row_var, column_var, value) in results:
+            if column_var == None:
+                J[self.index_row_map[row_var]] += value
             else:
-                raise Exception("Not implemented")
+                Y.stamp(self.index_row_map[row_var], self.index_col_map[column_var], value)
