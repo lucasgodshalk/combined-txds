@@ -52,12 +52,14 @@ class Slack:
         self.Pinit = Pinit / 100
         self.Qinit = Qinit / 100
 
-        self.stamper = None
+    def assign_nodes(self, node_index, optimization_enabled):
+        self.slack_Ir = next(node_index)
+        self.slack_Ii = next(node_index)
 
-    def try_build_stamper(self):
-        if self.stamper != None:
-            return
-        
+        if optimization_enabled:
+            self.slack_lambda_Ir = next(node_index)
+            self.slack_lambda_Ii = next(node_index)
+
         index_map = {}
         index_map[Vr] = self.bus.node_Vr
         index_map[Vi] = self.bus.node_Vi
@@ -70,20 +72,10 @@ class Slack:
 
         self.stamper = LagrangeStamper(lh, index_map)
 
-    def assign_nodes(self, node_index, optimization_enabled):
-        self.slack_Ir = next(node_index)
-        self.slack_Ii = next(node_index)
-
-        if optimization_enabled:
-            self.slack_lambda_Ir = next(node_index)
-            self.slack_lambda_Ii = next(node_index)
-
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        self.try_build_stamper()
         self.stamper.stamp_primal(Y, J, [self.Vr_set, self.Vi_set], v_previous)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        self.try_build_stamper()
         self.stamper.stamp_dual(Y, J, [self.Vr_set, self.Vi_set], v_previous)
 
     def calculate_residuals(self, network_model, v):

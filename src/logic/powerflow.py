@@ -88,14 +88,14 @@ class PowerFlow:
                 inf_current = InfeasibilityCurrent(bus)
                 infeasibility_currents.append(inf_current)
 
-        for ele in buses + slack + transformers + infeasibility_currents:
+        network_model = TxNetworkModel(raw_data, infeasibility_currents)
+
+        for ele in network_model.get_all_elements():
             ele.assign_nodes(node_index, optimization_enabled)
 
         size_Y = next(node_index)
 
         v_init = initialize_postive_seq(size_Y, buses, generators, slack, self.settings)
-
-        network_model = TxNetworkModel(raw_data, infeasibility_currents)
 
         return (network_model, v_init, size_Y)
 

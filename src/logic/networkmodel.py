@@ -26,6 +26,9 @@ class TxNetworkModel(NetworkModel):
 
     def get_NR_variable_elements(self):
         return self.nonlinear_elements
+    
+    def get_all_elements(self):
+        return self.buses + self.get_NR_invariant_elements() + self.get_NR_variable_elements()
 
 class DxNetworkModel(NetworkModel):
     # The id of the node connected to ground

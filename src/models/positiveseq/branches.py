@@ -55,13 +55,7 @@ class Branches:
 
         self.status = status
 
-        self.line_stamper = None
-        self.shunt_stamper = None
-
-    def try_build_stamper(self):
-        if self.line_stamper != None:
-            return
-        
+    def assign_nodes(self, node_index, optimization_enabled):
         self.line_stamper = build_line_stamper(
             self.from_bus.node_Vr, 
             self.from_bus.node_Vi, 
@@ -89,7 +83,6 @@ class Branches:
         if not self.status:
             return
 
-        self.try_build_stamper()
         self.line_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
         self.shunt_stamper.stamp_primal(Y, J, [self.B_line, tx_factor], v_previous)
     
@@ -97,7 +90,6 @@ class Branches:
         if not self.status:
             return
         
-        self.try_build_stamper()
         self.line_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
         self.shunt_stamper.stamp_dual(Y, J, [self.B_line, tx_factor], v_previous)
     

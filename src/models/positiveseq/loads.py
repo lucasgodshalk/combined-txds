@@ -50,12 +50,7 @@ class Loads:
         self.P = P / 100
         self.Q = Q / 100
 
-        self.stamper = None
-
-    def try_build_stamper(self):
-        if self.stamper != None:
-            return
-        
+    def assign_nodes(self, node_index, optimization_enabled):
         index_map = {}
         index_map[Vr] = self.bus.node_Vr
         index_map[Vi] = self.bus.node_Vi
@@ -65,11 +60,9 @@ class Loads:
         self.stamper = LagrangeStamper(lh, index_map)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        self.try_build_stamper()
         self.stamper.stamp_primal(Y, J, [self.P, self.Q], v_previous)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        self.try_build_stamper()
         self.stamper.stamp_dual(Y, J, [self.P, self.Q], v_previous)
 
     def calculate_residuals(self, network_model, v):

@@ -63,12 +63,7 @@ class Shunts:
         self.G = G_MW / 100
         self.B = B_MVAR / 100
 
-        self.stamper = None
-
-    def try_build_stamper(self):
-        if self.stamper != None:
-            return
-        
+    def assign_nodes(self, node_index, optimization_enabled):
         index_map = {}
         index_map[Vr] = self.bus.node_Vr
         index_map[Vi] = self.bus.node_Vi
@@ -78,11 +73,9 @@ class Shunts:
         self.stamper = LagrangeStamper(lh, index_map)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        self.try_build_stamper()
         self.stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        self.try_build_stamper()
         self.stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
 
     def calculate_residuals(self, network_model, v):

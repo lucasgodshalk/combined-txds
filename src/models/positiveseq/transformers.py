@@ -79,12 +79,19 @@ class Transformers:
 
         self.status = status
 
-        self.xfrmr_stamper = None
-        self.losses_stamper = None
+    def assign_nodes(self, node_index, optimization_enabled):
+        self.node_primary_Ir = next(node_index)
+        self.node_primary_Ii = next(node_index)
+        self.node_secondary_Vr = next(node_index)
+        self.node_secondary_Vi = next(node_index)
 
-    def try_build_stamper(self):
-        if self.xfrmr_stamper != None:
+        if not optimization_enabled:
             return
+        
+        self.node_primary_Lambda_Ir = next(node_index)
+        self.node_primary_Lambda_Ii = next(node_index)
+        self.node_secondary_Lambda_Vr = next(node_index)
+        self.node_secondary_Lambda_Vi = next(node_index)
         
         index_map = {}
         index_map[Vr_from] = self.from_bus.node_Vr
@@ -114,25 +121,10 @@ class Transformers:
             self.to_bus.node_lambda_Vi
             )
 
-    def assign_nodes(self, node_index, optimization_enabled):
-        self.node_primary_Ir = next(node_index)
-        self.node_primary_Ii = next(node_index)
-        self.node_secondary_Vr = next(node_index)
-        self.node_secondary_Vi = next(node_index)
-
-        if not optimization_enabled:
-            return
-        
-        self.node_primary_Lambda_Ir = next(node_index)
-        self.node_primary_Lambda_Ii = next(node_index)
-        self.node_secondary_Lambda_Vr = next(node_index)
-        self.node_secondary_Lambda_Vi = next(node_index)
-
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         if not self.status:
             return
 
-        self.try_build_stamper()
         self.xfrmr_stamper.stamp_primal(Y, J, [self.tr, self.ang_rad, tx_factor], v_previous)
         self.losses_stamper.stamp_primal(Y, J, [self.G_loss, self.B_loss, tx_factor], v_previous)
 
@@ -140,7 +132,6 @@ class Transformers:
         if not self.status:
             return
 
-        self.try_build_stamper()
         self.xfrmr_stamper.stamp_dual(Y, J, [self.tr, self.ang_rad, tx_factor], v_previous)
         self.losses_stamper.stamp_dual(Y, J, [self.G_loss, self.B_loss, tx_factor], v_previous)
 
