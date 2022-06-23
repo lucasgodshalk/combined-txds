@@ -16,8 +16,6 @@ class InfeasibilityCurrent:
     def __init__(self, bus: Bus) -> None:
         self.bus = bus
 
-        self.stamper = None
-
     def assign_nodes(self, node_index, optimization_enabled):
         if not optimization_enabled:
             raise Exception("Cannot use infeasibility currents when optimization is not enabled")
