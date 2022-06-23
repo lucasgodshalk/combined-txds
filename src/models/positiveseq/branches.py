@@ -64,7 +64,8 @@ class Branches:
             self.from_bus.node_lambda_Vr, 
             self.from_bus.node_lambda_Vi, 
             self.to_bus.node_lambda_Vr, 
-            self.to_bus.node_lambda_Vi
+            self.to_bus.node_lambda_Vi,
+            optimization_enabled
             )
 
         index_map = {}
@@ -77,7 +78,7 @@ class Branches:
         index_map[Lr_to] = self.to_bus.node_lambda_Vr
         index_map[Li_to] = self.to_bus.node_lambda_Vi
 
-        self.shunt_stamper = LagrangeStamper(shunt_lh, index_map)
+        self.shunt_stamper = LagrangeStamper(shunt_lh, index_map, optimization_enabled)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         if not self.status:

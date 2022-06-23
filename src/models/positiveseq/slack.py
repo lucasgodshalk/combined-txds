@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
-from logic.lagrangestamper import LagrangeStamper
+from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.buses import _all_bus_key
 import math
@@ -59,6 +59,9 @@ class Slack:
         if optimization_enabled:
             self.slack_lambda_Ir = next(node_index)
             self.slack_lambda_Ii = next(node_index)
+        else:
+            self.slack_lambda_Ir = SKIP
+            self.slack_lambda_Ii = SKIP
 
         index_map = {}
         index_map[Vr] = self.bus.node_Vr
@@ -70,7 +73,7 @@ class Slack:
         index_map[Lsr] = self.slack_lambda_Ir
         index_map[Lsi] = self.slack_lambda_Ii
 
-        self.stamper = LagrangeStamper(lh, index_map)
+        self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         self.stamper.stamp_primal(Y, J, [self.Vr_set, self.Vi_set], v_previous)

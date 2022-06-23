@@ -5,7 +5,7 @@ from sympy import symbols
 from sympy import cos
 from sympy import sin
 from logic.lagrangehandler import LagrangeHandler
-from logic.lagrangestamper import LagrangeStamper
+from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.shared import TX_LARGE_G, TX_LARGE_B
 from models.positiveseq.buses import _all_bus_key
@@ -85,14 +85,17 @@ class Transformers:
         self.node_secondary_Vr = next(node_index)
         self.node_secondary_Vi = next(node_index)
 
-        if not optimization_enabled:
-            return
-        
-        self.node_primary_Lambda_Ir = next(node_index)
-        self.node_primary_Lambda_Ii = next(node_index)
-        self.node_secondary_Lambda_Vr = next(node_index)
-        self.node_secondary_Lambda_Vi = next(node_index)
-        
+        if optimization_enabled:
+            self.node_primary_Lambda_Ir = next(node_index)
+            self.node_primary_Lambda_Ii = next(node_index)
+            self.node_secondary_Lambda_Vr = next(node_index)
+            self.node_secondary_Lambda_Vi = next(node_index)
+        else:
+            self.node_primary_Lambda_Ir = SKIP
+            self.node_primary_Lambda_Ii = SKIP
+            self.node_secondary_Lambda_Vr = SKIP
+            self.node_secondary_Lambda_Vi = SKIP
+
         index_map = {}
         index_map[Vr_from] = self.from_bus.node_Vr
         index_map[Vi_from] = self.from_bus.node_Vi
@@ -108,7 +111,7 @@ class Transformers:
         index_map[Lvr_sec] = self.node_secondary_Lambda_Vr
         index_map[Lvi_sec] = self.node_secondary_Lambda_Vi
 
-        self.xfrmr_stamper = LagrangeStamper(xfrmr_lh, index_map)
+        self.xfrmr_stamper = LagrangeStamper(xfrmr_lh, index_map, optimization_enabled)
 
         self.losses_stamper = build_line_stamper(
             self.node_secondary_Vr, 
@@ -118,7 +121,8 @@ class Transformers:
             self.node_secondary_Lambda_Vr, 
             self.node_secondary_Lambda_Vi, 
             self.to_bus.node_lambda_Vr, 
-            self.to_bus.node_lambda_Vi
+            self.to_bus.node_lambda_Vi,
+            optimization_enabled
             )
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):

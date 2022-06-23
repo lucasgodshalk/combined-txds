@@ -69,7 +69,7 @@ class Generators:
         index_map[Li] = self.bus.node_lambda_Vi
         index_map[LQ] = self.bus.node_lambda_Q
 
-        self.stamper = LagrangeStamper(lh, index_map)
+        self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         self.stamper.stamp_primal(Y, J, [self.P, self.Vset], v_previous)

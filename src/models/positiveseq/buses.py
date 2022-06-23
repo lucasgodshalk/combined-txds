@@ -2,6 +2,7 @@ from __future__ import division
 from itertools import count
 import math
 import typing
+from logic.lagrangestamper import SKIP
 from logic.matrixbuilder import MatrixBuilder
 
 class Bus:
@@ -72,15 +73,19 @@ class Bus:
         if self.Type == 2:
             self.node_Q = next(node_index)
 
-        if not optimization_enabled:
-            return
+        if optimization_enabled:
+            self.node_lambda_Vr = next(node_index)
+            self.node_lambda_Vi = next(node_index)
 
-        self.node_lambda_Vr = next(node_index)
-        self.node_lambda_Vi = next(node_index)
+            # If PV Bus
+            if self.Type == 2:
+                self.node_lambda_Q = next(node_index)
+        else:
+            self.node_lambda_Vr = SKIP
+            self.node_lambda_Vi = SKIP
+            self.node_lambda_Q = SKIP
 
-        # If PV Bus
-        if self.Type == 2:
-            self.node_lambda_Q = next(node_index)
+
 
 _all_bus_key: typing.Dict[int, Bus]
 _all_bus_key = {}

@@ -31,7 +31,7 @@ class InfeasibilityCurrent:
         index_map[Lr] = self.bus.node_lambda_Vr
         index_map[Li] = self.bus.node_lambda_Vi
 
-        self.stamper = LagrangeStamper(lh, index_map)
+        self.stamper = LagrangeStamper(lh, index_map, optimization_enabled=True)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         self.stamper.stamp_primal(Y, J, [], v_previous)

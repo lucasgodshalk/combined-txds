@@ -25,7 +25,7 @@ lagrange = np.dot(duals, eqns)
 
 lh = LagrangeHandler(lagrange, constants, primals, duals)
 
-def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_idx, Li_from_idx, Lr_to_idx, Li_to_idx):
+def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_idx, Li_from_idx, Lr_to_idx, Li_to_idx, optimization_enabled):
     index_map = {}
     index_map[Vr_from] = Vr_from_idx
     index_map[Vi_from] = Vi_from_idx
@@ -36,7 +36,7 @@ def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_i
     index_map[Lr_to] = Lr_to_idx
     index_map[Li_to] = Li_to_idx
 
-    return LagrangeStamper(lh, index_map)
+    return LagrangeStamper(lh, index_map, optimization_enabled)
 
 
 def stamp_line(Y: MatrixBuilder, Vr_from, Vr_to, Vi_from, Vi_to, G, B):
