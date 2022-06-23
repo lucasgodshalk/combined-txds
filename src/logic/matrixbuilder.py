@@ -17,9 +17,9 @@ class MatrixBuilder:
             return
 
         if self.settings.debug:
-            if type(row) != int:
+            if type(row) != int or row < 0:
                 raise Exception("Invalid row index")
-            elif type(column) != int:
+            elif type(column) != int or column < 0:
                 raise Exception("Invalid column index")
             elif math.isnan(value) or value == None or (type(value) != int and type(value) != float and type(value) != np.float64):
                 raise Exception("Invalid value")
