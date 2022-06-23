@@ -67,9 +67,6 @@ def split_expr(eqn, vars):
     
     return (constant_expr, variable_expr_dict)
 
-def return_zero(*args):
-    return 0
-
 class DerivativeEntry:
     def __init__(self, derivative_var, derivative, constant_expr, variable_exprs, lambda_inputs) -> None:
         self.derivative_var = derivative_var
