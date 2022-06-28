@@ -4,6 +4,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
+from models.shared.bus import Bus
 
 constants = P, Vset = symbols('P V_set')
 primals = Vr, Vi, Q = symbols('V_r V_i Q')
@@ -21,7 +22,7 @@ class Generators:
     _ids = count(0)
 
     def __init__(self,
-                 bus,
+                 bus: Bus,
                  P,
                  Vset,
                  Qmax,

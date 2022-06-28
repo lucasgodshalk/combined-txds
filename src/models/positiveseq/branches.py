@@ -6,6 +6,7 @@ from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.shared import build_line_stamper
+from models.shared.bus import Bus
 
 constants = B_line, tx_factor = symbols('B_line tx_factor')
 primals = [Vr_from, Vi_from, Vr_to, Vi_to] = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
@@ -28,8 +29,8 @@ class Branches:
     _ids = count(0)
 
     def __init__(self,
-                 from_bus,
-                 to_bus,
+                 from_bus: Bus,
+                 to_bus: Bus,
                  r,
                  x,
                  b,

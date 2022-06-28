@@ -5,6 +5,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
+from models.shared.bus import Bus
 
 constants = G, B, tx_factor = symbols('G B tx_factor')
 primals = [Vr, Vi] = symbols('Vr Vi')
@@ -26,7 +27,7 @@ class Shunts:
     _ids = count(0)
 
     def __init__(self,
-                 bus,
+                 bus: Bus,
                  G_MW,
                  B_MVAR,
                  shunt_type,

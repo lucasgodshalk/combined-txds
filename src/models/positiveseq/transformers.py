@@ -9,6 +9,7 @@ from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 import math
 from models.positiveseq.shared import build_line_stamper
+from models.shared.bus import Bus
 
 constants = tr, ang, tx_factor = symbols('tr ang tx_factor')
 primals = [Vr_from, Vi_from, Ir_prim, Ii_prim, Vr_sec, Vi_sec] = symbols('V_r V_i I_pri\,r I_pri\,i V_sec\,r V_sec\,i')
@@ -37,8 +38,8 @@ class Transformers:
     _ids = count(0)
 
     def __init__(self,
-                 from_bus,
-                 to_bus,
+                 from_bus: Bus,
+                 to_bus: Bus,
                  r,
                  x,
                  status,

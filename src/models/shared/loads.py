@@ -5,6 +5,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
+from models.shared.bus import Bus
 
 constants = P, Q = symbols('P Q')
 primals = Vr, Vi = symbols('V_r V_i')
@@ -21,7 +22,7 @@ class Loads:
     _ids = count(0)
 
     def __init__(self,
-                 bus,
+                 bus: Bus,
                  P,
                  Q,
                  IP,
