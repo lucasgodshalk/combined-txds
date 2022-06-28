@@ -2,7 +2,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.bus import Bus
+from models.shared.bus import Bus
 
 constants = ()
 primals = [Iir, Iii] = symbols("Iir Iii")
@@ -12,7 +12,7 @@ lagrange = Iir ** 2 + Iii ** 2 + Iir * Lr + Iii * Li
 
 lh = LagrangeHandler(lagrange, constants, primals, duals)
 
-class InfeasibilityCurrent:
+class L2InfeasibilityCurrent:
     def __init__(self, bus: Bus) -> None:
         self.bus = bus
 

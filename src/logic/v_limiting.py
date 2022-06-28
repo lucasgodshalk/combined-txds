@@ -1,6 +1,6 @@
 from typing import List
 import numpy as np
-from models.positiveseq.bus import Bus
+from models.shared.bus import Bus
 
 V_DIFF_MAX = 1
 V_MAX = 2

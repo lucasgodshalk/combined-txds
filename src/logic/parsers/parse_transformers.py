@@ -10,7 +10,7 @@
 import math
 import copy
 import typing
-from models.positiveseq.bus import Bus
+from models.shared.bus import Bus
 
 from models.positiveseq.transformers import Transformers
 

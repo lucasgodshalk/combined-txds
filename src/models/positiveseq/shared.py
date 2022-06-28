@@ -38,32 +38,6 @@ def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_i
 
     return LagrangeStamper(lh, index_map, optimization_enabled)
 
-
-def stamp_line(Y: MatrixBuilder, Vr_from, Vr_to, Vi_from, Vi_to, G, B):
-    #From Bus - Real
-    Y.stamp(Vr_from, Vr_from, G)
-    Y.stamp(Vr_from, Vr_to, -G)
-    Y.stamp(Vr_from, Vi_from, B)
-    Y.stamp(Vr_from, Vi_to, -B)
-
-    #From Bus - Imaginary
-    Y.stamp(Vi_from, Vi_from, G)
-    Y.stamp(Vi_from, Vi_to, -G)
-    Y.stamp(Vi_from, Vr_from, -B)
-    Y.stamp(Vi_from, Vr_to, B)
-
-    #To Bus - Real
-    Y.stamp(Vr_to, Vr_to, G)
-    Y.stamp(Vr_to, Vr_from, -G)
-    Y.stamp(Vr_to, Vi_to, B)
-    Y.stamp(Vr_to, Vi_from, -B)
-
-    #To Bus - Imaginary
-    Y.stamp(Vi_to, Vi_to, G)
-    Y.stamp(Vi_to, Vi_from, -G)
-    Y.stamp(Vi_to, Vr_to, -B)
-    Y.stamp(Vi_to, Vr_from, B)
-
 def dump_index_map(buses, slacks):
     map = {}
 

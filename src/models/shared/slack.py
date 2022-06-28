@@ -6,7 +6,7 @@ from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 import math
 
-from models.positiveseq.bus import Bus
+from models.shared.bus import Bus
 
 constants = [Vrset, Viset] = symbols("Vrset Viset")
 

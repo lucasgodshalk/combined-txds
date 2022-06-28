@@ -7,9 +7,8 @@ from sympy import sin
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.shared import TX_LARGE_G, TX_LARGE_B
 import math
-from models.positiveseq.shared import build_line_stamper, stamp_line
+from models.positiveseq.shared import build_line_stamper
 
 constants = tr, ang, tx_factor = symbols('tr ang tx_factor')
 primals = [Vr_from, Vi_from, Ir_prim, Ii_prim, Vr_sec, Vi_sec] = symbols('V_r V_i I_pri\,r I_pri\,i V_sec\,r V_sec\,i')

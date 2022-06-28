@@ -16,10 +16,10 @@ import math
 from logic.global_vars import global_vars
 
 from models.positiveseq.branches import Branches
-from models.positiveseq.bus import Bus
+from models.shared.bus import Bus
 from models.positiveseq.generators import Generators
-from models.positiveseq.loads import Loads
-from models.positiveseq.slack import Slack
+from models.shared.loads import Loads
+from models.shared.slack import Slack
 from models.positiveseq.shunts import Shunts
 from logic.parsers.parse_transformers import TwoWindingXfmrs, ThreeWindingXfmrs
 

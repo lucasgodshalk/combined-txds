@@ -1,9 +1,9 @@
 from typing import List
 import numpy as np
 from logic.powerflowsettings import PowerFlowSettings
-from models.positiveseq.bus import Bus
+from models.shared.bus import Bus
 from models.positiveseq.generators import Generators
-from models.positiveseq.slack import Slack
+from models.shared.slack import Slack
 
 BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0

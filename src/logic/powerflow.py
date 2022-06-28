@@ -10,7 +10,7 @@ from itertools import count
 from logic.parsers.anoeds_parser import Parser
 from logic.powerflowrunner import PowerFlowRunner
 from logic.v_limiting import PositiveSeqVoltageLimiting
-from models.positiveseq.infeasibility import InfeasibilityCurrent
+from models.shared.l2infeasibility_current import L2InfeasibilityCurrent
 
 class PowerFlow:
     def __init__(self, netlist, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
@@ -87,7 +87,7 @@ class PowerFlow:
         infeasibility_currents = []
         if self.settings.infeasibility_analysis:
             for bus in buses:
-                inf_current = InfeasibilityCurrent(bus)
+                inf_current = L2InfeasibilityCurrent(bus)
                 infeasibility_currents.append(inf_current)
 
         network_model = TxNetworkModel(raw_data, infeasibility_currents)

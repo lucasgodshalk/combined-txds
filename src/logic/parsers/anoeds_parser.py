@@ -8,11 +8,11 @@ from logic.networkmodel import DxNetworkModel
 from ditto.readers.gridlabd.read import Reader
 from ditto.store import Store
 import ditto.models.load
-from models.positiveseq.slack import Slack
+from models.shared.slack import Slack
 
 from models.threephase.pq_load import PQLoad
-from models.positiveseq.loads import Loads
-from models.positiveseq.bus import Bus
+from models.shared.loads import Loads
+from models.shared.bus import Bus
 from models.threephase.infinite_source import InfiniteSource
 from models.threephase.transformer import Transformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
