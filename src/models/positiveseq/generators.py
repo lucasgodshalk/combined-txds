@@ -4,7 +4,6 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.bus import _all_bus_key
 
 constants = P, Vset = symbols('P V_set')
 primals = Vr, Vi, Q = symbols('V_r V_i Q')
@@ -51,7 +50,7 @@ class Generators:
 
         self.id = self._ids.__next__()
 
-        self.bus = _all_bus_key[bus]
+        self.bus = bus
         self.P = -P / 100
         self.Vset = Vset
 

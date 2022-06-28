@@ -40,9 +40,6 @@ class Bus:
         self.Vr_init = Vm_init * math.cos(Va_init * math.pi / 180)
         self.Vi_init = Vm_init * math.sin(Va_init * math.pi / 180)
 
-        # initialize the bus key
-        _all_bus_key[self.Bus] = self
-
     def set_initial_voltages(self, v_estimate):
         f_r, f_i = (self.node_Vr, self.node_Vi)
         v_estimate[f_r] = self.Vr_init if v_estimate[f_r] == 0 else v_estimate[f_r]
@@ -92,6 +89,3 @@ class Bus:
             self.node_lambda_Vi = SKIP
             self.node_lambda_Q = SKIP
 
-_all_bus_key: typing.Dict[int, Bus]
-_all_bus_key = {}
-_idsAllBuses = count(1)

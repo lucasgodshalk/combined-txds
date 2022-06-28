@@ -8,7 +8,6 @@ from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.shared import TX_LARGE_G, TX_LARGE_B
-from models.positiveseq.bus import _all_bus_key
 import math
 from models.positiveseq.shared import build_line_stamper, stamp_line
 
@@ -65,8 +64,8 @@ class Transformers:
         """
         self.id = self._ids.__next__()
 
-        self.from_bus = _all_bus_key[from_bus]
-        self.to_bus = _all_bus_key[to_bus]
+        self.from_bus = from_bus
+        self.to_bus = to_bus
 
         self.r = r
         self.x = x

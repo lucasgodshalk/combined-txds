@@ -71,6 +71,7 @@ def parse_raw(rawfile):
     integrated_data = {}
     search_case_data = {}
     gen_bus_keys = {}
+    all_bus_key = {}
 
     # toggle this to store unused data types or not
     integrate = True
@@ -117,7 +118,7 @@ def parse_raw(rawfile):
         if bus.ide == 4:
             offline_bus.add(bus.i)
         else:
-            integrated_data['buses'].append(b.integrate())
+            integrated_data['buses'].append(b.integrate(all_bus_key))
 
     # ---------- generators ----------
     all_case_data['all_ns_generators'] = []
@@ -161,7 +162,7 @@ def parse_raw(rawfile):
             if gen.i not in offline_bus and gen.stat == True:
                 # adding to power flow specific data class
                 if gen.i not in search_case_data['slack_generators'].keys():
-                    integrated_data['slack'].append(g.integrate())
+                    integrated_data['slack'].append(g.integrate(all_bus_key))
                     slack_dic[g.i] = slack_idx
                     slack_idx += 1
                 else:
@@ -188,7 +189,7 @@ def parse_raw(rawfile):
                 non_empty_bus_set.add(g.i)
                 # Deal with generators with qb equal qt
                 if almostEqual(g.qt, g.qb) and (gen.wmod != 2):
-                    l = g.integrate(False)
+                    l = g.integrate(all_bus_key, False)
                     g.qg = gen.qt
                     integrated_data['loads'].append(l)
                 elif (g.pg == 0 and g.qt == 0 and g.qb == 0):
@@ -218,7 +219,7 @@ def parse_raw(rawfile):
                                 integrated_data['generators'][idx].Vset, gen.vs, gen.i))
                     else:
                         gen_dic[g.i] = len(integrated_data['generators'])
-                        integrated_data['generators'].append(g.integrate())
+                        integrated_data['generators'].append(g.integrate(all_bus_key))
                         voltage_controlling_bus.add(g.i)
 
                     if gen.ireg == 0:
@@ -302,7 +303,7 @@ def parse_raw(rawfile):
                                                      zr, zx, rt, rx, gtap, stat, rmpct, Pmax, Pmin,
                                                      wmod, wpf)
                     gen_dic[sshunt.i] = len(integrated_data['generators'])
-                    integrated_data['generators'].append(ss.integrate())
+                    integrated_data['generators'].append(ss.integrate(all_bus_key))
 
                     voltage_controlling_bus.add(sshunt.i)
                     if ss.ireg == 0:
@@ -312,7 +313,7 @@ def parse_raw(rawfile):
 
             else:  # treat it like a shunt
 
-                integrated_data['shunts'].append(ss.integrate())
+                integrated_data['shunts'].append(ss.integrate(all_bus_key))
 
         # add both offline and online shunts in all_case_data
         all_case_data['all_switched_shunts'].append(ss)
@@ -330,7 +331,7 @@ def parse_raw(rawfile):
 
         if (fs.i not in offline_bus) and (fshunt.status == 1) and (fshunt.gl != 0 or fshunt.bl != 0):
             non_empty_bus_set.add(fs.i)
-            integrated_data['shunts'].append(fs.integrate())
+            integrated_data['shunts'].append(fs.integrate(all_bus_key))
 
     # ---------- loads ----------
     for load in data.raw.get_loads():
@@ -341,7 +342,7 @@ def parse_raw(rawfile):
         all_case_data['all_loads'].append(l)
         search_case_data['loads'][(l.i, l.id)] = l
         if (load.i not in offline_bus) and (load.status == 1):
-            integrated_data['loads'].append(l.integrate())
+            integrated_data['loads'].append(l.integrate(all_bus_key))
             non_empty_bus_set.add(load.i)
 
     # copied from parser_three, not sure what it does
@@ -364,7 +365,7 @@ def parse_raw(rawfile):
         all_case_data['all_non_xfmr_branches'].append(br)
         search_case_data['branches'][(br.i, br.j, br.ckt)] = br
         if (branch.i not in offline_bus) and (branch.j not in offline_bus) and (branch.st == 1):
-            (new_branch, shunt_i, shunt_j) = br.integrate()
+            (new_branch, shunt_i, shunt_j) = br.integrate(all_bus_key)
             integrated_data['branches'].append(new_branch)
             if shunt_i != None:
                 non_empty_bus_set.add(shunt_i.Bus)
@@ -408,7 +409,7 @@ def parse_raw(rawfile):
         search_case_data['two_xfmrs'][(x2.i, x2.j, x2.ckt)] = x2
 
         if (x2.i not in offline_bus) and (x2.j not in offline_bus):
-            new_xfmr2 = data_classes.integrate_2xfmrs(x2, sbase, search_case_data['buses'])
+            new_xfmr2 = data_classes.integrate_2xfmrs(x2, sbase, search_case_data['buses'], all_bus_key)
             if new_xfmr2 != None:
                 integrated_data['xfmrs'].append(new_xfmr2)
 
@@ -448,7 +449,7 @@ def parse_raw(rawfile):
         all_case_data['all_three_xfmrs'].append(x3)
         search_case_data['three_xfmrs'][(x3.i, x3.j, x3.k, x3.ckt)] = x3
         if x3.stat != 0:
-            new_xfmr3 = data_classes.integrate_3xfmrs(x3, sbase, search_case_data['buses'], -1)
+            new_xfmr3 = data_classes.integrate_3xfmrs(x3, sbase, search_case_data['buses'], -1, all_bus_key)
             if new_xfmr3 != []:
                 busType = 1
                 vmInit = x.vmstar

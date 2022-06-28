@@ -12,7 +12,7 @@ from models.positiveseq.slack import Slack
 
 from models.threephase.pq_load import PQLoad
 from models.positiveseq.loads import Loads
-from models.positiveseq.bus import Bus, _idsAllBuses
+from models.positiveseq.bus import Bus
 from models.threephase.bus_slack import SlackBus
 from models.threephase.infinite_source import InfiniteSource
 from models.threephase.transformer import Transformer
@@ -37,6 +37,7 @@ from models.threephase.regulator_phase import RegulatorPhase
 from models.threephase.transmission_line_phase import TransmissionLinePhase
 
 class Parser:
+    _idsAllBuses = count(1)
     # Angles in degrees associated with different phases
     _phase_to_degrees = {'A': 0, 'B': 240, 'C': 120, '1': 0, '2': 90}
 
@@ -112,7 +113,7 @@ class Parser:
                     simulation_state.infinite_sources.append(infinite_source)    
 
     def create_bus(self, simulation_state, v_mag, v_ang, node_name, node_phase):
-        bus_id = next(_idsAllBuses)
+        bus_id = next(self._idsAllBuses)
         bus = Bus(bus_id, 1, v_mag, v_ang, node_name, node_phase)
         bus.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
         simulation_state.buses.append(bus)

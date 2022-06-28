@@ -9,6 +9,7 @@
 
 """
 from enum import Enum
+import typing
 
 import numpy as np
 import math
@@ -64,9 +65,9 @@ class Bus_data:
     def __repr__(self):
         return (str(self.i) + ' ' + str(self.name))
 
-    def integrate(self):
+    def integrate(self, all_bus_key: typing.Dict[int, Bus]):
         new_bus = Bus(self.i, self.ide, self.vm, self.va, self.area)
-
+        all_bus_key[self.i] = new_bus
         return new_bus
 
 
@@ -89,8 +90,8 @@ class Load_data:
         self.owner = owner
         self.scale = scale
 
-    def integrate(self):
-        new_load = Loads(self.i, self.pl, self.ql, self.ip, self.iq,
+    def integrate(self, all_bus_key: typing.Dict[int, Bus]):
+        new_load = Loads(all_bus_key[self.i], self.pl, self.ql, self.ip, self.iq,
                          self.yp, self.yq, self.area, self.status)
         return (new_load)
 
@@ -104,8 +105,8 @@ class Fixed_shunt_data:
         self.gl = gl  # Active component of shunt admittance to ground (MW @ 1/unit voltage)
         self.bl = bl  # Reactive component of shunt admittance to ground(Mvar @ 1/unit voltage)
 
-    def integrate(self):
-        new_shunt = Shunts(self.i, self.gl, self.bl, 1, 0, 0, 0, 0, 0, 0, 0)
+    def integrate(self, all_bus_key: typing.Dict[int, Bus]):
+        new_shunt = Shunts(all_bus_key[self.i], self.gl, self.bl, 1, 0, 0, 0, 0, 0, 0, 0)
         return new_shunt
 
 
@@ -140,7 +141,7 @@ class Switched_shunt_data:
         self.b6, self.b7 = b6, b7
         self.b8 = b8
 
-    def integrate(self):
+    def integrate(self, all_bus_key: typing.Dict[int, Bus]):
         G_MW = 0
         B_MVAR = self.binit
         Nstep = [self.n1, self.n2, self.n3, self.n4, self.n5,
@@ -155,7 +156,7 @@ class Switched_shunt_data:
         bmax = sum(np.multiply(npBstep[pos_Bstep], npNstep[pos_Bstep]))
         bmin = sum(np.multiply(npBstep[neg_Bstep], npNstep[neg_Bstep]))
 
-        new_shunt = Shunts(self.i, G_MW, B_MVAR, 3, self.vswhi,
+        new_shunt = Shunts(all_bus_key[self.i], G_MW, B_MVAR, 3, self.vswhi,
                            self.vswlo, bmax, bmin, self.binit, self.swrem,
                            Nstep, Bstep)
 
@@ -219,16 +220,16 @@ class Generator_data:
         if (abs(self.qt - self.qb) < 1e-6):
             self.qg = self.qt
 
-    def integrate(self, isGenerator=True):
+    def integrate(self, all_bus_key: typing.Dict[int, Bus], isGenerator=True):
         if isGenerator:
             self.rmpct = self.rmpct
-            new_obj = Generators(self.i, self.pg, self.vs, self.qt, self.qb,
+            new_obj = Generators(all_bus_key[self.i], self.pg, self.vs, self.qt, self.qb,
                                  self.pt, self.pb, self.qg, self.ireg, self.rmpct, GenType.Generation)
 
         else:
             area = -1
             status = 1
-            new_obj = Loads(self.i, -self.pg, -self.qg, 0.0, 0.0, 0.0, 0.0, area, status)
+            new_obj = Loads(all_bus_key[self.i], -self.pg, -self.qg, 0.0, 0.0, 0.0, 0.0, area, status)
 
         return new_obj
 
@@ -273,8 +274,8 @@ class Slack_generator_data:
         self.wmod = wmod  # Wind machine control mode
         self.wpf = wpf  # Power factor
 
-    def integrate(self):
-        new_slack = Slack(self.i, self.vs, self.ang, self.pg, self.qg)
+    def integrate(self, all_bus_key: typing.Dict[int, Bus]):
+        new_slack = Slack(all_bus_key[self.i], self.vs, self.ang, self.pg, self.qg)
         return (new_slack)
 
     def __repr__(self):
@@ -314,8 +315,8 @@ class Branch_data:
         self.f3 = f3
         self.f4 = f4
 
-    def integrate(self):
-        new_branch = Branches(self.i, self.j, self.r, self.x, self.b, self.st,
+    def integrate(self, all_bus_key: typing.Dict[int, Bus]):
+        new_branch = Branches(all_bus_key[self.i], all_bus_key[self.j], self.r, self.x, self.b, self.st,
                               self.rateA, self.rateB, self.rateC)
         shunt_i = None
         shunt_j = None
@@ -391,10 +392,10 @@ class Two_xfmr_data:
             self.cnxa1 = cnxa1
 
 
-def integrate_2xfmrs(xfmr_data, sbase, busData):
+def integrate_2xfmrs(xfmr_data, sbase, busData, all_bus_key: typing.Dict[int, Bus]):
     # send in system sbase
     new_2xfmr = TwoWindingXfmrs(xfmr_data, sbase, busData)
-    return (new_2xfmr.createXfmrObject())
+    return (new_2xfmr.createXfmrObject(all_bus_key))
 
 
 # three winding transformers
@@ -482,7 +483,7 @@ class Three_xfmr_data:
         self.cnxa3 = cnxa3
 
 
-def integrate_3xfmrs(xfmr_data, sbase, busData, starNode):
+def integrate_3xfmrs(xfmr_data, sbase, busData, starNode, all_bus_key: typing.Dict[int, Bus]):
     # send in system sbase
     new_3xfmr = ThreeWindingXfmrs(xfmr_data, sbase, -1, busData)
-    return (new_3xfmr.createXfmrObject())
+    return (new_3xfmr.createXfmrObject(all_bus_key))

@@ -5,7 +5,6 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.bus import _all_bus_key
 
 constants = G, B, tx_factor = symbols('G B tx_factor')
 primals = [Vr, Vi] = symbols('Vr Vi')
@@ -58,7 +57,7 @@ class Shunts:
             Bstep (list): the admittance increase for each step in Nstep as MVar at unity voltage
         """
         self.id = self._ids.__next__()
-        self.bus = _all_bus_key[bus]
+        self.bus = bus
 
         self.G = G_MW / 100
         self.B = B_MVAR / 100

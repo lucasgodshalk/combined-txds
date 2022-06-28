@@ -5,7 +5,6 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.bus import _all_bus_key
 from models.positiveseq.shared import build_line_stamper
 
 constants = B_line, tx_factor = symbols('B_line tx_factor')
@@ -41,8 +40,8 @@ class Branches:
                  
         self.id = self._ids.__next__()
 
-        self.from_bus = _all_bus_key[from_bus]
-        self.to_bus = _all_bus_key[to_bus]
+        self.from_bus = from_bus
+        self.to_bus = to_bus
 
         self.r = r
         self.x = x
