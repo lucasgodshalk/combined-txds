@@ -14,10 +14,10 @@ scaled_G = G + TX_LARGE_G * G * tx_factor
 scaled_B = B + TX_LARGE_B * B * tx_factor
 
 eqns = [
-    scaled_G * Vr_from - scaled_G * Vr_to + scaled_B * Vi_from - scaled_B * Vi_to,
-    scaled_G * Vi_from - scaled_G * Vi_to - scaled_B * Vr_from + scaled_B * Vr_to,
-    scaled_G * Vr_to - scaled_G * Vr_from + scaled_B * Vi_to - scaled_B * Vi_from,
-    scaled_G * Vi_to - scaled_G * Vi_from - scaled_B * Vr_to + scaled_B * Vr_from   
+    scaled_G * Vr_from - scaled_G * Vr_to - scaled_B * Vi_from + scaled_B * Vi_to,
+    scaled_G * Vi_from - scaled_G * Vi_to + scaled_B * Vr_from - scaled_B * Vr_to,
+    scaled_G * Vr_to - scaled_G * Vr_from - scaled_B * Vi_to + scaled_B * Vi_from,
+    scaled_G * Vi_to - scaled_G * Vi_from + scaled_B * Vr_to - scaled_B * Vr_from   
 ]
 
 lagrange = np.dot(duals, eqns)
