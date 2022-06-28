@@ -1,4 +1,3 @@
-
 import math
 from models.threephase.edge import Edge
 
@@ -29,11 +28,11 @@ class RegulatorPhase(Edge):
         # TODO add linear Y stamps
         # Y.stamp(f_r, f_r, 0)
 
-        v_r_f, v_i_f = state.bus_map[self.from_node]
+        v_r_f, v_i_f = (self.from_node.node_Vr, self.from_node.node_Vi)
         v_r_p = self.real_voltage_idx
         v_i_p = self.imag_voltage_idx
-        v_r_s, v_i_s = state.bus_map[self.secondary_node]
-        v_r_t, v_i_t = state.bus_map[self.to_node]
+        v_r_s, v_i_s = (self.secondary_node.node_Vr, self.secondary_node.node_Vi)
+        v_r_t, v_i_t = (self.to_node.node_Vr, self.to_node.node_Vi)
 
         # Stamps for the voltage equations for the primary coil
         Y.stamp(v_r_p, v_r_f, 1)

@@ -363,19 +363,13 @@ class Parser:
                     # Create a new variable for the voltage equations on the primary coil (not an actual node)
                     real_voltage_idx = simulation_state.next_var_idx.__next__()
                     imag_voltage_idx = simulation_state.next_var_idx.__next__()
-                    
 
                     # Create a new bus on the secondary coil, for KCL
-                    secondary_bus = Bus()
-                    simulation_state.bus_name_map[model.name + "_secondary_" + phase] = secondary_bus.bus_id
-                    v_r_s = simulation_state.next_var_idx.__next__()
-                    v_i_s = simulation_state.next_var_idx.__next__()
-                    simulation_state.bus_map[secondary_bus.bus_id] = (v_r_s, v_i_s)
-                    
+                    secondary_bus = self.create_bus(simulation_state, 0, 0, model.name + "_secondary", phase)
 
                     tap_position = float(getattr(self.all_gld_objects[self.all_gld_objects[model.name]['configuration']],'_tap_pos_' + phase))
                                       
-                    single_regulator_phase = RegulatorPhase(from_bus, real_voltage_idx, imag_voltage_idx, secondary_bus.bus_id, to_bus, phase, tap_position)
+                    single_regulator_phase = RegulatorPhase(from_bus, real_voltage_idx, imag_voltage_idx, secondary_bus, to_bus, phase, tap_position)
                     regulator.regulator_phases.append(single_regulator_phase)
                 simulation_state.regulators.append(regulator)
     

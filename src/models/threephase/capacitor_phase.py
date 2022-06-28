@@ -1,7 +1,7 @@
 class PhaseCapacitor():
 
-    def __init__(self, Vr_init, Vi_init, nominal_reactive_power, low_voltage, high_voltage, phase, bus_id):
-        self.bus_id = bus_id
+    def __init__(self, Vr_init, Vi_init, nominal_reactive_power, low_voltage, high_voltage, phase, bus):
+        self.bus = bus
         self.Vr_init = Vr_init
         self.Vi_init = Vi_init
         self.phase = phase
@@ -11,7 +11,7 @@ class PhaseCapacitor():
         self.on = True
         
     def stamp_primal(self, Y, J, v_estimate, tx_factor, state):
-        f_r, f_i = state.bus_map[self.bus_id]
+        f_r, f_i = (self.bus.node_Vr, self.bus.node_Vi)
         v_r = v_estimate[f_r]
         v_i = v_estimate[f_i]
 
@@ -56,7 +56,7 @@ class PhaseCapacitor():
         # Y.stamp(self.imag_current_idx, f_i, 1)
 
     def calculate_residuals(self, state, v, residual_contributions):
-        f_r, f_i = state.bus_map[self.bus_id]
+        f_r, f_i = (self.bus.node_Vr, self.bus.node_Vi)
         v_r = v[f_r]
         v_i = v[f_i]
         
@@ -71,7 +71,7 @@ class PhaseCapacitor():
         
     def set_initial_voltages(self, state, v):
         # Indices in J of the real and imaginary voltage variables for this bus
-        f_r, f_i = state.bus_map[self.bus_id]
+        f_r, f_i = (self.bus.node_Vr, self.bus.node_Vi)
 
         v[f_r] = self.Vr_init
         v[f_i] = self.Vi_init
