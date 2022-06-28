@@ -1,7 +1,7 @@
 from typing import List
 import numpy as np
 from logic.powerflowsettings import PowerFlowSettings
-from models.positiveseq.buses import Bus
+from models.positiveseq.bus import Bus
 from models.positiveseq.generators import Generators
 from models.positiveseq.slack import Slack
 

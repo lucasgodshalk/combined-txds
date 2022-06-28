@@ -15,7 +15,7 @@ import math
 from logic.global_vars import global_vars
 
 from models.positiveseq.branches import Branches
-from models.positiveseq.buses import Bus
+from models.positiveseq.bus import Bus
 from models.positiveseq.generators import Generators
 from models.positiveseq.loads import Loads
 from models.positiveseq.slack import Slack

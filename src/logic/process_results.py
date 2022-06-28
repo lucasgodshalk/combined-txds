@@ -2,7 +2,7 @@ import math
 from typing import List
 import pandas as pd
 from logic.powerflowsettings import PowerFlowSettings
-from models.positiveseq.buses import Bus
+from models.positiveseq.bus import Bus
 
 
 class GeneratorResult:

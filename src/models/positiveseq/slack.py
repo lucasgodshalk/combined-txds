@@ -4,7 +4,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.buses import _all_bus_key
+from models.positiveseq.bus import _all_bus_key
 import math
 
 constants = [Vrset, Viset] = symbols("Vrset Viset")

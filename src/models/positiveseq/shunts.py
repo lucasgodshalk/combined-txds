@@ -5,7 +5,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.buses import _all_bus_key
+from models.positiveseq.bus import _all_bus_key
 
 constants = G, B, tx_factor = symbols('G B tx_factor')
 primals = [Vr, Vi] = symbols('Vr Vi')

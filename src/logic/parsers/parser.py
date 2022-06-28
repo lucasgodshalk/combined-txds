@@ -13,7 +13,7 @@
 import time
 from logic.global_vars import global_vars
 
-from models.positiveseq.buses import Bus
+from models.positiveseq.bus import Bus
 
 import logic.parsers.data_classes as data_classes
 
