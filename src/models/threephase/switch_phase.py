@@ -25,8 +25,8 @@ class SwitchPhase(Edge):
             self.B = 1e4
     
     def get_nodes(self, state):
-        f_r, f_i = state.bus_map[self.from_node]
-        t_r, t_i = state.bus_map[self.to_node]
+        f_r, f_i = (self.from_node.node_Vr, self.from_node.node_Vi)
+        t_r, t_i = (self.to_node.node_Vr, self.to_node.node_Vi)
         return f_r, f_i, t_r, t_i
 
     def stamp_primal(self, Y, J, v_previous, tx_factor, state):
