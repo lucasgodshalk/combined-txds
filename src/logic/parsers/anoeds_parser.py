@@ -46,10 +46,11 @@ class Parser:
 
     def __init__(self, input_file, optimization_enabled):
         self.input_file_path = os.path.abspath(input_file)
-        self._bus_index = count(0)
         self.optimization_enabled = optimization_enabled
 
     def parse(self):
+        self._bus_index = count(0)
+        
         self.ditto_store = Store()
         gld_reader = Reader(input_file = self.input_file_path)
 
