@@ -1,14 +1,15 @@
 import math
+from models.shared.bus import Bus
 from models.threephase.edge import Edge
 
 class RegulatorPhase(Edge):
     
     def __init__(self
-                , from_node 
+                , from_node: Bus 
                 , real_voltage_idx
                 , imag_voltage_idx
-                , secondary_node
-                , to_node
+                , secondary_node: Bus
+                , to_node: Bus
                 , phase
                 , tap_position
                 , edge_id = Edge._edge_ids.__next__()):

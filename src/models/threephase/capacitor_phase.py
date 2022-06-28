@@ -1,6 +1,9 @@
+from models.shared.bus import Bus
+
+
 class PhaseCapacitor():
 
-    def __init__(self, Vr_init, Vi_init, nominal_reactive_power, low_voltage, high_voltage, phase, bus):
+    def __init__(self, Vr_init, Vi_init, nominal_reactive_power, low_voltage, high_voltage, phase, bus: Bus):
         self.bus = bus
         self.Vr_init = Vr_init
         self.Vi_init = Vi_init

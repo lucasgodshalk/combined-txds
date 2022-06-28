@@ -1,12 +1,11 @@
+from models.shared.bus import Bus
 from models.threephase.edge import Edge
-
-import numpy as np
 
 class SwitchPhase(Edge):
 
     def __init__(self
-                , from_node
-                , to_node
+                , from_node: Bus
+                , to_node: Bus
                 , status
                 , phase
                 , edge_id = Edge._edge_ids.__next__()
