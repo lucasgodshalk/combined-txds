@@ -42,7 +42,7 @@ class Slack:
             Qinit (float): the initial reactive power that the slack bus is supplying
         """
 
-        self.bus = _all_bus_key[bus]
+        self.bus = bus
         self.Vset = Vset
         self.ang_rad = ang * math.pi / 180
 

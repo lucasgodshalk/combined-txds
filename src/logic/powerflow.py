@@ -50,17 +50,21 @@ class PowerFlow:
         #return (is_success, results)
     
     def create_network(self):
+        optimization_enabled = self.settings.infeasibility_analysis
+
         if ".glm" in self.netlist:
-            return self.create_three_phase_network()
+            return self.create_three_phase_network(optimization_enabled)
         elif ".RAW" in self.netlist:
-            return self.create_positive_seq_network()
+            return self.create_positive_seq_network(optimization_enabled)
         else:
             raise Exception("Invalid netlist file format")
 
-    def create_three_phase_network(self):
-        parser = Parser(self.netlist)
+    def create_three_phase_network(self, optimization_enabled):
+        parser = Parser(self.netlist, optimization_enabled)
 
         network_model = parser.parse()
+
+        network_model.J_length = next(network_model.next_var_idx)
 
         powerflowrunner = PowerFlowRunner(self.netlist, self.settings)
         powerflowrunner.reset_v_estimate(network_model)
@@ -70,7 +74,7 @@ class PowerFlow:
         return (network_model, v_init, network_model.J_length)
 
 
-    def create_positive_seq_network(self):
+    def create_positive_seq_network(self, optimization_enabled):
         node_index = count(0)
 
         raw_data = parse_raw(self.netlist)
@@ -80,10 +84,8 @@ class PowerFlow:
         transformers = raw_data['xfmrs']
         generators = raw_data['generators']
 
-        optimization_enabled = False
         infeasibility_currents = []
         if self.settings.infeasibility_analysis:
-            optimization_enabled = True
             for bus in buses:
                 inf_current = InfeasibilityCurrent(bus)
                 infeasibility_currents.append(inf_current)

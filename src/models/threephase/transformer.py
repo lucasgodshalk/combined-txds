@@ -25,11 +25,11 @@ class Transformer():
         phase_list = self.get_phase_list()
 
         for (pos_phase_1, neg_phase_1, pos_phase_2, neg_phase_2) in phase_list:
-            v_r_f, v_i_f = state.bus_map[self.primary_coil.phase_coils[pos_phase_1].from_node]
+            v_r_f, v_i_f = (self.primary_coil.phase_coils[pos_phase_1].from_node.node_Vr, self.primary_coil.phase_coils[pos_phase_1].from_node.node_Vi)
             v_r_p = self.primary_coil.phase_coils[pos_phase_1].real_voltage_idx
             v_i_p = self.primary_coil.phase_coils[pos_phase_1].imag_voltage_idx
-            v_r_s, v_i_s = state.bus_map[self.secondary_coil.phase_coils[pos_phase_2].secondary_node]
-            v_r_t, v_i_t = state.bus_map[self.secondary_coil.phase_coils[pos_phase_2].to_node]
+            v_r_s, v_i_s = (self.secondary_coil.phase_coils[pos_phase_2].secondary_node.node_Vr, self.secondary_coil.phase_coils[pos_phase_2].secondary_node.node_Vi)
+            v_r_t, v_i_t = (self.secondary_coil.phase_coils[pos_phase_2].to_node.node_Vr, self.secondary_coil.phase_coils[pos_phase_2].to_node.node_Vi)
 
             # Stamps for the voltage equations for the primary coil
             Y.stamp(v_r_p, v_r_f, 1)
@@ -114,11 +114,11 @@ class Transformer():
         residual_contributions = defaultdict(lambda: 0)
 
         for (pos_phase_1, neg_phase_1, pos_phase_2, neg_phase_2) in phase_list:
-            v_r_f, v_i_f = state.bus_map[self.primary_coil.phase_coils[pos_phase_1].from_node]
+            v_r_f, v_i_f = (self.primary_coil.phase_coils[pos_phase_1].from_node.node_Vr, self.primary_coil.phase_coils[pos_phase_1].from_node.node_Vi)
             v_r_p = self.primary_coil.phase_coils[pos_phase_1].real_voltage_idx
             v_i_p = self.primary_coil.phase_coils[pos_phase_1].imag_voltage_idx
-            v_r_s, v_i_s = state.bus_map[self.secondary_coil.phase_coils[pos_phase_2].secondary_node]
-            v_r_t, v_i_t = state.bus_map[self.secondary_coil.phase_coils[pos_phase_2].to_node]
+            v_r_s, v_i_s = (self.secondary_coil.phase_coils[pos_phase_2].secondary_node.node_Vr, self.secondary_coil.phase_coils[pos_phase_2].secondary_node.node_Vi)
+            v_r_t, v_i_t = (self.secondary_coil.phase_coils[pos_phase_2].to_node.node_Vr, self.secondary_coil.phase_coils[pos_phase_2].to_node.node_Vi)
 
             # # Residual calculations for the voltage equations for the primary coil
             # residual_contributions[v_r_p] += v[v_r_f] * (1)

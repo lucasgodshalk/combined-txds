@@ -3,7 +3,6 @@ from itertools import count
 import math
 import typing
 from logic.lagrangestamper import SKIP
-from logic.matrixbuilder import MatrixBuilder
 
 class Bus:
     def __init__(self,
@@ -11,7 +10,9 @@ class Bus:
                  Type,
                  Vm_init,
                  Va_init,
-                 Area):
+                 Area,
+                 NodeName = None,
+                 NodePhase = None):
         """Initialize an instance of the Buses class.
 
         Args:
@@ -24,6 +25,8 @@ class Bus:
 
         self.Bus = Bus
         self.Type = Type
+        self.NodeName = NodeName
+        self.NodePhase = NodePhase
 
         # initialize all nodes
         self.node_Vr: int # real voltage node at a bus
@@ -38,8 +41,12 @@ class Bus:
         self.Vi_init = Vm_init * math.sin(Va_init * math.pi / 180)
 
         # initialize the bus key
-        self.idAllBuses = _idsAllBuses.__next__()
         _all_bus_key[self.Bus] = self
+
+    def set_initial_voltages(self, v_estimate):
+        f_r, f_i = (self.node_Vr, self.node_Vi)
+        v_estimate[f_r] = self.Vr_init if v_estimate[f_r] == 0 else v_estimate[f_r]
+        v_estimate[f_i] = self.Vi_init if v_estimate[f_i] == 0 else v_estimate[f_i]
 
     def __str__(self):
         return_string = 'The bus number is : {} with Vr node as: {} and Vi node as {} '.format(self.Bus,
@@ -84,8 +91,6 @@ class Bus:
             self.node_lambda_Vr = SKIP
             self.node_lambda_Vi = SKIP
             self.node_lambda_Q = SKIP
-
-
 
 _all_bus_key: typing.Dict[int, Bus]
 _all_bus_key = {}

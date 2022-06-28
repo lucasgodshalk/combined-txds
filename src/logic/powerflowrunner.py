@@ -73,21 +73,13 @@ class PowerFlowRunner:
     def reset_v_estimate(self, simulation_state):
         self.v_estimate = np.zeros(simulation_state.J_length)
 
-        # Set initial voltage values for infinite sources
-        for infinite_source in simulation_state.infinite_sources:
-            infinite_source.set_initial_voltages(simulation_state, self.v_estimate)
-
-        # Set initial voltage values for loads
-        for load in simulation_state.loads:
-            load.set_initial_voltages(simulation_state, self.v_estimate)
-
         # Set initial voltage values for capacitors
         for cap in simulation_state.capacitors:
             cap.set_initial_voltages(simulation_state, self.v_estimate)
 
         # Set initial voltage values for all other buses (one object per phase)
         for bus in simulation_state.buses:
-            bus.set_initial_voltages(simulation_state, self.v_estimate)
+            bus.set_initial_voltages(self.v_estimate)
     
     def calculate_residuals(self, simulation_state):
         residuals = defaultdict(lambda: 0)

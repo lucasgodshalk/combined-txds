@@ -46,7 +46,7 @@ class Loads:
         """
         self.id = Loads._ids.__next__()
 
-        self.bus = _all_bus_key[bus]
+        self.bus = bus
         self.P = P / 100
         self.Q = Q / 100
 

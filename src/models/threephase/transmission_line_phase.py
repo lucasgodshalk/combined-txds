@@ -16,11 +16,9 @@ class TransmissionLinePhase(Edge):
         self.phase = phase
     
     def get_nodes(self, state):
-        self.from_node = state.bus_name_map[self.from_element + '_' + self.phase]
-        self.to_node = state.bus_name_map[self.to_element + '_' + self.phase]
-        f_r, f_i = state.bus_map[self.from_node]
-        t_r, t_i = state.bus_map[self.to_node]
-        return f_r, f_i, t_r, t_i
+        from_bus = state.bus_name_map[self.from_element + "_" + self.phase]
+        to_bus = state.bus_name_map[self.to_element + "_" + self.phase]
+        return from_bus.node_Vr, from_bus.node_Vi, to_bus.node_Vr, to_bus.node_Vi
 
     def collect_Y_stamps(self, state, g, b, B):
         line_r_f, line_i_f, line_r_t, line_i_t = self.get_nodes(state)

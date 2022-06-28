@@ -8,10 +8,11 @@ from logic.networkmodel import DxNetworkModel
 from ditto.readers.gridlabd.read import Reader
 from ditto.store import Store
 import ditto.models.load
+from models.positiveseq.slack import Slack
 
 from models.threephase.pq_load import PQLoad
-from models.threephase.pq_phase_load import PQPhaseLoad
-from models.threephase.bus import Bus
+from models.positiveseq.loads import Loads
+from models.positiveseq.bus import Bus, _idsAllBuses
 from models.threephase.bus_slack import SlackBus
 from models.threephase.infinite_source import InfiniteSource
 from models.threephase.transformer import Transformer
@@ -44,9 +45,10 @@ class Parser:
 
     _phase_to_angle = _phase_to_radians
 
-    def __init__(self, input_file):
+    def __init__(self, input_file, optimization_enabled):
         self.input_file_path = os.path.abspath(input_file)
         self._bus_index = count(0)
+        self.optimization_enabled = optimization_enabled
 
     def parse(self):
         self.ditto_store = Store()
@@ -74,7 +76,7 @@ class Parser:
     
     # GridlabD buses default to being "PQ" constant power buses (aka loads)
     # They could also be "PV" voltage-controlled magnitude buses (aka generators)
-    def create_buses(self, simulation_state):
+    def create_buses(self, simulation_state: DxNetworkModel):
         for model in self.ditto_store.models:
 
             if isinstance(model, ditto.models.node.Node) or isinstance(model, ditto.models.power_source.PowerSource):
@@ -86,49 +88,38 @@ class Parser:
                 for phase in model.phases:
                     if phase.default_value in self._phase_to_angle:
                         if hasattr(model, "parent"):
-                            bus_id = simulation_state.bus_name_map[model.parent + "_" + phase.default_value]
+                            bus = simulation_state.bus_name_map[model.parent + "_" + phase.default_value]
                         elif hasattr(model, "_connecting_element"):
-                            bus_id = simulation_state.bus_name_map[model._connecting_element + "_" + phase]
+                            bus = simulation_state.bus_name_map[model._connecting_element + "_" + phase]
                         else:
-                            bus_id = None
-                        try:
-                            voltage = getattr(model, "voltage_" + phase.default_value)
-                            v_mag = abs(voltage)
-                            v_ang = cmath.phase(voltage)
-                        except:
-                            v_mag = model.nominal_voltage
-                            v_ang = self._phase_to_angle[phase.default_value]
+                            try:
+                                voltage = getattr(model, "voltage_" + phase.default_value)
+                                v_mag = abs(voltage)
+                                v_ang = cmath.phase(voltage)
+                            except:
+                                v_mag = model.nominal_voltage
+                                v_ang = self._phase_to_angle[phase.default_value]
+
+                            bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase.default_value)
+
                         if infinite_source is not None:
                             # Create this phase of the slack bus
-                            bus = SlackBus(v_mag, v_ang, bus_id)
-                            infinite_source.phase_slack_buses.append(bus)
-                        else:
-                            bus = Bus(v_mag, v_ang, bus_id)
-                            simulation_state.buses.append(bus)
-                        simulation_state.bus_name_map[model.name + "_" + phase.default_value] = bus.bus_id
-                        if not hasattr(model, "parent"):
-                            real_voltage_idx = simulation_state.next_var_idx.__next__()
-                            imag_voltage_idx = simulation_state.next_var_idx.__next__()
-                            simulation_state.bus_map[bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
-                            simulation_state.J_length += 2
+                            slack = Slack(bus, v_mag, v_ang, 0, 0)
+                            slack.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+                            infinite_source.phase_slack_buses.append(slack)
+                            
                 if infinite_source is not None:
                     simulation_state.infinite_sources.append(infinite_source)    
-        
-        # Second loop to get indices of variables for extra equations for slack buses
-        # Doing this separately after all bus node locations in J are set, so that next_var_idx counter keeps all voltage equations together for ease of reading output
-        for infinite_source in simulation_state.infinite_sources:
-            for phase_slack_bus in infinite_source.phase_slack_buses:
-                # Adding two new variables, the real and imaginary currents across this phase of the slack bus
-                i_r = simulation_state.next_var_idx.__next__()
-                i_i = simulation_state.next_var_idx.__next__()
-                simulation_state.J_length += 2
 
-                phase_slack_bus.real_current_idx = i_r
-                phase_slack_bus.imag_current_idx = i_i
+    def create_bus(self, simulation_state, v_mag, v_ang, node_name, node_phase):
+        bus_id = next(_idsAllBuses)
+        bus = Bus(bus_id, 1, v_mag, v_ang, node_name, node_phase)
+        bus.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+        simulation_state.buses.append(bus)
+        simulation_state.bus_name_map[node_name + "_" + node_phase] = bus
+        return bus            
 
-
-
-    def create_loads(self, simulation_state):
+    def create_loads(self, simulation_state: DxNetworkModel):
         # Go through the ditto store for each load object
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.load.Load):
@@ -164,38 +155,39 @@ class Parser:
                     for phase_load in model.phase_loads:
                         if (not hasattr(phase_load, "p") or not hasattr(phase_load, "q") or (phase_load.p == 0 and phase_load.q == 0)):
                             continue
+
                         # Get the existing bus id for each phase load of this PQ load
                         if hasattr(model, "connecting_element"):
-                            bus_id = simulation_state.bus_name_map[model.connecting_element + "_" + phase_load.phase]
+                            bus = simulation_state.bus_name_map[model.connecting_element + "_" + phase_load.phase]
                         elif hasattr(model, "_parent"):
-                            bus_id = simulation_state.bus_name_map[model._parent + "_" + phase_load.phase]
+                            bus = simulation_state.bus_name_map[model._parent + "_" + phase_load.phase]
                         else:
-                            bus_id = None
-
-                        # Get the initial voltage values for this 
-                        try:
-                            v_complex = complex(getattr(self.all_gld_objects[model.name],'_voltage_' + phase_load.phase))
-                            v_r = v_complex.real
-                            v_i = v_complex.imag
-                        except Exception:
+                            # Get relevant attributes, create and save an object
+                            # Get the initial voltage values for this 
                             try:
-                                v_complex = complex(getattr(self.all_gld_objects[model.name],'_nominal_voltage'))
-                                v_r = v_complex.real
-                                v_i = v_complex.imag
+                                v_complex = complex(getattr(self.all_gld_objects[model.name],'_voltage_' + phase_load.phase))
                             except Exception:
                                 try:
-                                    v_complex = complex(getattr(self.all_gld_objects[model.connecting_element],'_voltage_' + phase_load.phase))
-                                    v_r = v_complex.real
-                                    v_i = v_complex.imag
+                                    v_complex = complex(getattr(self.all_gld_objects[model.name],'_nominal_voltage'))
                                 except Exception:
-                                    nominal_v = float(getattr(self.all_gld_objects[model.connecting_element],'_nominal_voltage'))
-                                    v_angle = self._phase_to_angle[phase_load.phase]
-                                    v_r = nominal_v * math.cos(v_angle)
-                                    v_i = nominal_v * math.sin(v_angle)
-                                    v_complex = complex(v_r,v_i)
-                        
-                        # Get relevant attributes, create and save an object
-                        pq_load.phase_loads.append(PQPhaseLoad(phase_load.p, phase_load.q, v_r, v_i, phase_load.phase, bus_id))
+                                    try:
+                                        v_complex = complex(getattr(self.all_gld_objects[model.connecting_element],'_voltage_' + phase_load.phase))
+                                    except Exception:
+                                        nominal_v = float(getattr(self.all_gld_objects[model.connecting_element],'_nominal_voltage'))
+                                        v_angle = self._phase_to_angle[phase_load.phase]
+                                        v_r = nominal_v * math.cos(v_angle)
+                                        v_i = nominal_v * math.sin(v_angle)
+                                        v_complex = complex(v_r,v_i)
+
+                            
+                            v_mag = abs(v_complex)
+                            v_ang = cmath.phase(v_complex)
+
+                            bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase_load.phase)
+
+                        phase_load = Loads(bus, phase_load.p, phase_load.q, 0, 0, 0, 0, None, None)
+                        phase_load.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+                        pq_load.phase_loads.append(phase_load)
                     simulation_state.loads.append(pq_load)
                 # TODO add cases for other types (ZIP, etc)
                 
@@ -244,7 +236,7 @@ class Parser:
         real_voltage_idx = simulation_state.next_var_idx.__next__()
         imag_voltage_idx = simulation_state.next_var_idx.__next__()
         simulation_state.bus_map[primary_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
-        simulation_state.J_length += 2
+        
         transformer_coil_0.primary_node = primary_bus.bus_id
 
         # Create a new bus on the first triplex coil, for KCL
@@ -253,13 +245,13 @@ class Parser:
         real_voltage_idx = simulation_state.next_var_idx.__next__()
         imag_voltage_idx = simulation_state.next_var_idx.__next__()
         simulation_state.bus_map[secondary1_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
-        simulation_state.J_length += 2
+        
         transformer_coil_1.sending_node = secondary1_bus.bus_id
         
         # Create a new variable for the voltage equations on the first triplex coil (not an actual node)
         real_voltage_idx = simulation_state.next_var_idx.__next__()
         imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        simulation_state.J_length += 2
+        
         transformer_coil_1.real_voltage_idx = real_voltage_idx
         transformer_coil_1.imag_voltage_idx = imag_voltage_idx
         
@@ -273,13 +265,13 @@ class Parser:
         real_voltage_idx = simulation_state.next_var_idx.__next__()
         imag_voltage_idx = simulation_state.next_var_idx.__next__()
         simulation_state.bus_map[secondary2_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
-        simulation_state.J_length += 2
+        
         transformer_coil_2.sending_node = secondary2_bus.bus_id
         
         # Create a new variable for the voltage equations on the second triplex coil (not an actual node)
         real_voltage_idx = simulation_state.next_var_idx.__next__()
         imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        simulation_state.J_length += 2
+        
         transformer_coil_2.real_voltage_idx = real_voltage_idx
         transformer_coil_2.imag_voltage_idx = imag_voltage_idx
         
@@ -308,7 +300,7 @@ class Parser:
             # Create a new variable for the voltage equations on the primary coil (not an actual node)
             real_voltage_idx = simulation_state.next_var_idx.__next__()
             imag_voltage_idx = simulation_state.next_var_idx.__next__()
-            simulation_state.J_length += 2
+            
 
             primary_phase_coil = TransformerPhaseCoil(phase_winding.phase)
             primary_phase_coil.from_node = from_bus
@@ -317,16 +309,11 @@ class Parser:
             primary_transformer_coil.phase_coils[phase_winding.phase] = primary_phase_coil
 
             # Create a new bus on the secondary coil, for KCL
-            secondary_bus = Bus()
-            simulation_state.bus_name_map[model.name + "_secondary_" + phase_winding.phase] = secondary_bus.bus_id
-            real_voltage_idx = simulation_state.next_var_idx.__next__()
-            imag_voltage_idx = simulation_state.next_var_idx.__next__()
-            simulation_state.bus_map[secondary_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
-            simulation_state.J_length += 2
+            secondary_bus = self.create_bus(simulation_state, 0, 0, model.name + "_secondary_", phase_winding.phase)
             
             to_bus = simulation_state.bus_name_map[model.to_element + '_' + phase_winding.phase]
             secondary_phase_coil = TransformerPhaseCoil(phase_winding.phase)
-            secondary_phase_coil.secondary_node = secondary_bus.bus_id
+            secondary_phase_coil.secondary_node = secondary_bus
             secondary_phase_coil.to_node = to_bus
             secondary_transformer_coil.phase_coils[phase_winding.phase] = secondary_phase_coil
 
@@ -377,7 +364,7 @@ class Parser:
                     # Create a new variable for the voltage equations on the primary coil (not an actual node)
                     real_voltage_idx = simulation_state.next_var_idx.__next__()
                     imag_voltage_idx = simulation_state.next_var_idx.__next__()
-                    simulation_state.J_length += 2
+                    
 
                     # Create a new bus on the secondary coil, for KCL
                     secondary_bus = Bus()
@@ -385,7 +372,7 @@ class Parser:
                     v_r_s = simulation_state.next_var_idx.__next__()
                     v_i_s = simulation_state.next_var_idx.__next__()
                     simulation_state.bus_map[secondary_bus.bus_id] = (v_r_s, v_i_s)
-                    simulation_state.J_length += 2
+                    
 
                     tap_position = float(getattr(self.all_gld_objects[self.all_gld_objects[model.name]['configuration']],'_tap_pos_' + phase))
                                       

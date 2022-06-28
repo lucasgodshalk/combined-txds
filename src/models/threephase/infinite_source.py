@@ -15,7 +15,7 @@ class InfiniteSource():
             phase_slack_bus.set_initial_voltages(state, v)
 
     def calculate_residuals(self, state, v):
-        residual_contributions = defaultdict(lambda: 0)
+        residual_contributions = {}
         for phase_slack_bus in self.phase_slack_buses:
-            phase_slack_bus.calculate_residuals(state, v, residual_contributions)
+            residual_contributions.update(phase_slack_bus.calculate_residuals(state, v))
         return residual_contributions

@@ -16,8 +16,8 @@ class PQLoad():
             phase_load.set_initial_voltages(state, v)
         
     def calculate_residuals(self, state, v):
-        residual_contributions = defaultdict(lambda: 0)
+        residual_contributions = {}
         for phase_load in self.phase_loads:
-            phase_load.calculate_residuals(state, v, residual_contributions)
+            residual_contributions.update(phase_load.calculate_residuals(state, v))
         return residual_contributions
 
