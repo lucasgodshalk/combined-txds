@@ -1,10 +1,8 @@
 import math
 import numpy as np
-from models.threephase.bus import Bus
-
 
 # A toy class which models a load as a simple resistor
-class ResistivePhaseLoad(Bus):
+class ResistivePhaseLoad():
 
     def __init__(self, V_r, V_i, Z, phase, bus_id):
         self.bus_id = bus_id

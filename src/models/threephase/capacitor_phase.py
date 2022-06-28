@@ -1,6 +1,4 @@
-from models.threephase.bus import Bus
-
-class PhaseCapacitor(Bus):
+class PhaseCapacitor():
 
     def __init__(self, Vr_init, Vi_init, nominal_reactive_power, low_voltage, high_voltage, phase, bus_id):
         self.bus_id = bus_id

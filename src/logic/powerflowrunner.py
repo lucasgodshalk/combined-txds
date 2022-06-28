@@ -1,6 +1,5 @@
 from collections import defaultdict
 from logic.parsers.anoeds_parser import Parser
-from models.threephase.bus import Bus
 from models.threephase.resistive_load import ResistiveLoad
 from models.threephase.pq_load import PQLoad
 import numpy as np

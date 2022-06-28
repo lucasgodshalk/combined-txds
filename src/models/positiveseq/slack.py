@@ -6,6 +6,8 @@ from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 import math
 
+from models.positiveseq.bus import Bus
+
 constants = [Vrset, Viset] = symbols("Vrset Viset")
 
 primals = [Vr, Vi, Isr, Isi] = symbols("Vr Vi I_Sr I_Si")
@@ -26,7 +28,7 @@ lh = LagrangeHandler(lagrange, constants, primals, duals)
 class Slack:
 
     def __init__(self,
-                 bus,
+                 bus: Bus,
                  Vset,
                  ang,
                  Pinit,
@@ -81,4 +83,7 @@ class Slack:
         self.stamper.stamp_dual(Y, J, [self.Vr_set, self.Vi_set], v_previous)
 
     def calculate_residuals(self, network_model, v):
-        return {}
+        residual_contributions = {}
+        residual_contributions[self.bus.node_Vr] = v[self.real_current_idx]
+        residual_contributions[self.bus.node_Vi] = v[self.imag_current_idx]
+        return residual_contributions
