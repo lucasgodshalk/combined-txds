@@ -3,8 +3,6 @@ import numpy as np
 from models.threephase.transmission_line_phase import TransmissionLinePhase
 from models.threephase.edge import Edge
 
-from copy import copy
-
 class TransmissionLine():
     
     def __init__(self, impedances, shunt_admittances, from_element, to_element, length, phases="ABC"):

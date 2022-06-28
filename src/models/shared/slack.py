@@ -83,6 +83,6 @@ class Slack:
 
     def calculate_residuals(self, network_model, v):
         residual_contributions = {}
-        residual_contributions[self.bus.node_Vr] = v[self.real_current_idx]
-        residual_contributions[self.bus.node_Vi] = v[self.imag_current_idx]
+        residual_contributions[self.bus.node_Vr] = v[self.slack_Ir]
+        residual_contributions[self.bus.node_Vi] = v[self.slack_Ii]
         return residual_contributions
