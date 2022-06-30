@@ -81,6 +81,26 @@ class TransmissionLine():
 
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
+        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
+            line_stamper.stamp_primal(Y, J, [g, b, tx_factor], v_previous)
+            shunt_stamper.stamp_primal(Y, J, [B/2, tx_factor], v_previous)
+
+
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(network_model):
+            line_stamper.stamp_dual(Y, J, [g, b, tx_factor], v_previous)
+            shunt_stamper.stamp_dual(Y, J, [B/2, tx_factor], v_previous)
+
+    def calculate_residuals(self, state, v):
+        residuals = {}
+
+        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
+            residuals.update(line_stamper.calc_residuals([g, b, 1], v))
+            residuals.update(shunt_stamper.calc_residuals([B/2, 1], v)) 
+
+        return residuals
+
+    def __loop_line_stampers(self, state):
         # Go through all phases
         for i in range(len(self.lines)):
             # Get the line
@@ -104,110 +124,4 @@ class TransmissionLine():
 
                 (line_stamper, shunt_stamper) = self.stampers[(line1_from, line2_to)]
 
-                line_stamper.stamp_primal(Y, J, [g, b, tx_factor], v_previous)
-                shunt_stamper.stamp_primal(Y, J, [B/2, tx_factor], v_previous)
-
-                # # Collect stamps for mutual susceptance
-
-                # # For the KCL at one node of the line
-                # Y.stamp(line_r_f, line2_r_f, g)
-                # Y.stamp(line_r_f, line2_r_t, -g)
-                # Y.stamp(line_r_f, line2_i_f, -b - B/2)
-                # Y.stamp(line_r_f, line2_i_t, b)
-                
-                # Y.stamp(line_i_f, line2_r_f, b + B/2)
-                # Y.stamp(line_i_f, line2_r_t, -b)
-                # Y.stamp(line_i_f, line2_i_f, g)
-                # Y.stamp(line_i_f, line2_i_t, -g)
-
-                # # For the KCL at the other node of the line
-                # Y.stamp(line_r_t, line2_r_f, -g)
-                # Y.stamp(line_r_t, line2_r_t, g)
-                # Y.stamp(line_r_t, line2_i_f, b)
-                # Y.stamp(line_r_t, line2_i_t, -b - B/2)
-
-                # Y.stamp(line_i_t, line2_r_f, -b)
-                # Y.stamp(line_i_t, line2_r_t, b + B/2)
-                # Y.stamp(line_i_t, line2_i_f, -g)
-                # Y.stamp(line_i_t, line2_i_t, g)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        # Go through all phases
-        for i in range(len(self.lines)):
-            # Get the line
-            line = self.lines[i]
-
-            # Collect the line's nodes for mutual susceptance calculation
-            line1_from, _ = line.get_nodes(network_model)
-
-            # Go through all lines
-            for j in range(len(self.lines)):
-                g = np.real(self.admittances[i][j])
-                b = np.imag(self.admittances[i][j])
-                try:
-                    B = np.imag(self.shunt_admittances[i][j])
-                except IndexError:
-                    B = 0
-
-
-                line2 = self.lines[j]
-                _, line2_to = line2.get_nodes(network_model)
-
-                (line_stamper, shunt_stamper) = self.stampers[(line1_from, line2_to)]
-
-                line_stamper.stamp_dual(Y, J, [g, b, tx_factor], v_previous)
-                shunt_stamper.stamp_dual(Y, J, [B/2, tx_factor], v_previous)
-
-
-    def calculate_residuals(self, state, v):
-        return {}
-
-        residual_contributions = defaultdict(lambda: 0)
-        # Go through all phases
-        for i in range(len(self.lines)):
-            # Get the line
-            line1 = self.lines[i]
-
-            # Collect the line's nodes
-            line1_from, line1_to = line1.get_nodes(state)
-            line1_r_f, line1_i_f, line1_r_t, line1_i_t = (line1_from.node_Vr, line1_from.node_Vi, line1_to.node_Vr, line1_to.node_Vi)
-
-            # Go through all lines
-            for j in range(len(self.lines)):
-                g = np.real(self.admittances[i][j])
-                b = np.imag(self.admittances[i][j])
-                try:
-                    B = np.imag(self.shunt_admittances[i][j])
-                except IndexError:
-                    B = 0
-
-
-                line2 = self.lines[j]
-
-                line2_from, line2_to = line2.get_nodes(state)
-                line2_r_f, line2_i_f, line2_r_t, line2_i_t = (line2_from.node_Vr, line2_from.node_Vi, line2_to.node_Vr, line2_to.node_Vi)
-
-                # For the KCL at one node of the line
-                residual_contributions[line1_r_f] += v[line2_r_f] * (g)
-                residual_contributions[line1_r_f] += v[line2_r_t] * (-g)
-                residual_contributions[line1_r_f] += v[line2_i_f] * (-b - B/2)
-                residual_contributions[line1_r_f] += v[line2_i_t] * (b)
-                
-                residual_contributions[line1_i_f] += v[line2_r_f] * (b + B/2)
-                residual_contributions[line1_i_f] += v[line2_r_t] * (-b)
-                residual_contributions[line1_i_f] += v[line2_i_f] * (g)
-                residual_contributions[line1_i_f] += v[line2_i_t] * (-g)
-
-                # For the KCL at the other node of the line
-                residual_contributions[line1_r_t] += v[line2_r_f] * (-g)
-                residual_contributions[line1_r_t] += v[line2_r_t] * (g)
-                residual_contributions[line1_r_t] += v[line2_i_f] * (b)
-                residual_contributions[line1_r_t] += v[line2_i_t] * (-b - B/2)
-
-                residual_contributions[line1_i_t] += v[line2_r_f] * (-b)
-                residual_contributions[line1_i_t] += v[line2_r_t] * (b + B/2)
-                residual_contributions[line1_i_t] += v[line2_i_f] * (-g)
-                residual_contributions[line1_i_t] += v[line2_i_t] * (g)
-
-        return residual_contributions
-
+                yield (line_stamper, shunt_stamper, g, b, B)

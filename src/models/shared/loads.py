@@ -66,9 +66,4 @@ class Loads:
         self.stamper.stamp_dual(Y, J, [self.P, self.Q], v_previous)
 
     def calculate_residuals(self, network_model, v):
-        # v_r, v_i = state.bus_map[self.bus_id]
-        # residual_contributions[v_r] += self.I_R.evalf(subs={self.V_R: v[v_r], self.V_I: v[v_i]})
-        # residual_contributions[v_i] += self.I_I.evalf(subs={self.V_R: v[v_r], self.V_I: v[v_i]})
-        # return residual_contributions
-
-        return {}
+        return self.stamper.calc_residuals([self.P, self.Q], v)

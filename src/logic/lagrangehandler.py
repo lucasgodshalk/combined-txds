@@ -1,4 +1,5 @@
 from collections import defaultdict
+import typing
 from sympy import Add, diff, lambdify, Eq, simplify, expand  
 
 def is_constant(expr, vars):
@@ -70,12 +71,14 @@ def split_expr(eqn, vars):
 class DerivativeEntry:
     def __init__(self, derivative_var, derivative, constant_expr, variable_exprs, lambda_inputs) -> None:
         self.derivative_var = derivative_var
-        self.derivative = derivative
-        self.constant_expr = constant_expr
-        self.variable_exprs = variable_exprs
 
+        self.derivative = derivative
+        self.derivative_eval = lambdify(lambda_inputs, derivative)
+        
+        self.constant_expr = constant_expr
         self.constant_eval = lambdify(lambda_inputs, constant_expr)
 
+        self.variable_exprs = variable_exprs
         self.variable_evals = {}
         for var, derivative in variable_exprs.items():
             self.variable_exprs[var] = derivative
@@ -98,6 +101,7 @@ class LagrangeHandler:
 
         self.variables = self.primals + self.duals
 
+        self.derivatives: typing.Dict[any, DerivativeEntry]
         self.derivatives = {}
 
         lambda_inputs = self.constants + self.variables

@@ -38,4 +38,4 @@ class L2InfeasibilityCurrent:
         self.stamper.stamp_dual(Y, J, [], v_previous)
 
     def calculate_residuals(self, network_model, v):
-        return {}
+        return self.stamper.calc_residuals([], v)

@@ -82,7 +82,4 @@ class Slack:
         self.stamper.stamp_dual(Y, J, [self.Vr_set, self.Vi_set], v_previous)
 
     def calculate_residuals(self, network_model, v):
-        residual_contributions = {}
-        residual_contributions[self.bus.node_Vr] = v[self.slack_Ir]
-        residual_contributions[self.bus.node_Vi] = v[self.slack_Ii]
-        return residual_contributions
+        return self.stamper.calc_residuals([self.Vr_set, self.Vi_set], v)

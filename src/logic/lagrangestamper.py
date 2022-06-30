@@ -56,7 +56,19 @@ class LagrangeStamper:
         primal_vals, dual_vals = self.__extract_kth_primals_duals(v_prev)
         args = constant_vals + primal_vals + dual_vals
         self.__stamp_set(Y, J, self.dual_components, args)
-    
+
+    def calc_residuals(self, constant_vals, v_result):
+        residuals = {}
+
+        primal_vals, dual_vals = self.__extract_kth_primals_duals(v_result)
+        args = constant_vals + primal_vals + dual_vals
+
+        for (variable, derivative) in self.handler.derivatives.items():
+            row_idx = self.index_map[variable]
+            residuals[row_idx] = derivative.derivative_eval(*args)
+
+        return residuals
+
     def __extract_kth_primals_duals(self, v_prev):
         if v_prev is None:
             return (self.empty_primals, self.empty_duals)
