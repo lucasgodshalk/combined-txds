@@ -51,6 +51,9 @@ class Bus:
                                                                                                self.node_Vi)
         return return_string
 
+    def __repr__(self):
+        return f'Bus id:{self.Bus} name:{self.NodeName} phase:{self.NodePhase}'
+
     def get_Vr_init(self):
         return (self.node_Vr, self.Vr_init)
 

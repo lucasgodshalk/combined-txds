@@ -44,7 +44,7 @@ class Slack:
 
         self.bus = bus
         self.Vset = Vset
-        self.ang_rad = ang * math.pi / 180
+        self.ang_rad = ang
 
         self.Vr_set = self.Vset * math.cos(self.ang_rad)
         self.Vi_set = self.Vset * math.sin(self.ang_rad)

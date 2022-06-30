@@ -1,26 +1,22 @@
 # import pytest as pt
 # import anoeds.parser
 import numpy as np
-from anoeds.anoeds_parser import Parser
+from logic.parsers.anoeds_parser import Parser
+from logic.powerflowsettings import PowerFlowSettings
 from models.threephase.resistive_load import ResistiveLoad
 from models.threephase.pq_load import PQLoad
 from models.threephase.transmission_line import TransmissionLine
 from models.threephase.infinite_source import InfiniteSource
-from models.threephase.bus_slack import SlackBus
 from models.threephase.transformer import Transformer
 from models.threephase.regulator import Regulator
-from anoeds.powerflowrunner import PowerFlowRunner
 import os
 from pprint import pprint
-
-from models.threephase.transmission_line_triplex import TriplexTransmissionLine
-
 
 CURR_DIR = os.path.realpath(os.path.dirname(__file__))
 
 def test_parser_read():
-    glm_file_path = os.path.join("data", "ieee_4_node", "node.glm")
-    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path))
+    glm_file_path = os.path.join("data", "ieee_four_bus", "node.glm")
+    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path), PowerFlowSettings(), False)
     _ = test_parser.parse()
     ditto_objects = test_parser.ditto_store
     pprint(ditto_objects)
@@ -32,7 +28,7 @@ def test_parser_read():
 
 def test_parser_create_resistive_load():
     glm_file_path = os.path.join("data", "swing_and_line_to_resistive", "node.glm")
-    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path))
+    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path), PowerFlowSettings(), False)
     simulation_state = test_parser.parse()
     assert len(simulation_state.loads) == 1
     assert isinstance(simulation_state.loads[0], ResistiveLoad)
@@ -40,7 +36,7 @@ def test_parser_create_resistive_load():
 
 def test_parser_create_pq_load():
     glm_file_path = os.path.join("data", "ieee_4_node", "node.glm")
-    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path))
+    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path), PowerFlowSettings(), False)
     simulation_state = test_parser.parse()
     assert len(simulation_state.loads) == 1
     assert isinstance(simulation_state.loads[0], PQLoad)
@@ -48,23 +44,22 @@ def test_parser_create_pq_load():
 
 def test_parser_create_line():
     glm_file_path = os.path.join("data", "ieee_4_node", "node.glm")
-    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path))
+    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path), PowerFlowSettings(), False)
     simulation_state = test_parser.parse()
     assert len(simulation_state.transmission_lines) == 2
     assert isinstance(simulation_state.transmission_lines[0], TransmissionLine)
 
 def test_parser_create_infinite_source():
     glm_file_path = os.path.join("data", "ieee_4_node", "node.glm")
-    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path))
+    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path), PowerFlowSettings(), False)
     simulation_state = test_parser.parse()
     assert len(simulation_state.infinite_sources) == 1
     assert isinstance(simulation_state.infinite_sources[0], InfiniteSource)
     assert len(simulation_state.infinite_sources[0].phase_slack_buses) == 3
-    assert isinstance(simulation_state.infinite_sources[0].phase_slack_buses[0], SlackBus)
 
 def test_parser_create_xfmr():
     glm_file_path = os.path.join("data", "ieee_4_node", "node.glm")
-    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path))
+    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path), PowerFlowSettings(), False)
     simulation_state = test_parser.parse()
     assert len(simulation_state.transformers) == 1
     assert isinstance(simulation_state.transformers[0], Transformer)
@@ -72,14 +67,14 @@ def test_parser_create_xfmr():
 
 def test_parser_create_regulator():
     glm_file_path = os.path.join("data", "gc-12.47-1", "node.glm")
-    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path))
+    test_parser = Parser(os.path.join(CURR_DIR, glm_file_path), PowerFlowSettings(), False)
     simulation_state = test_parser.parse()
     assert len(simulation_state.regulators) == 1
     assert isinstance(simulation_state.regulators[0], Regulator)
 
 # def test_parser_create_triplex_line():
 #     glm_file_path = os.path.join("data", "r1-12.47-1", "node.glm")
-#     test_parser = Parser(os.path.join(CURR_DIR, glm_file_path))
+#     test_parser = Parser(os.path.join(CURR_DIR, glm_file_path), PowerFlowSettings(), False)
 #     simulation_state = test_parser.parse()
 #     assert len(simulation_state.lines) == 1
 #     assert isinstance(simulation_state.lines[0], TriplexTransmissionLine)

@@ -47,7 +47,7 @@ class PowerFlow:
 
         #results = process_results(raw_data, v_final, duration_seconds, settings)
 
-        #return (is_success, results)
+        return v_final
     
     def create_network(self):
         optimization_enabled = self.settings.infeasibility_analysis

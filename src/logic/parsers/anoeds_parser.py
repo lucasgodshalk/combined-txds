@@ -119,7 +119,7 @@ class Parser:
 
     def create_bus(self, simulation_state, v_mag, v_ang, node_name, node_phase):
         bus_id = next(self._bus_index)
-        bus = Bus(bus_id, 1, v_mag, v_ang, node_name, node_phase)
+        bus = Bus(bus_id, 1, v_mag, v_ang, None, node_name, node_phase)
         bus.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
         simulation_state.buses.append(bus)
         simulation_state.bus_name_map[node_name + "_" + node_phase] = bus

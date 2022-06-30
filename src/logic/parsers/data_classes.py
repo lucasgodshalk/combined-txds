@@ -66,7 +66,7 @@ class Bus_data:
         return (str(self.i) + ' ' + str(self.name))
 
     def integrate(self, all_bus_key: typing.Dict[int, Bus]):
-        new_bus = Bus(self.i, self.ide, self.vm, self.va, self.area)
+        new_bus = Bus(self.i, self.ide, self.vm, self.va, self.area, self.name, "PosSeq")
         all_bus_key[self.i] = new_bus
         return new_bus
 
@@ -259,7 +259,7 @@ class Slack_generator_data:
         self.rmpct = rmpct
         self.pt = pt  # max gen active power output (MW)
         self.pb = pb  # min gen active power output
-        self.ang = ang
+        self.ang = ang * math.pi / 180
 
         # each generator can have 1-4 owners (oi)
         # and the corresponding num of fraction of total ownership (fi)
