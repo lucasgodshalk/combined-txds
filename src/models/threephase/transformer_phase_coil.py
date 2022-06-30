@@ -1,3 +1,4 @@
+from models.shared.bus import Bus
 from models.threephase.edge import Edge
 
 class TransformerPhaseCoil(Edge):
@@ -22,6 +23,14 @@ class TransformerPhaseCoil(Edge):
         self.x = x
         # self.V = V
         # self.I = I
+
+        self.from_node: Bus
+        self.to_node: Bus
+        self.secondary_node: Bus
+
+        self.from_node = None
+        self.to_node = None
+        self.secondary_node = None
 
         ##### TODO choose correct representation #####
 

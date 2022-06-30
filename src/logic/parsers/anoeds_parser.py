@@ -44,7 +44,7 @@ class Parser:
 
     _phase_to_angle = _phase_to_radians
 
-    def __init__(self, input_file, optimization_enabled):
+    def __init__(self, input_file, optimization_enabled: bool):
         self.input_file_path = os.path.abspath(input_file)
         self.optimization_enabled = optimization_enabled
 
@@ -310,8 +310,8 @@ class Parser:
 
             # Create a new bus on the secondary coil, for KCL
             secondary_bus = self.create_bus(simulation_state, 0, 0, model.name + "_secondary_", phase_winding.phase)
-            
             to_bus = simulation_state.bus_name_map[model.to_element + '_' + phase_winding.phase]
+            
             secondary_phase_coil = TransformerPhaseCoil(phase_winding.phase)
             secondary_phase_coil.secondary_node = secondary_bus
             secondary_phase_coil.to_node = to_bus
@@ -326,7 +326,7 @@ class Parser:
         else:
             g_shunt = 0
             b_shunt = 0
-        transformer = Transformer(primary_transformer_coil, secondary_transformer_coil, phases, turn_ratio, phase_shift, g_shunt, b_shunt)
+        transformer = Transformer(primary_transformer_coil, secondary_transformer_coil, phases, turn_ratio, phase_shift, g_shunt, b_shunt, self.optimization_enabled)
         simulation_state.transformers.append(transformer)
     
     def create_capacitors(self, simulation_state):
@@ -423,7 +423,7 @@ class Parser:
 
                     phases = [wire.phase for wire in model.wires if wire.phase != 'N']
                     
-                    transmission_line = TransmissionLine(impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
+                    transmission_line = TransmissionLine(simulation_state, self.optimization_enabled, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
                     simulation_state.transmission_lines.append(transmission_line)
 
 

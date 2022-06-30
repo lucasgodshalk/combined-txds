@@ -1,3 +1,8 @@
+import typing
+
+from models.threephase.transformer_phase_coil import TransformerPhaseCoil
+
+
 class PrimaryTransformerCoil():
     
     def __init__(self
@@ -13,6 +18,7 @@ class PrimaryTransformerCoil():
         self.connection_type = connection_type
         self.voltage_limit = voltage_limit
 
+        self.phase_coils: typing.Dict[str, TransformerPhaseCoil]
         self.phase_coils = {}
 
     # def stamp_primal(self, Y, J, v_previous, tx_factor, state):

@@ -1,3 +1,8 @@
+import typing
+
+from models.threephase.transformer_phase_coil import TransformerPhaseCoil
+
+
 class SecondaryTransformerCoil():
     
     def __init__(self
@@ -15,6 +20,7 @@ class SecondaryTransformerCoil():
         self.connection_type = connection_type
         self.voltage_limit = voltage_limit
 
+        self.phase_coils: typing.Dict[str, TransformerPhaseCoil]
         self.phase_coils = {}
         
         self.resistance = resistance

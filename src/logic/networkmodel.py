@@ -1,5 +1,8 @@
 from cmath import pi
 from itertools import count
+import typing
+
+from models.shared.bus import Bus
 
 class NetworkModel():
     def __init__(self, is_three_phase: bool) -> None:
@@ -44,6 +47,7 @@ class DxNetworkModel(NetworkModel):
         # The map from each bus id to the location of its (real, imaginary) state variables in J
         self.bus_map = {}
         # The map from a bus name to its bus id
+        self.bus_name_map: typing.Dict[str, Bus]
         self.bus_name_map = {}
 
         # All of the loads    
