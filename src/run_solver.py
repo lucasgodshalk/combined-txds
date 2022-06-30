@@ -16,7 +16,7 @@ casename = 'test/data/ieee_four_bus/node.glm'
 
 print(f'Testcase: {casename.replace("testcases/", "")}')
 
-settings = PowerFlowSettings(debug=False, max_iters=50, flat_start=False, infeasibility_analysis=False, tx_stepping=False, voltage_limiting=False)
+settings = PowerFlowSettings(debug=False, max_iters=50, flat_start=False, infeasibility_analysis=True, tx_stepping=False, voltage_limiting=False)
 
 powerflow = PowerFlow(casename, settings)
 

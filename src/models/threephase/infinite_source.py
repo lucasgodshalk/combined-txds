@@ -1,14 +1,21 @@
 from collections import defaultdict
+import typing
+from models.shared.slack import Slack
 
 
 class InfiniteSource():
 
     def __init__(self):
+        self.phase_slack_buses: typing.List[Slack]
         self.phase_slack_buses = []
 
     def stamp_primal(self, Y, J, v_previous, tx_factor, state):
         for phase_slack_bus in self.phase_slack_buses:
             phase_slack_bus.stamp_primal(Y, J, v_previous, tx_factor, state)
+
+    def stamp_dual(self, Y, J, v_previous, tx_factor, state):
+        for phase_slack_bus in self.phase_slack_buses:
+            phase_slack_bus.stamp_dual(Y, J, v_previous, tx_factor, state)
 
     def set_initial_voltages(self, state, v):
         for phase_slack_bus in self.phase_slack_buses:

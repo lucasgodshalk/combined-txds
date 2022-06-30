@@ -2,6 +2,7 @@ from collections import defaultdict
 import typing
 import numpy as np
 from logic.lagrangestamper import SKIP, LagrangeStamper
+from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.shared import build_line_stamper
 from models.positiveseq.branches import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 from models.threephase.transmission_line_phase import TransmissionLinePhase
@@ -79,7 +80,7 @@ class TransmissionLine():
                 self.stampers[(line1_from, line2_to)] = (line_stamper, shunt_stamper)
 
 
-    def stamp_primal(self, Y, J, v_previous, tx_factor, state):
+    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
         # Go through all phases
         for i in range(len(self.lines)):
             # Get the line
@@ -129,7 +130,35 @@ class TransmissionLine():
                 # Y.stamp(line_i_t, line2_r_t, b + B/2)
                 # Y.stamp(line_i_t, line2_i_f, -g)
                 # Y.stamp(line_i_t, line2_i_t, g)
-    
+
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+        # Go through all phases
+        for i in range(len(self.lines)):
+            # Get the line
+            line = self.lines[i]
+
+            # Collect the line's nodes for mutual susceptance calculation
+            line1_from, _ = line.get_nodes(network_model)
+
+            # Go through all lines
+            for j in range(len(self.lines)):
+                g = np.real(self.admittances[i][j])
+                b = np.imag(self.admittances[i][j])
+                try:
+                    B = np.imag(self.shunt_admittances[i][j])
+                except IndexError:
+                    B = 0
+
+
+                line2 = self.lines[j]
+                _, line2_to = line2.get_nodes(network_model)
+
+                (line_stamper, shunt_stamper) = self.stampers[(line1_from, line2_to)]
+
+                line_stamper.stamp_dual(Y, J, [g, b, tx_factor], v_previous)
+                shunt_stamper.stamp_dual(Y, J, [B/2, tx_factor], v_previous)
+
+
     def calculate_residuals(self, state, v):
         return {}
 

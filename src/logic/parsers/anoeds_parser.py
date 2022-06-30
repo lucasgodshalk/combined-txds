@@ -8,6 +8,8 @@ from logic.networkmodel import DxNetworkModel
 from ditto.readers.gridlabd.read import Reader
 from ditto.store import Store
 import ditto.models.load
+from logic.powerflowsettings import PowerFlowSettings
+from models.shared.L2infeasibility import L2InfeasibilityCurrent
 from models.shared.slack import Slack
 
 from models.threephase.pq_load import PQLoad
@@ -44,8 +46,9 @@ class Parser:
 
     _phase_to_angle = _phase_to_radians
 
-    def __init__(self, input_file, optimization_enabled: bool):
+    def __init__(self, input_file, settings: PowerFlowSettings, optimization_enabled: bool):
         self.input_file_path = os.path.abspath(input_file)
+        self.settings = settings
         self.optimization_enabled = optimization_enabled
 
     def parse(self):
@@ -71,6 +74,9 @@ class Parser:
 
 
         self.create_transmission_lines(simulation_state)
+
+        if self.settings.infeasibility_analysis:
+            self.setup_infeasibility(simulation_state)
 
         return simulation_state
     
@@ -283,7 +289,7 @@ class Parser:
         
         simulation_state.transformers.append(transformer)
     
-    def create_three_phase_transformer(self, model, simulation_state):
+    def create_three_phase_transformer(self, model, simulation_state: DxNetworkModel):
         winding1 = model.windings[0]
         primary_transformer_coil = PrimaryTransformerCoil(winding1.nominal_voltage, winding1.rated_power, winding1.connection_type, winding1.voltage_limit)
         winding2 = model.windings[1]
@@ -298,20 +304,20 @@ class Parser:
             from_bus = simulation_state.bus_name_map[model.from_element + '_' + phase_winding.phase]
             
             # Create a new variable for the voltage equations on the primary coil (not an actual node)
-            real_voltage_idx = simulation_state.next_var_idx.__next__()
-            imag_voltage_idx = simulation_state.next_var_idx.__next__()
-            
 
             primary_phase_coil = TransformerPhaseCoil(phase_winding.phase)
             primary_phase_coil.from_node = from_bus
-            primary_phase_coil.real_voltage_idx = real_voltage_idx
-            primary_phase_coil.imag_voltage_idx = imag_voltage_idx
+            primary_phase_coil.real_voltage_idx = next(simulation_state.next_var_idx)
+            primary_phase_coil.imag_voltage_idx = next(simulation_state.next_var_idx)
+            if self.optimization_enabled:
+                primary_phase_coil.real_lambda_idx = next(simulation_state.next_var_idx)
+                primary_phase_coil.imag_lambda_idx = next(simulation_state.next_var_idx)
             primary_transformer_coil.phase_coils[phase_winding.phase] = primary_phase_coil
 
             # Create a new bus on the secondary coil, for KCL
             secondary_bus = self.create_bus(simulation_state, 0, 0, model.name + "_secondary_", phase_winding.phase)
             to_bus = simulation_state.bus_name_map[model.to_element + '_' + phase_winding.phase]
-            
+
             secondary_phase_coil = TransformerPhaseCoil(phase_winding.phase)
             secondary_phase_coil.secondary_node = secondary_bus
             secondary_phase_coil.to_node = to_bus
@@ -425,6 +431,13 @@ class Parser:
                     
                     transmission_line = TransmissionLine(simulation_state, self.optimization_enabled, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
                     simulation_state.transmission_lines.append(transmission_line)
+
+
+    def setup_infeasibility(self, simulation_state: DxNetworkModel):
+        for bus in simulation_state.buses:
+            current = L2InfeasibilityCurrent(bus)
+            current.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+            simulation_state.infeasibility_currents.append(current)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ from itertools import count
 from logic.parsers.anoeds_parser import Parser
 from logic.powerflowrunner import PowerFlowRunner
 from logic.v_limiting import PositiveSeqVoltageLimiting
-from models.shared.l2infeasibility_current import L2InfeasibilityCurrent
+from models.shared.L2infeasibility import L2InfeasibilityCurrent
 
 class PowerFlow:
     def __init__(self, netlist, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
@@ -60,7 +60,7 @@ class PowerFlow:
             raise Exception("Invalid netlist file format")
 
     def create_three_phase_network(self, optimization_enabled):
-        parser = Parser(self.netlist, optimization_enabled)
+        parser = Parser(self.netlist, self.settings, optimization_enabled)
 
         network_model = parser.parse()
 

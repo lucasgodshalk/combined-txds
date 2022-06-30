@@ -69,12 +69,14 @@ class DxNetworkModel(NetworkModel):
         # All of the regulators
         self.regulators = []
 
+        self.infeasibility_currents = []
+
         # Reference nodes to be removed from the set of equations
         self.reference_r = None
         self.reference_i = None
     
     def get_NR_invariant_elements(self):
-        return self.transmission_lines + self.infinite_sources + self.transformers + self.regulators + self.switches
+        return self.transmission_lines + self.infinite_sources + self.transformers + self.regulators + self.switches + self.infeasibility_currents
 
     def get_NR_variable_elements(self):
         return self.loads + self.capacitors + self.fuses

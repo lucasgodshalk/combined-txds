@@ -3,6 +3,7 @@ from collections import defaultdict
 import math
 import typing
 from logic.lagrangestamper import SKIP, LagrangeStamper
+from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.shared import build_line_stamper
 from models.positiveseq.transformers import xfrmr_lh, Vr_from, Vi_from, Ir_prim, Ii_prim, Vr_sec, Vi_sec, Lr_from, Li_from, Lir_prim, Lii_prim, Lvr_sec, Lvi_sec
 from models.threephase.primary_transformer_coil import PrimaryTransformerCoil
@@ -36,6 +37,8 @@ class Transformer():
             from_bus = self.primary_coil.phase_coils[pos_phase_1].from_node
             v_r_p = self.primary_coil.phase_coils[pos_phase_1].real_voltage_idx
             v_i_p = self.primary_coil.phase_coils[pos_phase_1].imag_voltage_idx
+            L_r_p = self.primary_coil.phase_coils[pos_phase_1].real_lambda_idx
+            L_i_p = self.primary_coil.phase_coils[pos_phase_1].imag_lambda_idx
             secondary_bus = self.secondary_coil.phase_coils[pos_phase_2].secondary_node
             to_bus = self.secondary_coil.phase_coils[pos_phase_2].to_node
 
@@ -49,8 +52,8 @@ class Transformer():
 
             index_map[Lr_from] = from_bus.node_lambda_Vr
             index_map[Li_from] = from_bus.node_lambda_Vi
-            index_map[Lir_prim] = SKIP
-            index_map[Lii_prim] = SKIP
+            index_map[Lir_prim] = L_r_p
+            index_map[Lii_prim] = L_i_p
             index_map[Lvr_sec] = secondary_bus.node_lambda_Vr
             index_map[Lvi_sec] = secondary_bus.node_lambda_Vi
 
@@ -70,7 +73,7 @@ class Transformer():
 
             self.stampers[(pos_phase_1, pos_phase_2)] = (xfrmr_stamper, losses_stamper)
         
-    def stamp_primal(self, Y, J, v_previous, tx_factor, state):
+    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
         phase_list = self.get_phase_list()
 
         for (pos_phase_1, neg_phase_1, pos_phase_2, neg_phase_2) in phase_list:
@@ -86,7 +89,7 @@ class Transformer():
             xfrmr_stamper.stamp_primal(Y, J, [self.turn_ratio, self.phase_shift, tx_factor], v_previous)
             losses_stamper.stamp_primal(Y, J, [g, -b, tx_factor], v_previous)
             
-            return            
+            continue            
 
             v_r_f, v_i_f = (self.primary_coil.phase_coils[pos_phase_1].from_node.node_Vr, self.primary_coil.phase_coils[pos_phase_1].from_node.node_Vi)
             v_r_p = self.primary_coil.phase_coils[pos_phase_1].real_voltage_idx
@@ -144,7 +147,7 @@ class Transformer():
 
 
             # Stamps to the negative terminal (neutral when wye, not neutral when delta)
-            if neg_phase_1 is not "N" and neg_phase_2 is not "N":
+            if neg_phase_1 != "N" and neg_phase_2 != "N":
                 v_r_fn, v_i_fn = state.bus_map[self.primary_coil.phase_coils[neg_phase_1].from_node]
                 v_r_tn, v_i_tn = state.bus_map[self.secondary_coil.phase_coils[neg_phase_2].to_node]
 
@@ -165,7 +168,23 @@ class Transformer():
                 Y.stamp(v_r_tn, v_i_p, self.turn_ratio * math.sin(self.phase_shift))
                 Y.stamp(v_i_tn, v_r_p, -self.turn_ratio * math.sin(self.phase_shift))
                 Y.stamp(v_i_tn, v_i_p, self.turn_ratio * math.cos(self.phase_shift))
-        
+
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+        phase_list = self.get_phase_list()
+
+        for (pos_phase_1, neg_phase_1, pos_phase_2, neg_phase_2) in phase_list:
+
+            xfrmr_stamper, losses_stamper = self.stampers[(pos_phase_1, pos_phase_2)]
+
+            # Values for the secondary coil stamps, converted out of per-unit
+            r = self.secondary_coil.resistance * self.secondary_coil.nominal_voltage ** 2  / self.secondary_coil.rated_power
+            x = self.secondary_coil.reactance * self.secondary_coil.nominal_voltage ** 2  / self.secondary_coil.rated_power
+            g = r / (r**2 + x**2)
+            b = -x / (r**2 + x**2)
+
+            xfrmr_stamper.stamp_dual(Y, J, [self.turn_ratio, self.phase_shift, tx_factor], v_previous)
+            losses_stamper.stamp_dual(Y, J, [g, -b, tx_factor], v_previous)
+
     def calculate_residuals(self, state, v):
         phase_list = self.get_phase_list()
         residual_contributions = defaultdict(lambda: 0)
