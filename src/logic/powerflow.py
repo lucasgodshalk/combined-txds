@@ -9,6 +9,7 @@ from logic.parsers.parser import parse_raw
 from itertools import count
 from logic.parsers.anoeds_parser import Parser
 from logic.powerflowrunner import PowerFlowRunner
+from logic.powerflowresults import PowerFlowResults
 from logic.v_limiting import PositiveSeqVoltageLimiting
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
 
@@ -18,8 +19,6 @@ class PowerFlow:
         self.settings = settings
 
     def execute(self):
-        print("Running power flow solver...")
-
         start_time = time.perf_counter_ns()
 
         (network_model, v_init, size_Y) = self.create_network()
@@ -34,20 +33,11 @@ class PowerFlow:
 
         is_success, v_final, iteration_num, tx_factor = homotopy_controller.run_powerflow(v_init)
 
-        if is_success:
-            print(f'Power flow solver converged after {iteration_num} iterations.')
-        else:
-            print(f'Power flow solver FAILED after {iteration_num} iterations (tx-factor {tx_factor}).')
-
         end_time = time.perf_counter_ns()
 
         duration_seconds = (end_time * 1.0 - start_time * 1.0) / math.pow(10, 9)
 
-        print(f'Ran for {"{:.3f}".format(duration_seconds)} seconds')
-
-        #results = process_results(raw_data, v_final, duration_seconds, settings)
-
-        return v_final
+        return PowerFlowResults(is_success, iteration_num, duration_seconds, network_model, v_final, self.settings)
     
     def create_network(self):
         optimization_enabled = self.settings.infeasibility_analysis

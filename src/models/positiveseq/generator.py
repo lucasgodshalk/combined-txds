@@ -18,7 +18,7 @@ lagrange = Lr * F_Vr + Li * F_Vi + LQ * F_Q
 
 lh = LagrangeHandler(lagrange, constants, primals, duals)
 
-class Generators:
+class Generator:
     _ids = count(0)
 
     def __init__(self,

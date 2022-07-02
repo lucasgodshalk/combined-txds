@@ -2,14 +2,14 @@ from typing import List
 import numpy as np
 from logic.powerflowsettings import PowerFlowSettings
 from models.shared.bus import Bus
-from models.positiveseq.generators import Generators
+from models.positiveseq.generator import Generator
 from models.shared.slack import Slack
 
 BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0
 BUS_Q_FLAT = -1
 
-def initialize_postive_seq(Y_size, buses: List[Bus], generators: List[Generators], slacks: List[Slack], settings: PowerFlowSettings):
+def initialize_postive_seq(Y_size, buses: List[Bus], generators: List[Generator], slacks: List[Slack], settings: PowerFlowSettings):
     v_init = np.zeros(Y_size)
 
     for bus in buses:

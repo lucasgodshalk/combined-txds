@@ -18,7 +18,8 @@ lagrange = Lr * F_Ir + Li * F_Ii
 
 lh = LagrangeHandler(lagrange, constants, primals, duals)
 
-class Loads:
+#Represents a positive sequence or single phase load.
+class PQLoad:
     _ids = count(0)
 
     def __init__(self,
@@ -44,7 +45,7 @@ class Loads:
             area (int): location where the load is assigned to.
             status (bool): indicates if the load is in-service or out-of-service.
         """
-        self.id = Loads._ids.__next__()
+        self.id = PQLoad._ids.__next__()
 
         self.bus = bus
         self.P = P / 100

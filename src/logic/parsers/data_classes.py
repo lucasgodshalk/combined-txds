@@ -17,8 +17,8 @@ from logic.global_vars import global_vars
 
 from models.positiveseq.branches import Branches
 from models.shared.bus import Bus
-from models.positiveseq.generators import Generators
-from models.shared.loads import Loads
+from models.positiveseq.generator import Generator
+from models.shared.pqload import PQLoad
 from models.shared.slack import Slack
 from models.positiveseq.shunts import Shunts
 from logic.parsers.parse_transformers import TwoWindingXfmrs, ThreeWindingXfmrs
@@ -91,7 +91,7 @@ class Load_data:
         self.scale = scale
 
     def integrate(self, all_bus_key: typing.Dict[int, Bus]):
-        new_load = Loads(all_bus_key[self.i], self.pl, self.ql, self.ip, self.iq,
+        new_load = PQLoad(all_bus_key[self.i], self.pl, self.ql, self.ip, self.iq,
                          self.yp, self.yq, self.area, self.status)
         return (new_load)
 
@@ -223,13 +223,13 @@ class Generator_data:
     def integrate(self, all_bus_key: typing.Dict[int, Bus], isGenerator=True):
         if isGenerator:
             self.rmpct = self.rmpct
-            new_obj = Generators(all_bus_key[self.i], self.pg, self.vs, self.qt, self.qb,
+            new_obj = Generator(all_bus_key[self.i], self.pg, self.vs, self.qt, self.qb,
                                  self.pt, self.pb, self.qg, self.ireg, self.rmpct, GenType.Generation)
 
         else:
             area = -1
             status = 1
-            new_obj = Loads(all_bus_key[self.i], -self.pg, -self.qg, 0.0, 0.0, 0.0, 0.0, area, status)
+            new_obj = PQLoad(all_bus_key[self.i], -self.pg, -self.qg, 0.0, 0.0, 0.0, 0.0, area, status)
 
         return new_obj
 

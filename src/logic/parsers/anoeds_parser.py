@@ -12,10 +12,8 @@ from logic.powerflowsettings import PowerFlowSettings
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
 from models.shared.slack import Slack
 
-from models.threephase.pq_load import PQLoad
-from models.shared.loads import Loads
+from models.shared.pqload import PQLoad
 from models.shared.bus import Bus
-from models.threephase.infinite_source import InfiniteSource
 from models.threephase.transformer import Transformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
 from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
@@ -86,10 +84,9 @@ class Parser:
         for model in self.ditto_store.models:
 
             if isinstance(model, ditto.models.node.Node) or isinstance(model, ditto.models.power_source.PowerSource):
+                isSlack = False
                 if isinstance(model, ditto.models.power_source.PowerSource) or (hasattr(model, "bustype") and model._bustype == "SWING"):
-                    infinite_source = InfiniteSource()
-                else:
-                    infinite_source = None
+                    isSlack = True
 
                 for phase in model.phases:
                     if phase.default_value in self._phase_to_angle:
@@ -107,21 +104,19 @@ class Parser:
                                 v_ang = self._phase_to_angle[phase.default_value]
 
                             bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase.default_value)
+                            simulation_state.buses.append(bus)
 
-                        if infinite_source is not None:
+                        if isSlack:
                             # Create this phase of the slack bus
                             slack = Slack(bus, v_mag, v_ang, 0, 0)
                             slack.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
-                            infinite_source.phase_slack_buses.append(slack)
+                            simulation_state.slack.append(slack)
                             
-                if infinite_source is not None:
-                    simulation_state.infinite_sources.append(infinite_source)    
 
     def create_bus(self, simulation_state, v_mag, v_ang, node_name, node_phase):
         bus_id = next(self._bus_index)
         bus = Bus(bus_id, 1, v_mag, v_ang, None, node_name, node_phase)
         bus.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
-        simulation_state.buses.append(bus)
         simulation_state.bus_name_map[node_name + "_" + node_phase] = bus
         return bus            
 
@@ -156,7 +151,6 @@ class Parser:
                         resistive_load.phase_loads.append(ResistivePhaseLoad(v_r, v_i, phase_load.z, phase_load.phase, bus_id))
                     simulation_state.loads.append(resistive_load)
                 elif any(phaseload.model == 1 for phaseload in model.phase_loads): #model.bustype == "PQ":
-                    pq_load = PQLoad()
                     # Loop through each phase associated with this load
                     for phase_load in model.phase_loads:
                         if (not hasattr(phase_load, "p") or not hasattr(phase_load, "q") or (phase_load.p == 0 and phase_load.q == 0)):
@@ -191,10 +185,9 @@ class Parser:
 
                             bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase_load.phase)
 
-                        phase_load = Loads(bus, phase_load.p, phase_load.q, 0, 0, 0, 0, None, None)
+                        phase_load = PQLoad(bus, phase_load.p, phase_load.q, 0, 0, 0, 0, None, None)
                         phase_load.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
-                        pq_load.phase_loads.append(phase_load)
-                    simulation_state.loads.append(pq_load)
+                        simulation_state.loads.append(phase_load)
                 # TODO add cases for other types (ZIP, etc)
                 
                     

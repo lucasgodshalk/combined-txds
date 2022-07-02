@@ -1,7 +1,6 @@
 from collections import defaultdict
 from logic.parsers.anoeds_parser import Parser
 from models.threephase.resistive_load import ResistiveLoad
-from models.threephase.pq_load import PQLoad
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve

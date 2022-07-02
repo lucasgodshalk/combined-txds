@@ -4,6 +4,7 @@ import math
 import typing
 from logic.lagrangestamper import SKIP
 
+#Represents an interconnection point for other network element with a shared voltage. In the three-phase case, this is used for a single phase.
 class Bus:
     def __init__(self,
                  Bus,
@@ -13,8 +14,7 @@ class Bus:
                  Area,
                  NodeName = None,
                  NodePhase = None):
-        """Initialize an instance of the Buses class.
-
+        """
         Args:
             Bus (int): The bus number.
             Type (int): The type of bus (e.g., PV, PQ, of Slack)
