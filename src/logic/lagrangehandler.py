@@ -1,6 +1,6 @@
 from collections import defaultdict
 import typing
-from sympy import Add, diff, lambdify, Eq, simplify, expand  
+from sympy import Add, diff, lambdify, expand, Pow
 
 def is_constant(expr, vars):
     for symbol in expr.free_symbols:
@@ -12,13 +12,14 @@ def is_linear(expr, vars):
     if is_constant(expr, vars):
         return False
 
-    for x in vars:
-        for y in vars:
-            try: 
-                if not Eq(diff(expr, x, y), 0):
-                    return False
-            except TypeError:
+    var_found = False
+    for symbol in expr.free_symbols:
+        if symbol in vars:
+            if var_found:
                 return False
+            elif len(expr.atoms(Pow)) > 0:
+                return False
+            var_found = True
     return True 
 
 def get_linear_term(expr, vars):
@@ -93,6 +94,9 @@ class DerivativeEntry:
             yield(variable, func)
 
 class LagrangeHandler:
+    #Increment whenever you make changes to langrangian handling.
+    VERSION = 1
+
     def __init__(self, lagrange, constant_symbols, primal_symbols, dual_symbols) -> None:
         self.lagrange = lagrange
         self.constants = constant_symbols
@@ -112,3 +116,4 @@ class LagrangeHandler:
             constant_expr, variable_exprs = split_expr(derivative, self.variables)
 
             self.derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, lambda_inputs)
+    
