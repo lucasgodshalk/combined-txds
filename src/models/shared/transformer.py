@@ -12,8 +12,8 @@ from models.positiveseq.shared import build_line_stamper
 from models.shared.bus import Bus
 
 constants = tr, ang, tx_factor = symbols('tr ang tx_factor')
-primals = [Vr_from, Vi_from, Ir_prim, Ii_prim, Vr_sec, Vi_sec] = symbols('V_r V_i I_pri\,r I_pri\,i V_sec\,r V_sec\,i')
-duals = [Lr_from, Li_from, Lir_prim, Lii_prim, Lvr_sec, Lvi_sec] = symbols('lambda_r lambda_i lambda_pri\,Ir lambda_pri\,Ii lambda_sec\,Vr lambda_sec\,Vi')
+primals = [Vr_pri_pos, Vr_pri_neg, Vi_pri_pos, Vi_pri_neg, Ir_prim, Ii_prim, Vr_sec_pos, Vi_sec_pos, Vr_sec_neg, Vi_sec_neg] = symbols('V_r_pri_pos V_r_pri_neg V_i_pri_pos V_i_pri_neg I_pri_r I_pri_i V_r_sec_pos V_r_sec_neg V_i_sec_pos V_i_sec_neg')
+duals = [Lr_pri_pos, Lr_pri_neg, Li_pri_pos, Li_pri_neg, Lir_prim, Lii_prim, Lr_sec_pos, Li_sec_pos, Lr_sec_neg, Li_sec_neg] = symbols('L_r_pri_pos L_r_pri_neg L_i_pri_pos L_i_pri_neg L_I_pri_r L_I_pri_i L_r_sec_pos L_r_sec_neg L_i_sec_pos L_i_sec_neg')
 
 scaled_tr = tr + (1 - tr) * tx_factor 
 scaled_angle = ang - ang * tx_factor
@@ -21,13 +21,20 @@ scaled_angle = ang - ang * tx_factor
 scaled_trcos = scaled_tr * cos(scaled_angle)
 scaled_trsin = scaled_tr * sin(scaled_angle)
 
+secondary_current_r = -scaled_trcos * Ir_prim - scaled_trsin * Ii_prim
+secondary_current_i = -scaled_trcos * Ii_prim + scaled_trsin * Ir_prim
+
 eqns = [
     Ir_prim,
     Ii_prim,
-    Vr_from - scaled_trcos * Vr_sec + scaled_trsin * Vi_sec,
-    Vi_from - scaled_trcos * Vi_sec - scaled_trsin * Vr_sec,
-    -scaled_trcos * Ir_prim - scaled_trsin * Ii_prim,
-    -scaled_trcos * Ii_prim + scaled_trsin * Ir_prim
+    -Ir_prim,
+    -Ii_prim,
+    (Vr_pri_pos - Vr_pri_neg) - scaled_trcos * (Vr_sec_pos - Vr_sec_neg) + scaled_trsin * (Vi_sec_pos - Vi_sec_neg),
+    (Vi_pri_pos - Vi_pri_neg) - scaled_trcos * (Vi_sec_pos - Vi_sec_neg) - scaled_trsin * (Vr_sec_pos - Vr_sec_neg),
+    secondary_current_r,
+    secondary_current_i,
+    -secondary_current_r,
+    -secondary_current_i
 ]
 
 lagrange = np.dot(duals, eqns)
@@ -38,8 +45,10 @@ class Transformer:
     _ids = count(0)
 
     def __init__(self,
-                 from_bus: Bus,
-                 to_bus: Bus,
+                 from_bus_pos: Bus,
+                 from_bus_neg: Bus,
+                 to_bus_pos: Bus,
+                 to_bus_neg: Bus,
                  r,
                  x,
                  status,
@@ -48,24 +57,13 @@ class Transformer:
                  Gsh_raw,
                  Bsh_raw,
                  rating):
-        """Initialize a transformer instance
 
-        Args:
-            from_bus (int): the primary or sending end bus of the transformer.
-            to_bus (int): the secondary or receiving end bus of the transformer
-            r (float): the line resitance of the transformer in
-            x (float): the line reactance of the transformer
-            status (int): indicates if the transformer is active or not
-            tr (float): transformer turns ratio
-            ang (float): the phase shift angle of the transformer
-            Gsh_raw (float): the shunt conductance of the transformer
-            Bsh_raw (float): the shunt admittance of the transformer
-            rating (float): the rating in MVA of the transformer
-        """
         self.id = self._ids.__next__()
 
-        self.from_bus = from_bus
-        self.to_bus = to_bus
+        self.from_bus_pos = from_bus_pos
+        self.from_bus_neg = from_bus_neg
+        self.to_bus_pos = to_bus_pos
+        self.to_bus_neg = to_bus_neg
 
         self.r = r
         self.x = x
@@ -96,31 +94,39 @@ class Transformer:
             self.node_secondary_Lambda_Vi = SKIP
 
         index_map = {}
-        index_map[Vr_from] = self.from_bus.node_Vr
-        index_map[Vi_from] = self.from_bus.node_Vi
+        index_map[Vr_pri_pos] = self.from_bus_pos.node_Vr
+        index_map[Vi_pri_pos] = self.from_bus_pos.node_Vi
+        index_map[Vr_pri_neg] = self.from_bus_neg.node_Vr
+        index_map[Vi_pri_neg] = self.from_bus_neg.node_Vi
         index_map[Ir_prim] = self.node_primary_Ir
         index_map[Ii_prim] = self.node_primary_Ii
-        index_map[Vr_sec] = self.node_secondary_Vr
-        index_map[Vi_sec] = self.node_secondary_Vi
+        index_map[Vr_sec_pos] = self.node_secondary_Vr
+        index_map[Vi_sec_pos] = self.node_secondary_Vi
+        index_map[Vr_sec_neg] = self.to_bus_neg.node_Vr
+        index_map[Vi_sec_neg] = self.to_bus_neg.node_Vi
 
-        index_map[Lr_from] = self.from_bus.node_lambda_Vr
-        index_map[Li_from] = self.from_bus.node_lambda_Vi
+        index_map[Lr_pri_pos] = self.from_bus_pos.node_lambda_Vr
+        index_map[Li_pri_pos] = self.from_bus_pos.node_lambda_Vi
+        index_map[Lr_pri_neg] = self.from_bus_neg.node_lambda_Vr
+        index_map[Li_pri_neg] = self.from_bus_neg.node_lambda_Vi
         index_map[Lir_prim] = self.node_primary_Lambda_Ir
         index_map[Lii_prim] = self.node_primary_Lambda_Ii
-        index_map[Lvr_sec] = self.node_secondary_Lambda_Vr
-        index_map[Lvi_sec] = self.node_secondary_Lambda_Vi
+        index_map[Lr_sec_pos] = self.node_secondary_Lambda_Vr
+        index_map[Li_sec_pos] = self.node_secondary_Lambda_Vi
+        index_map[Lr_sec_neg] = self.to_bus_neg.node_lambda_Vr
+        index_map[Li_sec_neg] = self.to_bus_neg.node_lambda_Vi
 
         self.xfrmr_stamper = LagrangeStamper(xfrmr_lh, index_map, optimization_enabled)
 
         self.losses_stamper = build_line_stamper(
             self.node_secondary_Vr, 
             self.node_secondary_Vi, 
-            self.to_bus.node_Vr, 
-            self.to_bus.node_Vi,
+            self.to_bus_pos.node_Vr, 
+            self.to_bus_pos.node_Vi,
             self.node_secondary_Lambda_Vr, 
             self.node_secondary_Lambda_Vi, 
-            self.to_bus.node_lambda_Vr, 
-            self.to_bus.node_lambda_Vi,
+            self.to_bus_pos.node_lambda_Vr, 
+            self.to_bus_pos.node_lambda_Vi,
             optimization_enabled
             )
 
