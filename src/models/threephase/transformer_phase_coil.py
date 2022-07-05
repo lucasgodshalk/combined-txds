@@ -27,17 +27,9 @@ class TransformerPhaseCoil(Edge):
 
         self.from_node: Bus
         self.to_node: Bus
-        self.secondary_node: Bus
 
         self.from_node = None
         self.to_node = None
-        self.secondary_node = None
-
-        self.real_voltage_idx = -1
-        self.imag_voltage_idx = -1
-
-        self.real_lambda_idx = SKIP
-        self.imag_lambda_idx = SKIP
 
         ##### TODO choose correct representation #####
 

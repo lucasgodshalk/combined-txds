@@ -294,25 +294,14 @@ class Parser:
         phases = []
         for phase_winding in winding1.phase_windings:
             phases.append(phase_winding.phase)
-            from_bus = simulation_state.bus_name_map[model.from_element + '_' + phase_winding.phase]
             
-            # Create a new variable for the voltage equations on the primary coil (not an actual node)
-
             primary_phase_coil = TransformerPhaseCoil(phase_winding.phase)
+            from_bus = simulation_state.bus_name_map[model.from_element + '_' + phase_winding.phase]
             primary_phase_coil.from_node = from_bus
-            primary_phase_coil.real_voltage_idx = next(simulation_state.next_var_idx)
-            primary_phase_coil.imag_voltage_idx = next(simulation_state.next_var_idx)
-            if self.optimization_enabled:
-                primary_phase_coil.real_lambda_idx = next(simulation_state.next_var_idx)
-                primary_phase_coil.imag_lambda_idx = next(simulation_state.next_var_idx)
             primary_transformer_coil.phase_coils[phase_winding.phase] = primary_phase_coil
 
-            # Create a new bus on the secondary coil, for KCL
-            secondary_bus = self.create_bus(simulation_state, 0, 0, model.name + "_secondary_", phase_winding.phase)
-            to_bus = simulation_state.bus_name_map[model.to_element + '_' + phase_winding.phase]
-
             secondary_phase_coil = TransformerPhaseCoil(phase_winding.phase)
-            secondary_phase_coil.secondary_node = secondary_bus
+            to_bus = simulation_state.bus_name_map[model.to_element + '_' + phase_winding.phase]
             secondary_phase_coil.to_node = to_bus
             secondary_transformer_coil.phase_coils[phase_winding.phase] = secondary_phase_coil
 
@@ -325,7 +314,17 @@ class Parser:
         else:
             g_shunt = 0
             b_shunt = 0
-        transformer = ThreePhaseTransformer(primary_transformer_coil, secondary_transformer_coil, phases, turn_ratio, phase_shift, g_shunt, b_shunt, self.optimization_enabled)
+        transformer = ThreePhaseTransformer(
+            primary_transformer_coil, 
+            secondary_transformer_coil, 
+            phases, 
+            turn_ratio, 
+            phase_shift, 
+            g_shunt, 
+            b_shunt, 
+            self.optimization_enabled,
+            simulation_state.next_var_idx
+            )
         simulation_state.transformers.append(transformer)
     
     def create_capacitors(self, simulation_state):
