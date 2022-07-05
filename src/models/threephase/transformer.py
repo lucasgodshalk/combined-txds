@@ -5,7 +5,7 @@ import typing
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.shared import build_line_stamper
-from models.positiveseq.transformers import xfrmr_lh, Vr_from, Vi_from, Ir_prim, Ii_prim, Vr_sec, Vi_sec, Lr_from, Li_from, Lir_prim, Lii_prim, Lvr_sec, Lvi_sec
+from models.positiveseq.transformer import xfrmr_lh, Vr_from, Vi_from, Ir_prim, Ii_prim, Vr_sec, Vi_sec, Lr_from, Li_from, Lir_prim, Lii_prim, Lvr_sec, Lvi_sec
 from models.threephase.primary_transformer_coil import PrimaryTransformerCoil
 from models.threephase.secondary_transformer_coil import SecondaryTransformerCoil
 

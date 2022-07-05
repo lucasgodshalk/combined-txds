@@ -12,7 +12,7 @@ import copy
 import typing
 from models.shared.bus import Bus
 
-from models.positiveseq.transformers import Transformers
+from models.positiveseq.transformer import Transformer
 
 class TwoWindingXfmrs:
 
@@ -177,7 +177,7 @@ class TwoWindingXfmrs:
 
     def createXfmrObject(self, all_bus_key: typing.Dict[int, Bus]):
         if self.mStatus:
-            new_xfmr = Transformers(all_bus_key[int(self.mPrimaryBus)], all_bus_key[int(self.mSecondaryBus)], self.mRLoss,
+            new_xfmr = Transformer(all_bus_key[int(self.mPrimaryBus)], all_bus_key[int(self.mSecondaryBus)], self.mRLoss,
                                     self.mXLoss, self.mStatus, self.mTR,
                                     self.mAng, self.mGmag, self.mBmag, self.mMaxRating)
 
@@ -378,7 +378,7 @@ class ThreeWindingXfmrs(object):
         xfmrs = []
         if self.mWindingStatus[0]:
             self.mMaxRatingA = max(self.mRatingA[0], self.mRatingA[1], self.mRatingA[2])
-            new_3xfmr1 = Transformers(all_bus_key[int(self.mPrimaryBus[0])], all_bus_key[int(self.mSecondaryBus[0])], self.mR1,
+            new_3xfmr1 = Transformer(all_bus_key[int(self.mPrimaryBus[0])], all_bus_key[int(self.mSecondaryBus[0])], self.mR1,
                                       self.mX1, self.mWindingStatus[0], self.mTR[0], self.mAng[0],
                                       self.mGmag[0], self.mBmag[0], self.mMaxRatingA)
             xfmrs.append(new_3xfmr1)
@@ -389,7 +389,7 @@ class ThreeWindingXfmrs(object):
         # self.mRating[0]
         if self.mWindingStatus[1]:
             self.mMaxRatingB = max(self.mRatingB[0], self.mRatingB[1], self.mRatingB[2])
-            new_3xfmr2 = Transformers(all_bus_key[int(self.mPrimaryBus[1])], all_bus_key[int(self.mSecondaryBus[1])], self.mR2,
+            new_3xfmr2 = Transformer(all_bus_key[int(self.mPrimaryBus[1])], all_bus_key[int(self.mSecondaryBus[1])], self.mR2,
                                       self.mX2, self.mWindingStatus[1], self.mTR[1], self.mAng[1],
                                       0, 0, self.mMaxRatingB)
             xfmrs.append(new_3xfmr2)
@@ -400,7 +400,7 @@ class ThreeWindingXfmrs(object):
         # self.mRating[1]
         if self.mWindingStatus[2]:
             self.mMaxRatingC = max(self.mRatingC[0], self.mRatingC[1], self.mRatingC[2])
-            new_3xfmr3 = Transformers(all_bus_key[int(self.mPrimaryBus[2])], all_bus_key[int(self.mSecondaryBus[2])], self.mR3,
+            new_3xfmr3 = Transformer(all_bus_key[int(self.mPrimaryBus[2])], all_bus_key[int(self.mSecondaryBus[2])], self.mR3,
                                       self.mX3, self.mWindingStatus[2], self.mTR[2], self.mAng[2],
                                       0, 0, self.mMaxRatingC)
             xfmrs.append(new_3xfmr3)
