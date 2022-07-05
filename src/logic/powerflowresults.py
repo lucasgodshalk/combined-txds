@@ -6,16 +6,20 @@ from logic.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
 from models.shared.bus import Bus
 
+class GENTYPE:
+    PQ = "PQ"
+    Slack = "Slack"
+    Inf = "Inf"
 
 class GeneratorResult:
-    def __init__(self, generator, P, Q, is_slack):
+    def __init__(self, generator, P, Q, type_str):
         self.generator = generator
         self.P = P * 100
         self.Q = Q * 100
-        self.is_slack = is_slack
+        self.type_str = type_str
 
     def __str__(self) -> str:
-        name = "Slack" if self.is_slack else "Generator"
+        name = self.type_str
         return f'{name} @ bus {self.generator.bus.Bus} P (MW): {"{:.2f}".format(self.P)}, Q (MVar): {"{:.2f}".format(self.Q)}'
 
 class BusResult:
@@ -68,14 +72,25 @@ class PowerFlowResults:
             Q = -v_final[generator.bus.node_Q]
             P = -generator.P
 
-            self.generator_results.append(GeneratorResult(generator, P, Q, False))
+            self.generator_results.append(GeneratorResult(generator, P, Q, GENTYPE.PQ))
 
         for slack in self.network.slack:
+            Vr = v_final[slack.bus.node_Vr]
+            Vi = v_final[slack.bus.node_Vi]
             slack_Ir = v_final[slack.slack_Ir]
-            slack_Vr = slack.Vr_set
-            P = slack_Vr * slack_Ir * math.cos(slack.ang_rad)
-            Q = slack_Vr * slack_Ir * math.sin(slack.ang_rad)
-            self.generator_results.append(GeneratorResult(slack, P, Q, True))
+            slack_Ii = v_final[slack.slack_Ii]
+            P = Vr * slack_Ir
+            Q = Vi * slack_Ii
+            self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Slack))
+
+        for infeasibility_current in self.network.infeasibility_currents:
+            Vr = v_final[infeasibility_current.bus.node_Vr]
+            Vi = v_final[infeasibility_current.bus.node_Vi]
+            inf_Ir = v_final[infeasibility_current.node_Ir_inf]
+            inf_Ii = v_final[infeasibility_current.node_Ii_inf]
+            P = Vr * inf_Ir
+            Q = Vi * inf_Ii
+            self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Inf))            
 
     def display(self, verbose=False):
         print("=====================")
@@ -89,6 +104,13 @@ class PowerFlowResults:
         max_residual, residuals = self.calculate_residuals()
 
         print(f'Max Residual: {"{:.3f}".format(max_residual)}')
+
+        if self.settings.infeasibility_analysis:
+            results = self.report_infeasible()
+            P_sum = sum([result.P for result in results])
+            Q_sum = sum([result.Q for result in results])
+            print(f'Inf P: {P_sum:.3g}')
+            print(f'Inf Q: {Q_sum:.3g}')
 
         if verbose:
             self.__display_verbose()
@@ -106,21 +128,14 @@ class PowerFlowResults:
         for gen in self.generator_results:
             print(gen)
 
-        inf_total_r = 0#sum(abs(bus.I_inf_r) for bus in self.bus_results)
-        inf_total_i = 0#sum(abs(bus.I_inf_i) for bus in self.bus_results)
-
-        print("Total Infeasibility Current (abs):")
-        inf_total_r_str = "{:.3f}".format(inf_total_r)
-        inf_total_i_str = "{:.3f}".format(inf_total_i)
-        print(f'Real: {inf_total_r_str}, Imag: {inf_total_i_str}')
-
     def calculate_residuals(self):
         all_elements = self.network.get_NR_invariant_elements() + self.network.get_NR_variable_elements()
 
         residuals = np.zeros(len(self.v_final))
 
         for element in all_elements:
-            for (index, value) in element.calculate_residuals(self.network, self.v_final).items():
+            element_residuals = element.calculate_residuals(self.network, self.v_final)
+            for (index, value) in element_residuals.items():
                 residuals[index] += value
 
         max_residual = np.amax(np.abs(residuals))
@@ -128,23 +143,17 @@ class PowerFlowResults:
         return (max_residual, residuals)
 
     def report_infeasible(self):
-        largest = []
+        results = []
 
-        for bus_result in self.bus_results:
-            (I_r, I_i) = bus_result.get_infeasible()
-            if abs(I_r) < 1e-5 and abs(I_i) < 1e-5:
+        for gen_result in self.generator_results:
+            (P, Q) = gen_result.P, gen_result.Q
+            if abs(P) < 1e-5 and abs(Q) < 1e-5:
                 continue
 
-            if len(largest) == 0:
-                largest.append(bus_result)
-                continue
+            if gen_result.type_str == GENTYPE.Inf:
+                results.append(gen_result)
 
-            (I_r_next, I_i_next) = largest[-1].get_infeasible()
-
-            if abs(I_r) >= abs(I_r_next) or abs(I_i) >= abs(I_i_next):
-                largest.append(bus_result)
-
-        return largest[-3:]
+        return results
 
 
 def display_mat_comparison(mat, results: PowerFlowResults):
