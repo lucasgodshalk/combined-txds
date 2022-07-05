@@ -92,11 +92,13 @@ class TransmissionLine():
             shunt_stamper.stamp_dual(Y, J, [B/2, tx_factor], v_previous)
 
     def calculate_residuals(self, state, v):
-        residuals = {}
+        residuals = defaultdict(lambda:0)
 
         for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
-            residuals.update(line_stamper.calc_residuals([g, b, 1], v))
-            residuals.update(shunt_stamper.calc_residuals([B/2, 1], v)) 
+            for (key, value) in line_stamper.calc_residuals([g, b, 1], v).items():
+                residuals[key] += value
+            for (key, value) in shunt_stamper.calc_residuals([B/2, 1], v).items():
+                residuals[key] += value
 
         return residuals
 
