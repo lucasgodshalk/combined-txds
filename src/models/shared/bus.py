@@ -92,3 +92,4 @@ class Bus:
             self.node_lambda_Vi = SKIP
             self.node_lambda_Q = SKIP
 
+GROUND = Bus(SKIP, "Gnd", 0, 0, None, "Gnd", "Gnd")

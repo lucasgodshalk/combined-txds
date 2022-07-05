@@ -27,6 +27,9 @@ class LagrangeStamper:
         components = []
         for variable in variables:
             row_index = self.get_variable_row_index(variable, optimization_enabled)
+            if row_index == SKIP:
+                continue
+
             entry = self.handler.derivatives[variable]
 
             for (yth_variable, eval) in entry.get_evals():
@@ -35,6 +38,8 @@ class LagrangeStamper:
                     components.append((row_index, None, eval))
                 else:
                     col_index = self.index_map[yth_variable]
+                    if col_index == SKIP:
+                        continue
                     components.append((row_index, col_index, eval))
         
         return components
