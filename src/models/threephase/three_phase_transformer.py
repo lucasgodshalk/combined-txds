@@ -6,15 +6,15 @@ from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.positiveseq.shared import build_line_stamper
 from models.shared.bus import GROUND
-from models.shared.transformer import xfrmr_lh
-from models.shared.transformer import Vr_pri_pos, Vr_pri_neg, Vi_pri_pos, Vi_pri_neg, Ir_prim, Ii_prim, Vr_sec_pos, Vr_sec_neg, Vi_sec_pos, Vi_sec_neg, Lr_pri_pos, Lr_pri_neg, Li_pri_pos, Li_pri_neg, Lir_prim, Lii_prim, Lr_sec_pos, Lr_sec_neg, Li_sec_pos, Li_sec_neg
+from models.shared.single_phase_transformer import xfrmr_lh
+from models.shared.single_phase_transformer import Vr_pri_pos, Vr_pri_neg, Vi_pri_pos, Vi_pri_neg, Ir_prim, Ii_prim, Vr_sec_pos, Vr_sec_neg, Vi_sec_pos, Vi_sec_neg, Lr_pri_pos, Lr_pri_neg, Li_pri_pos, Li_pri_neg, Lir_prim, Lii_prim, Lr_sec_pos, Lr_sec_neg, Li_sec_pos, Li_sec_neg
 from models.threephase.primary_transformer_coil import PrimaryTransformerCoil
 from models.threephase.secondary_transformer_coil import SecondaryTransformerCoil
 
 
 NEUTRAL = "N"
 
-class Transformer():
+class ThreePhaseTransformer():
     
     def __init__(self
                 , primary_coil: PrimaryTransformerCoil

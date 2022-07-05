@@ -14,7 +14,7 @@ from models.shared.slack import Slack
 
 from models.shared.pqload import PQLoad
 from models.shared.bus import Bus
-from models.threephase.transformer import Transformer
+from models.threephase.three_phase_transformer import ThreePhaseTransformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
 from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
 from models.threephase.transformer_phase_coil import TransformerPhaseCoil
@@ -325,7 +325,7 @@ class Parser:
         else:
             g_shunt = 0
             b_shunt = 0
-        transformer = Transformer(primary_transformer_coil, secondary_transformer_coil, phases, turn_ratio, phase_shift, g_shunt, b_shunt, self.optimization_enabled)
+        transformer = ThreePhaseTransformer(primary_transformer_coil, secondary_transformer_coil, phases, turn_ratio, phase_shift, g_shunt, b_shunt, self.optimization_enabled)
         simulation_state.transformers.append(transformer)
     
     def create_capacitors(self, simulation_state):

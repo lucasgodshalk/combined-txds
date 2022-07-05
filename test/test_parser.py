@@ -5,7 +5,7 @@ from logic.parsers.anoeds_parser import Parser
 from logic.powerflowsettings import PowerFlowSettings
 from models.threephase.resistive_load import ResistiveLoad
 from models.threephase.transmission_line import TransmissionLine
-from models.threephase.transformer import Transformer
+from models.threephase.three_phase_transformer import ThreePhaseTransformer
 from models.threephase.regulator import Regulator
 import os
 from pprint import pprint
@@ -60,7 +60,7 @@ def test_parser_create_xfmr():
     test_parser = Parser(os.path.join(CURR_DIR, glm_file_path), PowerFlowSettings(), False)
     simulation_state = test_parser.parse()
     assert len(simulation_state.transformers) == 1
-    assert isinstance(simulation_state.transformers[0], Transformer)
+    assert isinstance(simulation_state.transformers[0], ThreePhaseTransformer)
 
 
 def test_parser_create_regulator():

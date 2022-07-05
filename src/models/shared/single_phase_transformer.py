@@ -41,7 +41,7 @@ lagrange = np.dot(duals, eqns)
 
 xfrmr_lh = LagrangeHandler(lagrange, constants, primals, duals)
 
-class Transformer:
+class SinglePhaseTransformer:
     _ids = count(0)
 
     def __init__(self,
