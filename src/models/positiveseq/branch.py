@@ -25,7 +25,7 @@ lagrange = np.dot(duals, shunt_eqns)
 
 shunt_lh = LagrangeHandler(lagrange, constants, primals, duals)
 
-class Branches:
+class Branch:
     _ids = count(0)
 
     def __init__(self,

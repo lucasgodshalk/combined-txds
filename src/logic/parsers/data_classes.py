@@ -15,7 +15,7 @@ import numpy as np
 import math
 from logic.global_vars import global_vars
 
-from models.positiveseq.branches import Branches
+from models.positiveseq.branch import Branch
 from models.shared.bus import Bus
 from models.positiveseq.generator import Generator
 from models.shared.pqload import PQLoad
@@ -316,7 +316,7 @@ class Branch_data:
         self.f4 = f4
 
     def integrate(self, all_bus_key: typing.Dict[int, Bus]):
-        new_branch = Branches(all_bus_key[self.i], all_bus_key[self.j], self.r, self.x, self.b, self.st,
+        new_branch = Branch(all_bus_key[self.i], all_bus_key[self.j], self.r, self.x, self.b, self.st,
                               self.rateA, self.rateB, self.rateC)
         shunt_i = None
         shunt_j = None
