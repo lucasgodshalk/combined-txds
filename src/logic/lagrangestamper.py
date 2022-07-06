@@ -1,3 +1,4 @@
+from collections import defaultdict
 from logic.lagrangehandler import LagrangeHandler
 from logic.matrixbuilder import MatrixBuilder
 
@@ -13,20 +14,21 @@ class LagrangeStamper:
     def __init__(self, handler: LagrangeHandler, index_map: dict, optimization_enabled: bool) -> None:
         self.handler = handler
         self.index_map = index_map
+        self.optimization_enabled = optimization_enabled
 
         self.empty_primals = [None] * len(self.handler.primals)
         self.empty_duals = [None] * len(self.handler.duals)
 
         #The 'primal' contributions are really the first derivative of the dual variables.
-        self.primal_components = self.build_component_set(self.handler.duals, optimization_enabled)
+        self.primal_components = self.build_component_set(self.handler.duals)
 
-        if optimization_enabled:
-            self.dual_components = self.build_component_set(self.handler.primals, True)
+        if self.optimization_enabled:
+            self.dual_components = self.build_component_set(self.handler.primals)
 
-    def build_component_set(self, variables, optimization_enabled):
+    def build_component_set(self, variables):
         components = []
         for variable in variables:
-            row_index = self.get_variable_row_index(variable, optimization_enabled)
+            row_index = self.get_variable_row_index(variable)
             if row_index == SKIP:
                 continue
 
@@ -44,8 +46,8 @@ class LagrangeStamper:
         
         return components
     
-    def get_variable_row_index(self, variable, optimization_enabled):
-        if optimization_enabled:
+    def get_variable_row_index(self, variable):
+        if self.optimization_enabled:
             return self.index_map[variable]
         else:
             #For the optimization enabled case, we can't use the dual variable's index
@@ -63,14 +65,21 @@ class LagrangeStamper:
         self.__stamp_set(Y, J, self.dual_components, args)
 
     def calc_residuals(self, constant_vals, v_result):
-        residuals = {}
+        residuals = defaultdict(lambda: 0)
 
         primal_vals, dual_vals = self.__extract_kth_primals_duals(v_result)
         args = constant_vals + primal_vals + dual_vals
 
-        for (variable, derivative) in self.handler.derivatives.items():
-            row_idx = self.index_map[variable]
-            residuals[row_idx] = derivative.derivative_eval(*args)
+        for dual in self.handler.duals:
+            derivative = self.handler.derivatives[dual]
+            row_idx = self.get_variable_row_index(dual)
+            residuals[row_idx] += derivative.derivative_eval(*args)
+
+        if self.optimization_enabled:
+            for primal in self.handler.primals:
+                derivative = self.handler.derivatives[primal]
+                row_idx = self.get_variable_row_index(primal)
+                residuals[row_idx] += derivative.derivative_eval(*args)
 
         return residuals
 
@@ -82,9 +91,12 @@ class LagrangeStamper:
         for primal in self.handler.primals:
             primal_vals.append(v_prev[self.index_map[primal]])
 
-        dual_vals = []
-        for dual in self.handler.duals:
-            dual_vals.append(v_prev[self.index_map[dual]])
+        if self.optimization_enabled:
+            dual_vals = []
+            for dual in self.handler.duals:
+                dual_vals.append(v_prev[self.index_map[dual]])
+        else:
+            dual_vals = self.empty_duals
 
         return (primal_vals, dual_vals)
 

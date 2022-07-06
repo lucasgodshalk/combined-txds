@@ -101,9 +101,9 @@ class PowerFlowResults:
         print(f'Iterations: {self.iterations}')
         print(f'Duration: {"{:.3f}".format(self.duration_sec)}(s)')
 
-        max_residual, residuals = self.calculate_residuals()
+        max_residual, max_residual_index, residuals = self.calculate_residuals()
 
-        print(f'Max Residual: {"{:.3f}".format(max_residual)}')
+        print(f'Max Residual: {"{:.3f}".format(max_residual)} [Index: {max_residual_index}]')
 
         if self.settings.infeasibility_analysis:
             results = self.report_infeasible()
@@ -131,16 +131,21 @@ class PowerFlowResults:
     def calculate_residuals(self):
         all_elements = self.network.get_NR_invariant_elements() + self.network.get_NR_variable_elements()
 
-        residuals = np.zeros(len(self.v_final))
-
+        residual_contributions = []
         for element in all_elements:
             element_residuals = element.calculate_residuals(self.network, self.v_final)
             for (index, value) in element_residuals.items():
-                residuals[index] += value
+                if value > 1e-4:
+                    residual_contributions.append((element, index, value))
+
+        residuals = np.zeros(len(self.v_final))
+        for (element, index, value) in residual_contributions:
+            residuals[index] += value
 
         max_residual = np.amax(np.abs(residuals))
+        max_residual_idx = int(np.argmax(np.abs(residuals)))
 
-        return (max_residual, residuals)
+        return (max_residual, max_residual_idx, residuals)
 
     def report_infeasible(self):
         results = []
