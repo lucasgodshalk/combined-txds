@@ -1,4 +1,5 @@
 from __future__ import division
+from collections import defaultdict
 from itertools import count
 import numpy as np
 from sympy import symbols
@@ -145,4 +146,13 @@ class SinglePhaseTransformer:
         self.losses_stamper.stamp_dual(Y, J, [self.G_loss, self.B_loss, tx_factor], v_previous)
 
     def calculate_residuals(self, network_model, v):
-        return {}
+        residuals = defaultdict(lambda: 0)
+
+        for (index, value) in self.xfrmr_stamper.calc_residuals([self.G_loss, self.B_loss, 1], v).items():
+            residuals[index] += value
+
+        for (index, value) in self.losses_stamper.calc_residuals([self.G_loss, self.B_loss, 1], v).items():
+            residuals[index] += value
+
+        return residuals   
+        
