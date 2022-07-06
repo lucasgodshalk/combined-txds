@@ -35,16 +35,16 @@ class ThreePhaseTransformer():
         self.xfmrs = {}
 
         for (pos_phase_1, neg_phase_1, pos_phase_2, neg_phase_2) in phase_list:
-            from_bus_pos = self.primary_coil.phase_coils[pos_phase_1].from_node
+            from_bus_pos = self.primary_coil.phase_connections[pos_phase_1]
             if neg_phase_1 == NEUTRAL:
                 from_bus_neg = GROUND
             else:
-                from_bus_neg = self.primary_coil.phase_coils[neg_phase_1].from_node
-            to_bus_pos = self.secondary_coil.phase_coils[pos_phase_2].to_node
+                from_bus_neg = self.primary_coil.phase_connections[neg_phase_1]
+            to_bus_pos = self.secondary_coil.phase_connections[pos_phase_2]
             if neg_phase_2 == NEUTRAL:
                 to_bus_neg = GROUND
             else:
-                to_bus_neg = self.secondary_coil.phase_coils[neg_phase_2].to_node
+                to_bus_neg = self.secondary_coil.phase_connections[neg_phase_2]
 
             # Values for the secondary coil stamps, converted out of per-unit
             r = self.secondary_coil.resistance * self.secondary_coil.nominal_voltage ** 2  / self.secondary_coil.rated_power

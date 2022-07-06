@@ -46,10 +46,7 @@ class Bus:
         v_estimate[f_i] = self.Vi_init if v_estimate[f_i] == 0 else v_estimate[f_i]
 
     def __str__(self):
-        return_string = 'The bus number is : {} with Vr node as: {} and Vi node as {} '.format(self.Bus,
-                                                                                               self.node_Vr,
-                                                                                               self.node_Vi)
-        return return_string
+        return f'Bus: {self.Bus} (Vr:{self.node_Vr} Vi:{self.node_Vi})'
 
     def __repr__(self):
         return f'Bus id:{self.Bus} name:{self.NodeName} phase:{self.NodePhase}'

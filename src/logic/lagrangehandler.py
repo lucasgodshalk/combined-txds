@@ -1,6 +1,6 @@
 from collections import defaultdict
 import typing
-from sympy import Add, diff, lambdify, expand, Pow
+from sympy import Add, diff, lambdify, expand, Pow, Symbol
 
 def is_constant(expr, vars):
     for symbol in expr.free_symbols:
@@ -105,7 +105,7 @@ class LagrangeHandler:
 
         self.variables = self.primals + self.duals
 
-        self.derivatives: typing.Dict[any, DerivativeEntry]
+        self.derivatives: typing.Dict[Symbol, DerivativeEntry]
         self.derivatives = {}
 
         lambda_inputs = self.constants + self.variables

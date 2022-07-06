@@ -17,7 +17,6 @@ from models.shared.bus import Bus
 from models.threephase.three_phase_transformer import ThreePhaseTransformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
 from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
-from models.threephase.transformer_phase_coil import TransformerPhaseCoil
 from models.threephase.transmission_line import TransmissionLine
 from models.threephase.transmission_line_triplex import TriplexTransmissionLine
 from models.threephase.primary_transformer_coil import PrimaryTransformerCoil
@@ -295,15 +294,11 @@ class Parser:
         for phase_winding in winding1.phase_windings:
             phases.append(phase_winding.phase)
             
-            primary_phase_coil = TransformerPhaseCoil(phase_winding.phase)
             from_bus = simulation_state.bus_name_map[model.from_element + '_' + phase_winding.phase]
-            primary_phase_coil.from_node = from_bus
-            primary_transformer_coil.phase_coils[phase_winding.phase] = primary_phase_coil
+            primary_transformer_coil.phase_connections[phase_winding.phase] = from_bus
 
-            secondary_phase_coil = TransformerPhaseCoil(phase_winding.phase)
             to_bus = simulation_state.bus_name_map[model.to_element + '_' + phase_winding.phase]
-            secondary_phase_coil.to_node = to_bus
-            secondary_transformer_coil.phase_coils[phase_winding.phase] = secondary_phase_coil
+            secondary_transformer_coil.phase_connections[phase_winding.phase] = to_bus
 
         phase_shift = 0 if model.phase_shift is None else model.phase_shift # TODO is this in degrees or radians
         if hasattr(model, "shunt_impedance") and model.shunt_impedance != 0:

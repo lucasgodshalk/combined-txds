@@ -1,7 +1,5 @@
 import typing
-
-from models.threephase.transformer_phase_coil import TransformerPhaseCoil
-
+from models.shared.bus import Bus
 
 class SecondaryTransformerCoil():
     
@@ -20,12 +18,8 @@ class SecondaryTransformerCoil():
         self.connection_type = connection_type
         self.voltage_limit = voltage_limit
 
-        self.phase_coils: typing.Dict[str, TransformerPhaseCoil]
-        self.phase_coils = {}
+        self.phase_coils: typing.Dict[str, Bus]
+        self.phase_connections = {}
         
         self.resistance = resistance
         self.reactance = reactance
-
-    # def stamp_primal(self, Y, J, v_previous, tx_factor, state):
-    #     for phase_coil in self.phase_coils:
-    #         phase_coil.collect_Y_stamps(state, self.resistance, self.reactance)
