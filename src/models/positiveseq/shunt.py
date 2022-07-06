@@ -23,7 +23,7 @@ lagrange = np.dot(duals, eqns)
 
 lh = LagrangeHandler(lagrange, constants, primals, duals)
 
-class Shunts:
+class Shunt:
     _ids = count(0)
 
     def __init__(self,

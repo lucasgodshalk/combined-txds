@@ -20,7 +20,7 @@ from models.shared.bus import Bus
 from models.positiveseq.generator import Generator
 from models.shared.pqload import PQLoad
 from models.shared.slack import Slack
-from models.positiveseq.shunts import Shunts
+from models.positiveseq.shunt import Shunt
 from logic.parsers.parse_transformers import TwoWindingXfmrs, ThreeWindingXfmrs
 
 class GenType(Enum):
@@ -106,7 +106,7 @@ class Fixed_shunt_data:
         self.bl = bl  # Reactive component of shunt admittance to ground(Mvar @ 1/unit voltage)
 
     def integrate(self, all_bus_key: typing.Dict[int, Bus]):
-        new_shunt = Shunts(all_bus_key[self.i], self.gl, self.bl, 1, 0, 0, 0, 0, 0, 0, 0)
+        new_shunt = Shunt(all_bus_key[self.i], self.gl, self.bl, 1, 0, 0, 0, 0, 0, 0, 0)
         return new_shunt
 
 
@@ -156,7 +156,7 @@ class Switched_shunt_data:
         bmax = sum(np.multiply(npBstep[pos_Bstep], npNstep[pos_Bstep]))
         bmin = sum(np.multiply(npBstep[neg_Bstep], npNstep[neg_Bstep]))
 
-        new_shunt = Shunts(all_bus_key[self.i], G_MW, B_MVAR, 3, self.vswhi,
+        new_shunt = Shunt(all_bus_key[self.i], G_MW, B_MVAR, 3, self.vswhi,
                            self.vswlo, bmax, bmin, self.binit, self.swrem,
                            Nstep, Bstep)
 
@@ -321,10 +321,10 @@ class Branch_data:
         shunt_i = None
         shunt_j = None
         if self.gi != 0 or self.bi != 0:
-            shunt_i = Shunts(self.i, self.gi * global_vars.MVAbase, self.bi * global_vars.MVAbase, 1, 0, 0, 0, 0, 0, 0,
+            shunt_i = Shunt(self.i, self.gi * global_vars.MVAbase, self.bi * global_vars.MVAbase, 1, 0, 0, 0, 0, 0, 0,
                              0)
         if self.gj != 0 or self.bj != 0:
-            shunt_j = Shunts(self.j, self.gj * global_vars.MVAbase, self.bj * global_vars.MVAbase, 1, 0, 0, 0, 0, 0, 0,
+            shunt_j = Shunt(self.j, self.gj * global_vars.MVAbase, self.bj * global_vars.MVAbase, 1, 0, 0, 0, 0, 0, 0,
                              0)
 
         return new_branch, shunt_i, shunt_j
