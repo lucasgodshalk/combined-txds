@@ -88,10 +88,10 @@ class DerivativeEntry:
 
     def get_evals(self):
         if self.constant_expr != 0:
-            yield (None, self.constant_eval)
+            yield (None, self.constant_eval, self.constant_expr)
 
         for (variable, func) in self.variable_evals.items():
-            yield(variable, func)
+            yield(variable, func, self.variable_exprs[variable])
 
 class LagrangeHandler:
     #Increment whenever you make changes to langrangian handling.
