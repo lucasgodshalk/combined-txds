@@ -5,7 +5,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.shared import build_line_stamper
+from models.shared.line import build_line_stamper
 from models.shared.bus import Bus
 
 constants = B_line, tx_factor = symbols('B_line tx_factor')

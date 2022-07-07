@@ -1,16 +1,18 @@
 import math
 from scipy.sparse import csc_matrix
 import numpy as np
+from sympy import Matrix
 from logic.powerflowsettings import PowerFlowSettings
 
 class MatrixBuilder:
-    def __init__(self, settings: PowerFlowSettings) -> None:
+    def __init__(self, settings: PowerFlowSettings, is_symbolic=False) -> None:
         self.settings = settings
         self._row = []
         self._col = []
         self._val = []
         self._index = 0
         self._max_index = 0
+        self.is_symbolic = is_symbolic
 
     def stamp(self, row, column, value):
         if value == 0:
@@ -40,11 +42,21 @@ class MatrixBuilder:
     def clear(self, retain_idx = 0):
         self._index = retain_idx
 
-    def to_matrix(self):
+    def to_matrix(self) -> csc_matrix:
         if self.settings.debug and self._max_index != self._index:
             raise Exception("Solver was not fully utilized. Garbage data remains")
+        if self.is_symbolic:
+            return self.to_symbolic_matrix()
 
         return csc_matrix((self._val, (self._row, self._col)), dtype=np.float64)
+
+    def to_symbolic_matrix(self):
+        rows = []
+        for _ in range(max(self._row) + 1):
+            rows.append([0] * (max(self._col) + 1))
+        for (row, col, value) in zip(self._row, self._col, self._val):
+            rows[row][col] += value
+        return Matrix(rows)
 
     def assert_valid(self, check_zeros=False):
         if not self.settings.debug:

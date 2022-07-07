@@ -11,8 +11,6 @@ class StampEntry:
         self.eval_func = eval_func
 
 class LagrangeStamper:
-    stamp_symbols = False
-
     def __init__(self, handler: LagrangeHandler, index_map: dict, optimization_enabled: bool) -> None:
         self.handler = handler
         self.index_map = index_map
@@ -103,15 +101,21 @@ class LagrangeStamper:
         return (primal_vals, dual_vals)
 
     def __stamp_set(self, Y: MatrixBuilder, J, components, args):
-        if self.stamp_symbols:
-            for (row_index, col_index, _, expr) in components:
-                if col_index == None:
-                    J[row_index] += expr
-                else:
-                    Y.stamp(row_index, col_index, expr)
-        else:
-            for (row_index, col_index, eval_func, expr) in components:
-                if col_index == None:
-                    J[row_index] += eval_func(*args)
-                else:
-                    Y.stamp(row_index, col_index, eval_func(*args))
+        for (row_index, col_index, eval_func, _) in components:
+            if col_index == None:
+                J[row_index] += eval_func(*args)
+            else:
+                Y.stamp(row_index, col_index, eval_func(*args))
+
+    def stamp_primal_symbols(self, Y: MatrixBuilder, J):
+        self.__stamp_symbol_set(Y, J, self.primal_components)
+
+    def stamp_dual_symbols(self, Y: MatrixBuilder, J):
+        self.__stamp_symbol_set(Y, J, self.dual_components)
+
+    def __stamp_symbol_set(self, Y: MatrixBuilder, J, components):
+        for (row_index, col_index, _, expr) in components:
+            if col_index == None:
+                J[row_index] += expr
+            else:
+                Y.stamp(row_index, col_index, expr)

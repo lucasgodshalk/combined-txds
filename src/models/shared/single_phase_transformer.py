@@ -9,7 +9,7 @@ from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 import math
-from models.positiveseq.shared import build_line_stamper
+from models.shared.line import build_line_stamper
 from models.shared.bus import Bus
 
 constants = tr, ang, tx_factor = symbols('tr ang tx_factor')

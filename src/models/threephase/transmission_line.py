@@ -3,7 +3,7 @@ import typing
 import numpy as np
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.positiveseq.shared import build_line_stamper
+from models.shared.line import build_line_stamper
 from models.positiveseq.branch import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 from models.threephase.transmission_line_phase import TransmissionLinePhase
 from models.threephase.edge import Edge
