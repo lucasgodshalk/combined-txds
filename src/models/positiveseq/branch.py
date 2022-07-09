@@ -49,7 +49,7 @@ class Branch:
         self.b = b
 
         self.G = r / (x ** 2 + r ** 2)
-        self.B = x / (x ** 2 + r ** 2)
+        self.B = -x / (x ** 2 + r ** 2)
 
         self.B_line = b / 2
 

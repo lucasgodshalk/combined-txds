@@ -73,7 +73,7 @@ class SinglePhaseTransformer:
         self.ang_rad = ang * math.pi / 180.
 
         self.G_loss = r / (r ** 2 + x ** 2)
-        self.B_loss = x / (r ** 2 + x ** 2) #source of error
+        self.B_loss = -x / (r ** 2 + x ** 2) #source of error
 
         self.status = status
 
