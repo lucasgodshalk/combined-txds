@@ -79,4 +79,4 @@ class Shunt:
         self.stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
 
     def calculate_residuals(self, network_model, v):
-        return {}
+        return self.stamper.calc_residuals([self.G, self.B, 0], v)

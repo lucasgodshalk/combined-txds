@@ -66,6 +66,9 @@ class SinglePhaseTransformer:
         self.to_bus_pos = to_bus_pos
         self.to_bus_neg = to_bus_neg
 
+        self.Gsh_raw = Gsh_raw
+        self.Bsh_raw = Bsh_raw
+
         self.r = r
         self.x = x
 
@@ -73,7 +76,7 @@ class SinglePhaseTransformer:
         self.ang_rad = ang * math.pi / 180.
 
         self.G_loss = r / (r ** 2 + x ** 2)
-        self.B_loss = -x / (r ** 2 + x ** 2) #source of error
+        self.B_loss = -x / (r ** 2 + x ** 2)
 
         self.status = status
 
@@ -148,7 +151,7 @@ class SinglePhaseTransformer:
     def calculate_residuals(self, network_model, v):
         residuals = defaultdict(lambda: 0)
 
-        for (index, value) in self.xfrmr_stamper.calc_residuals([self.G_loss, self.B_loss, 1], v).items():
+        for (index, value) in self.xfrmr_stamper.calc_residuals([self.tr, self.ang_rad, 1], v).items():
             residuals[index] += value
 
         for (index, value) in self.losses_stamper.calc_residuals([self.G_loss, self.B_loss, 1], v).items():
