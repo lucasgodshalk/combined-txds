@@ -103,7 +103,7 @@ class PowerFlowResults:
 
         max_residual, max_residual_index, residuals = self.calculate_residuals()
 
-        print(f'Max Residual: {"{:.3f}".format(max_residual)} [Index: {max_residual_index}]')
+        print(f'Max Residual: {max_residual:.3g} [Index: {max_residual_index}]')
 
         if self.settings.infeasibility_analysis:
             results = self.report_infeasible()
@@ -135,8 +135,7 @@ class PowerFlowResults:
         for element in all_elements:
             element_residuals = element.calculate_residuals(self.network, self.v_final)
             for (index, value) in element_residuals.items():
-                if value > 1e-4:
-                    residual_contributions.append((element, index, value))
+                residual_contributions.append((element, index, value))
 
         residuals = np.zeros(len(self.v_final))
         for (element, index, value) in residual_contributions:
