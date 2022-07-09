@@ -46,18 +46,3 @@ def test_line_symbols_opt():
     Y_matrix = Y_matrix.subs(tx_factor, 0)
 
     assert 1 == 1
-
-def test_line_values_powerflow():
-    lh = LagrangeStamper(line_lh, idx_map, False)
-
-    size = next(idx_count)
-
-    Y = MatrixBuilder(settings, is_symbolic=False)
-    J = [0] * size
-    v = [0] * size
-
-    lh.stamp_primal(Y, J, [2, 3, 0], v)
-
-    Y_matrix = Y.to_matrix().todense()
-
-    assert 1 == 1
