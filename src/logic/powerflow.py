@@ -18,7 +18,7 @@ class PowerFlow:
         self.netlist = netlist
         self.settings = settings
 
-    def execute(self):
+    def execute(self) -> PowerFlowResults:
         start_time = time.perf_counter_ns()
 
         (network_model, v_init, size_Y) = self.create_network()
