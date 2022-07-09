@@ -5,14 +5,13 @@ from sympy import Matrix
 from logic.powerflowsettings import PowerFlowSettings
 
 class MatrixBuilder:
-    def __init__(self, settings: PowerFlowSettings, is_symbolic=False) -> None:
+    def __init__(self, settings: PowerFlowSettings) -> None:
         self.settings = settings
         self._row = []
         self._col = []
         self._val = []
         self._index = 0
         self._max_index = 0
-        self.is_symbolic = is_symbolic
 
     def stamp(self, row, column, value):
         if value == 0:
@@ -45,8 +44,6 @@ class MatrixBuilder:
     def to_matrix(self) -> csc_matrix:
         if self.settings.debug and self._max_index != self._index:
             raise Exception("Solver was not fully utilized. Garbage data remains")
-        if self.is_symbolic:
-            return self.to_symbolic_matrix()
 
         return csc_matrix((self._val, (self._row, self._col)), dtype=np.float64)
 

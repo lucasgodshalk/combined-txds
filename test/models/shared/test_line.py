@@ -19,7 +19,7 @@ def test_line_symbols_powerflow():
 
     size = next(idx_count)
 
-    Y = MatrixBuilder(settings, is_symbolic=True)
+    Y = MatrixBuilder(settings)
     J = [0] * size
 
     lh.stamp_primal_symbols(Y, J)
@@ -35,7 +35,7 @@ def test_line_symbols_opt():
 
     size = next(idx_count)
 
-    Y = MatrixBuilder(settings, is_symbolic=True)
+    Y = MatrixBuilder(settings)
     J = [0] * size
 
     lh.stamp_primal_symbols(Y, J)
