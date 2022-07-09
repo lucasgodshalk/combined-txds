@@ -105,6 +105,10 @@ class PowerFlowResults:
 
         print(f'Max Residual: {max_residual:.3g} [Index: {max_residual_index}]')
 
+        if verbose:
+            for idx in range(len(residuals)):
+                print(f'Residual {idx}: {residuals[idx]:.3g}')
+
         if self.settings.infeasibility_analysis:
             results = self.report_infeasible()
             P_sum = sum([result.P for result in results])
