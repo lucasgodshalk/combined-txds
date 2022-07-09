@@ -1,4 +1,5 @@
 from __future__ import division
+from collections import defaultdict
 from itertools import count
 import numpy as np
 from sympy import symbols
@@ -95,8 +96,14 @@ class Branch:
         self.shunt_stamper.stamp_dual(Y, J, [self.B_line, tx_factor], v_previous)
     
     def calculate_residuals(self, network_model, v):
-        return {}
+        residuals = defaultdict(lambda: 0)
+
+        for (key, value) in self.line_stamper.calc_residuals([self.G, self.B, 0], v).items():
+            residuals[key] += value
+
+        for (key, value) in self.shunt_stamper.calc_residuals([self.B_line, 0], v).items():
+            residuals[key] += value
         
-
-
+        return residuals
+        
 

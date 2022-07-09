@@ -78,5 +78,4 @@ class Generator:
         self.stamper.stamp_dual(Y, J, [self.P, self.Vset], v_previous)
 
     def calculate_residuals(self, network_model, v):
-        return {}
-
+        return self.stamper.calc_residuals([self.P, self.Vset], v)

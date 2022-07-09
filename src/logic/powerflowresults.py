@@ -7,7 +7,7 @@ from logic.powerflowsettings import PowerFlowSettings
 from models.shared.bus import Bus
 
 class GENTYPE:
-    PQ = "PQ"
+    PV = "PV"
     Slack = "Slack"
     Inf = "Inf"
 
@@ -72,7 +72,7 @@ class PowerFlowResults:
             Q = -v_final[generator.bus.node_Q]
             P = -generator.P
 
-            self.generator_results.append(GeneratorResult(generator, P, Q, GENTYPE.PQ))
+            self.generator_results.append(GeneratorResult(generator, P, Q, GENTYPE.PV))
 
         for slack in self.network.slack:
             Vr = v_final[slack.bus.node_Vr]
