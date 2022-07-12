@@ -1,5 +1,5 @@
 import os
-from logic.powerflow import PowerFlow
+from logic.powerflow import FilePowerFlow
 from logic.powerflowresults import PowerFlowResults
 from scipy.io import loadmat
 
@@ -32,7 +32,7 @@ def assert_mat_comparison(mat, results: PowerFlowResults):
 
 def test_GS_4_prior_solution():
     filepath = get_positiveseq_raw("GS-4_prior_solution")
-    test_runner = PowerFlow(filepath)
+    test_runner = FilePowerFlow(filepath)
     results = test_runner.execute()
     assert results.is_success
     mat_result = loadmat(get_positiveseq_mat_result("GS-4_prior_solution"))
@@ -40,11 +40,11 @@ def test_GS_4_prior_solution():
 
 def test_IEEE_14_prior_solution():
     filepath = get_positiveseq_raw("IEEE-14_prior_solution")
-    test_runner = PowerFlow(filepath)
+    test_runner = FilePowerFlow(filepath)
     results = test_runner.execute()
     assert results.is_success
     mat_result = loadmat(get_positiveseq_mat_result("IEEE-14_prior_solution"))
     assert_mat_comparison(mat_result, results)
 
-    
-
+def test_simple_xfmr_network():
+    pass
