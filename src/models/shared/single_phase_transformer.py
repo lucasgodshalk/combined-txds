@@ -151,10 +151,10 @@ class SinglePhaseTransformer:
     def calculate_residuals(self, network_model, v):
         residuals = defaultdict(lambda: 0)
 
-        for (index, value) in self.xfrmr_stamper.calc_residuals([self.tr, self.ang_rad, 1], v).items():
+        for (index, value) in self.xfrmr_stamper.calc_residuals([self.tr, self.ang_rad, 0], v).items():
             residuals[index] += value
 
-        for (index, value) in self.losses_stamper.calc_residuals([self.G_loss, self.B_loss, 1], v).items():
+        for (index, value) in self.losses_stamper.calc_residuals([self.G_loss, self.B_loss, 0], v).items():
             residuals[index] += value
 
         return residuals   
