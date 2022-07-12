@@ -3,12 +3,10 @@ import time
 from logic.homotopycontroller import HomotopyController
 from logic.nrsolver import NRSolver
 from logic.networkmodel import TxNetworkModel
-from logic.initialize import initialize_postive_seq
 from logic.powerflowsettings import PowerFlowSettings
 from logic.parsers.parser import parse_raw
 from itertools import count
 from logic.parsers.anoeds_parser import Parser
-from logic.powerflowrunner import PowerFlowRunner
 from logic.powerflowresults import PowerFlowResults
 from logic.v_limiting import PositiveSeqVoltageLimiting
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
@@ -54,14 +52,11 @@ class PowerFlow:
 
         network_model = parser.parse()
 
-        network_model.J_length = next(network_model.next_var_idx)
+        size_Y = next(network_model.next_var_idx)
 
-        powerflowrunner = PowerFlowRunner(self.netlist, self.settings)
-        powerflowrunner.reset_v_estimate(network_model)
+        v_init = network_model.generate_v_init(size_Y, self.settings)
 
-        v_init = powerflowrunner.v_estimate
-
-        return (network_model, v_init, network_model.J_length)
+        return (network_model, v_init, size_Y)
 
 
     def create_positive_seq_network(self, optimization_enabled):
@@ -70,9 +65,6 @@ class PowerFlow:
         raw_data = parse_raw(self.netlist)
 
         buses = raw_data['buses']
-        slack = raw_data['slack']
-        transformers = raw_data['xfmrs']
-        generators = raw_data['generators']
 
         infeasibility_currents = []
         if self.settings.infeasibility_analysis:
@@ -87,7 +79,7 @@ class PowerFlow:
 
         size_Y = next(node_index)
 
-        v_init = initialize_postive_seq(size_Y, buses, generators, slack, self.settings)
+        v_init = network_model.generate_v_init(size_Y, self.settings)
 
         return (network_model, v_init, size_Y)
 
