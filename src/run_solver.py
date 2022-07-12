@@ -1,5 +1,5 @@
 from logic.powerflowsettings import PowerFlowSettings
-from logic.powerflow import PowerFlow
+from logic.powerflow import FilePowerFlow
 
 # path to the grid network RAW file
 casename = 'test/data/positiveseq/GS-4_prior_solution.RAW'
@@ -19,7 +19,7 @@ print(f'Testcase: {casename}')
 
 settings = PowerFlowSettings(debug=False, max_iters=50, flat_start=False, infeasibility_analysis=False, tx_stepping=False, voltage_limiting=False)
 
-powerflow = PowerFlow(casename, settings)
+powerflow = FilePowerFlow(casename, settings)
 
 results = powerflow.execute()
 

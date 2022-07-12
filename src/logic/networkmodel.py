@@ -30,6 +30,7 @@ class NetworkModel():
         self.slack = slack
         self.generators = generators
         self.infeasibility_currents = infeasibility_currents
+        self.size_Y = None
 
 class TxNetworkModel(NetworkModel):
     def __init__(self, raw_data, infeasibility_currents):
@@ -60,8 +61,8 @@ class TxNetworkModel(NetworkModel):
     def get_all_elements(self):
         return self.buses + self.get_NR_invariant_elements() + self.get_NR_variable_elements()
 
-    def generate_v_init(self, Y_size, settings: PowerFlowSettings):
-        v_init = np.zeros(Y_size)
+    def generate_v_init(self, settings: PowerFlowSettings):
+        v_init = np.zeros(self.size_Y)
 
         for bus in self.buses:
             (vr_idx, vr_init) = bus.get_Vr_init()
@@ -139,8 +140,8 @@ class DxNetworkModel(NetworkModel):
     def get_NR_variable_elements(self):
         return self.loads + self.capacitors + self.fuses
 
-    def generate_v_init(self, Y_size, settings: PowerFlowSettings):
-        v_init = np.zeros(Y_size)
+    def generate_v_init(self, settings: PowerFlowSettings):
+        v_init = np.zeros(self.size_Y)
 
         # Set initial voltage values for capacitors
         for cap in self.capacitors:
