@@ -34,7 +34,7 @@ class PowerFlow:
         return PowerFlowResults(is_success, iteration_num, duration_seconds, self.network_model, v_final, self.settings)
     
 class FilePowerFlow(PowerFlow):
-    def __init__(self, networkfile: str, settings: PowerFlowSettings):
+    def __init__(self, networkfile: str, settings: PowerFlowSettings = PowerFlowSettings()):
         builder = NetworkBuilder(settings)
 
         network = builder.from_file(networkfile)
