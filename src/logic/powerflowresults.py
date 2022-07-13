@@ -90,7 +90,9 @@ class PowerFlowResults:
             inf_Ii = v_final[infeasibility_current.node_Ii_inf]
             P = Vr * inf_Ir
             Q = Vi * inf_Ii
-            self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Inf))            
+            self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Inf))    
+
+        self.max_residual, self.max_residual_index, self.residuals = self.calculate_residuals()        
 
     def display(self, verbose=False):
         print("=====================")
@@ -101,13 +103,11 @@ class PowerFlowResults:
         print(f'Iterations: {self.iterations}')
         print(f'Duration: {"{:.3f}".format(self.duration_sec)}(s)')
 
-        max_residual, max_residual_index, residuals = self.calculate_residuals()
-
-        print(f'Max Residual: {max_residual:.3g} [Index: {max_residual_index}]')
+        print(f'Max Residual: {self.max_residual:.3g} [Index: {self.max_residual_index}]')
 
         if verbose:
-            for idx in range(len(residuals)):
-                print(f'Residual {idx}: {residuals[idx]:.3g}')
+            for idx in range(len(self.residuals)):
+                print(f'Residual {idx}: {self.residuals[idx]:.3g}')
 
         if self.settings.infeasibility_analysis:
             results = self.report_infeasible()
