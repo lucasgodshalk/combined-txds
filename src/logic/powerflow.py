@@ -1,7 +1,7 @@
 import math
 import time
 from logic.homotopycontroller import HomotopyController
-from logic.networkbuilder import NetworkBuilder
+from logic.networkloader import NetworkLoader
 from logic.nrsolver import NRSolver
 from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflowresults import PowerFlowResults
@@ -35,7 +35,7 @@ class PowerFlow:
     
 class FilePowerFlow(PowerFlow):
     def __init__(self, networkfile: str, settings: PowerFlowSettings = PowerFlowSettings()):
-        builder = NetworkBuilder(settings)
+        builder = NetworkLoader(settings)
 
         network = builder.from_file(networkfile)
 

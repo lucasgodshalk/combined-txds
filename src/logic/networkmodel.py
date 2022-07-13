@@ -18,45 +18,39 @@ class NetworkModel():
     def __init__(
         self, 
         is_three_phase: bool, 
-        buses: List[Bus], 
-        loads: List[PQLoad], 
-        generators: List[Generator],
-        slack: List[Slack],
-        infeasibility_currents: List[L2InfeasibilityCurrent]
         ):
         self.is_three_phase = is_three_phase
+
+        self.buses: List[Bus]
+        self.buses = []
+        self.loads: List[PQLoad]
+        self.loads = []
+        self.slack: List[Slack]
+        self.slack = []
+        self.generators: List[Generator]
+        self.generators = []
+        self.infeasibility_currents: List[L2InfeasibilityCurrent]
+        self.infeasibility_currents = []
+        self.size_Y = None
+
+class TxNetworkModel(NetworkModel):
+    def __init__(self, buses=[], loads=[], slack=[], generators=[], infeasibility_currents=[], transformers=[], branches=[], shunts=[]):
+        NetworkModel.__init__(self, is_three_phase=False)
+
         self.buses = buses
         self.loads = loads
         self.slack = slack
         self.generators = generators
         self.infeasibility_currents = infeasibility_currents
-        self.size_Y = None
-
-class TxNetworkModel(NetworkModel):
-    def __init__(self, raw_data, infeasibility_currents):
-        NetworkModel.__init__(
-            self, 
-            is_three_phase=False, 
-            buses=raw_data['buses'],
-            loads=raw_data['loads'],
-            generators=raw_data['generators'],
-            slack=raw_data['slack'],
-            infeasibility_currents=infeasibility_currents
-            )
-
-        self.transformer = raw_data['xfmrs']
-        self.branch = raw_data['branches']
-        self.shunt = raw_data['shunts']
-
-        self.linear_elments = self.branch + self.shunt + self.transformer + self.slack + self.infeasibility_currents
-
-        self.nonlinear_elements = self.generators + self.loads
+        self.transformer = transformers
+        self.branch = branches
+        self.shunt = shunts
 
     def get_NR_invariant_elements(self):
-        return self.linear_elments
+        return self.branch + self.shunt + self.transformer + self.slack + self.infeasibility_currents
 
     def get_NR_variable_elements(self):
-        return self.nonlinear_elements
+        return self.generators + self.loads
     
     def get_all_elements(self):
         return self.buses + self.get_NR_invariant_elements() + self.get_NR_variable_elements()
@@ -97,15 +91,7 @@ class DxNetworkModel(NetworkModel):
     OMEGA = 2 * pi * 60
 
     def __init__(self):
-        NetworkModel.__init__(
-            self, 
-            is_three_phase=True, 
-            buses=[],
-            loads=[],
-            generators=[],
-            slack=[],
-            infeasibility_currents=[]
-            )
+        NetworkModel.__init__(self, is_three_phase=True)
 
         # The next index of J to use
         self.next_var_idx = count(0)

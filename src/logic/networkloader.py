@@ -6,7 +6,7 @@ from logic.powerflowsettings import PowerFlowSettings
 from logic.parsers.anoeds_parser import Parser
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
 
-class NetworkBuilder:
+class NetworkLoader:
     def __init__(self, settings: PowerFlowSettings):
         self.settings = settings
         self.optimization_enabled = self.settings.infeasibility_analysis
@@ -41,7 +41,23 @@ class NetworkBuilder:
                 inf_current = L2InfeasibilityCurrent(bus)
                 infeasibility_currents.append(inf_current)
 
-        network_model = TxNetworkModel(raw_data, infeasibility_currents)
+        loads = raw_data['loads']
+        slack = raw_data['slack']
+        generators = raw_data['generators']
+        transformers = raw_data['xfmrs']
+        branches = raw_data['branches']
+        shunts = raw_data['shunts']
+
+        network_model = TxNetworkModel(
+            buses=buses, 
+            loads=loads, 
+            slack=slack, 
+            generators=generators, 
+            infeasibility_currents=infeasibility_currents,
+            transformers=transformers,
+            branches=branches,
+            shunts=shunts
+            )
 
         for ele in network_model.get_all_elements():
             ele.assign_nodes(node_index, self.optimization_enabled)
