@@ -4,7 +4,7 @@ from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from logic.powerflowsettings import PowerFlowSettings
 from models.shared.bus import GROUND, Bus
-from models.shared.single_phase_transformer import xfrmr_lh, tx_factor
+from models.shared.transformer import xfrmr_lh, tx_factor
 
 settings = PowerFlowSettings()
 
