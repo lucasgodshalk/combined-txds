@@ -1,9 +1,10 @@
 from itertools import count
 import os
 from logic.networkmodel import TxNetworkModel
-from logic.powerflow import FilePowerFlow
+from logic.powerflow import FilePowerFlow, PowerFlow
 from logic.powerflowresults import PowerFlowResults
 from scipy.io import loadmat
+from logic.powerflowsettings import PowerFlowSettings
 from models.positiveseq.branch import Branch
 
 from models.shared.bus import GROUND, Bus
@@ -53,7 +54,7 @@ def test_IEEE_14_prior_solution():
     mat_result = loadmat(get_positiveseq_mat_result("IEEE-14_prior_solution"))
     assert_mat_comparison(mat_result, results)
 
-def test_simple_xfmr_network():
+def test_isolated_xfmr_network():
     next_idx = count()
 
     from_bus = Bus(1, 1, 0.1, 0.1, None, None, None)
@@ -68,3 +69,11 @@ def test_simple_xfmr_network():
     slack.assign_nodes(next_idx, False)
 
     network = TxNetworkModel(buses=[from_bus, to_bus], transformers=[xfrmr], slack=[slack])
+    network.size_Y = next(next_idx)
+
+    powerflow = PowerFlow(network, PowerFlowSettings())
+
+    result = powerflow.execute()
+
+    assert result.is_success
+    assert result.max_residual < 1e-10

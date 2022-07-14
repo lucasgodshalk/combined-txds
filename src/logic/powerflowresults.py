@@ -40,6 +40,11 @@ class BusResult:
         v_ang_str = "{:.3f}".format(self.V_ang)
         return f'Bus {self.bus.Bus} ({self.bus.NodeName}:{self.bus.NodePhase}) V mag: {v_mag_str}, V ang (deg): {v_ang_str}'
 
+    def __repr__(self):
+        v_mag_str = "{:.3f}".format(self.V_mag)
+        v_ang_str = "{:.3f}".format(self.V_ang)
+        return f'Bus {self.bus.Bus} ({self.bus.NodeName}:{self.bus.NodePhase}) V mag: {v_mag_str}, V ang (deg): {v_ang_str}'
+
 class PowerFlowResults:
     def __init__(self, is_success: bool, iterations: int, duration_sec, network: NetworkModel, v_final, settings: PowerFlowSettings):
         self.is_success = is_success
@@ -69,8 +74,8 @@ class PowerFlowResults:
             self.bus_results.append(BusResult(bus, V_r, V_i, lambda_r, lambda_i))
 
         for generator in self.network.generators:
-            Q = -v_final[generator.bus.node_Q]
-            P = -generator.P
+            Q = v_final[generator.bus.node_Q]
+            P = generator.P
 
             self.generator_results.append(GeneratorResult(generator, P, Q, GENTYPE.PV))
 

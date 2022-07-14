@@ -49,7 +49,7 @@ class Bus:
         return f'Bus: {self.Bus} (Vr:{self.node_Vr} Vi:{self.node_Vi})'
 
     def __repr__(self):
-        return f'Bus id:{self.Bus} name:{self.NodeName} phase:{self.NodePhase}'
+        return f'Bus {self.Bus} ({self.NodeName}:{self.NodePhase}) Vr:{self.node_Vr} Vi:{self.node_Vi}'
 
     def get_Vr_init(self):
         return (self.node_Vr, self.Vr_init)
