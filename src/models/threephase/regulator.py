@@ -1,6 +1,9 @@
 from collections import defaultdict
 
 import math
+from typing import List
+
+from models.threephase.regulator_phase import RegulatorPhase
 
 class Regulator():
     
@@ -8,6 +11,8 @@ class Regulator():
                 , phases
                 , ar_step = 0.00625
                 , type = "B"):
+        
+        self.regulator_phases: List[RegulatorPhase]
         self.regulator_phases = []
         self.phases = phases
         self.ar_step = ar_step
@@ -15,11 +20,11 @@ class Regulator():
 
     def stamp_primal(self, Y, J, v_previous, tx_factor, state):
         for regulator in self.regulator_phases:
-            v_r_f, v_i_f = state.bus_map[regulator.from_node]
+            v_r_f, v_i_f = regulator.from_node.node_Vr, regulator.from_node.node_Vi
             v_r_p = regulator.real_voltage_idx
             v_i_p = regulator.imag_voltage_idx
-            v_r_s, v_i_s = state.bus_map[regulator.secondary_node]
-            v_r_t, v_i_t = state.bus_map[regulator.to_node]
+            v_r_s, v_i_s = regulator.secondary_node.node_Vr, regulator.secondary_node.node_Vi
+            v_r_t, v_i_t = regulator.to_node.node_Vr, regulator.to_node.node_Vi
 
             aR = (1 + (self.ar_step * regulator.tap_position)) ** -1 if self.type == "A" else 1 - (self.ar_step * regulator.tap_position)
 
@@ -73,11 +78,11 @@ class Regulator():
     def calculate_residuals(self, state, v):
         residual_contributions = defaultdict(lambda: 0)
         for regulator in self.regulator_phases:
-            v_r_f, v_i_f = state.bus_map[regulator.from_node]
+            v_r_f, v_i_f = regulator.from_node.node_Vr, regulator.from_node.node_Vi
             v_r_p = regulator.real_voltage_idx
             v_i_p = regulator.imag_voltage_idx
-            v_r_s, v_i_s = state.bus_map[regulator.secondary_node]
-            v_r_t, v_i_t = state.bus_map[regulator.to_node]
+            v_r_s, v_i_s = regulator.secondary_node.node_Vr, regulator.secondary_node.node_Vi
+            v_r_t, v_i_t = regulator.to_node.node_Vr, regulator.to_node.node_Vi
 
             aR = (1 + (self.ar_step * regulator.tap_position)) ** -1 if self.type == "A" else 1 - (self.ar_step * regulator.tap_position)
 
