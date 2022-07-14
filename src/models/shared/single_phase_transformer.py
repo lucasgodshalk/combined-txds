@@ -13,8 +13,8 @@ from models.shared.line import build_line_stamper
 from models.shared.bus import Bus
 
 constants = tr, ang, tx_factor = symbols('tr ang tx_factor')
-primals = [Vr_pri_pos, Vi_pri_pos, Vr_pri_neg, Vi_pri_neg, Ir_prim, Ii_prim, Vr_sec_pos, Vi_sec_pos, Vr_sec_neg, Vi_sec_neg] = symbols('V_r_pri_pos V_r_pri_neg V_i_pri_pos V_i_pri_neg I_pri_r I_pri_i V_r_sec_pos V_r_sec_neg V_i_sec_pos V_i_sec_neg')
-duals = [Lr_pri_pos, Li_pri_pos, Lr_pri_neg, Li_pri_neg, Lir_prim, Lii_prim, Lr_sec_pos, Li_sec_pos, Lr_sec_neg, Li_sec_neg] = symbols('L_r_pri_pos L_r_pri_neg L_i_pri_pos L_i_pri_neg L_I_pri_r L_I_pri_i L_r_sec_pos L_r_sec_neg L_i_sec_pos L_i_sec_neg')
+primals = [Vr_pri_pos, Vi_pri_pos, Vr_pri_neg, Vi_pri_neg, Ir_prim, Ii_prim, Vr_sec_pos, Vi_sec_pos, Vr_sec_neg, Vi_sec_neg] = symbols('Vr_pri_pos Vi_pri_pos Vr_pri_neg Vi_pri_neg Ir_prim Ii_prim Vr_sec_pos Vi_sec_pos Vr_sec_neg Vi_sec_neg')
+duals = [Lr_pri_pos, Li_pri_pos, Lr_pri_neg, Li_pri_neg, Lir_prim, Lii_prim, Lr_sec_pos, Li_sec_pos, Lr_sec_neg, Li_sec_neg] = symbols('Lr_pri_pos Li_pri_pos Lr_pri_neg Li_pri_neg Lir_prim Lii_prim Lr_sec_pos Li_sec_pos Lr_sec_neg Li_sec_neg')
 
 scaled_tr = tr + (1 - tr) * tx_factor 
 scaled_angle = ang - ang * tx_factor

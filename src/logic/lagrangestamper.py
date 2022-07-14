@@ -93,7 +93,11 @@ class LagrangeStamper:
 
         primal_vals = []
         for primal in self.handler.primals:
-            primal_vals.append(v_prev[self.index_map[primal]])
+            index = self.index_map[primal]
+            if index == SKIP:
+                primal_vals.append(0)
+            else:
+                primal_vals.append(v_prev[index])
 
         if self.optimization_enabled:
             dual_vals = []
