@@ -30,7 +30,10 @@ class BusResult:
         self.lambda_r = lambda_r
         self.lambda_i = lambda_i
         self.V_mag = math.sqrt(V_r ** 2 + V_i ** 2)
-        self.V_ang = math.atan2(V_i, V_r)  * 180 / math.pi
+        if self.V_mag < 1e-8:
+            self.V_ang = 0
+        else:
+            self.V_ang = math.atan2(V_i, V_r)  * 180 / math.pi
     
     def get_infeasible(self):
         return (self.I_inf_r, self.I_inf_i)
