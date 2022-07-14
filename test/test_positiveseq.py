@@ -43,6 +43,7 @@ def test_GS_4_prior_solution():
     test_runner = FilePowerFlow(filepath)
     results = test_runner.execute()
     assert results.is_success
+    assert results.max_residual < 1e-10
     mat_result = loadmat(get_positiveseq_mat_result("GS-4_prior_solution"))
     assert_mat_comparison(mat_result, results)
 
@@ -51,6 +52,7 @@ def test_IEEE_14_prior_solution():
     test_runner = FilePowerFlow(filepath)
     results = test_runner.execute()
     assert results.is_success
+    assert results.max_residual < 1e-10
     mat_result = loadmat(get_positiveseq_mat_result("IEEE-14_prior_solution"))
     assert_mat_comparison(mat_result, results)
 
@@ -73,7 +75,7 @@ def test_isolated_xfmr_network():
 
     powerflow = PowerFlow(network, PowerFlowSettings())
 
-    result = powerflow.execute()
+    results = powerflow.execute()
 
-    assert result.is_success
-    assert result.max_residual < 1e-10
+    assert results.is_success
+    assert results.max_residual < 1e-10

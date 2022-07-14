@@ -2,7 +2,7 @@ from collections import defaultdict
 from logic.lagrangehandler import LagrangeHandler
 from logic.matrixbuilder import MatrixBuilder
 
-SKIP = -1
+SKIP = None
 
 class StampEntry:
     def __init__(self, row_index, col_index, eval_func) -> None:
