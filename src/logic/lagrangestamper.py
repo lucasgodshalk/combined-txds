@@ -102,7 +102,11 @@ class LagrangeStamper:
         if self.optimization_enabled:
             dual_vals = []
             for dual in self.handler.duals:
-                dual_vals.append(v_prev[self.index_map[dual]])
+                index = self.index_map[dual]
+                if index == SKIP:
+                    dual_vals.append(0)
+                else:
+                    dual_vals.append(v_prev[index])
         else:
             dual_vals = self.empty_duals
 
