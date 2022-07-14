@@ -10,10 +10,11 @@ from ditto.store import Store
 import ditto.models.load
 from logic.powerflowsettings import PowerFlowSettings
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
+from models.shared.capacitor import Capacitor
 from models.shared.slack import Slack
 
 from models.shared.pqload import PQLoad
-from models.shared.bus import Bus
+from models.shared.bus import GROUND, Bus
 from models.threephase.three_phase_transformer import ThreePhaseTransformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
 from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
@@ -21,8 +22,6 @@ from models.threephase.transmission_line import TransmissionLine
 from models.threephase.transmission_line_triplex import TriplexTransmissionLine
 from models.threephase.primary_transformer_coil import PrimaryTransformerCoil
 from models.threephase.secondary_transformer_coil import SecondaryTransformerCoil
-from models.threephase.capacitor import Capacitor
-from models.threephase.capacitor_phase import PhaseCapacitor
 from models.threephase.fuse import Fuse
 from models.threephase.fuse_phase import FusePhase
 
@@ -90,7 +89,9 @@ class Parser:
                 for phase in model.phases:
                     if phase.default_value in self._phase_to_angle:
                         if hasattr(model, "parent"):
+                            #For now, just map any child nodes back to their parent.
                             bus = simulation_state.bus_name_map[model.parent + "_" + phase.default_value]
+                            simulation_state.bus_name_map[model.name + "_" + phase.default_value] = bus
                         elif hasattr(model, "_connecting_element"):
                             bus = simulation_state.bus_name_map[model._connecting_element + "_" + phase]
                         else:
@@ -322,19 +323,15 @@ class Parser:
             )
         simulation_state.transformers.append(transformer)
     
-    def create_capacitors(self, simulation_state):
+    def create_capacitors(self, simulation_state: DxNetworkModel):
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.capacitor.Capacitor):
-                cap = Capacitor()
                 gld_cap = self.all_gld_objects[model.name]
                 for phase_capacitor in model.phase_capacitors:
-                    voltage_angle = self._phase_to_angle[phase_capacitor.phase]
-                    v_r = abs(float(gld_cap._cap_nominal_voltage))*math.cos(voltage_angle)
-                    v_i = abs(float(gld_cap._cap_nominal_voltage))*math.sin(voltage_angle)
                     parent_bus = simulation_state.bus_name_map[gld_cap._parent + '_' + phase_capacitor.phase]
-                    phase_cap = PhaseCapacitor(v_r, v_i, phase_capacitor.var, model.low, model.high, phase_capacitor.phase, parent_bus)
-                    cap.phase_capacitors.append(phase_cap)
-                simulation_state.capacitors.append(cap)
+                    capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, model.nominal_voltage, model.high, model.low)
+                    capacitor.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+                    simulation_state.capacitors.append(capacitor)
 
     def create_regulators(self, simulation_state):
         for model in self.ditto_store.models:

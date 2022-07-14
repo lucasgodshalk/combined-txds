@@ -129,10 +129,6 @@ class DxNetworkModel(NetworkModel):
     def generate_v_init(self, settings: PowerFlowSettings):
         v_init = np.zeros(self.size_Y)
 
-        # Set initial voltage values for capacitors
-        for cap in self.capacitors:
-            cap.set_initial_voltages(self, v_init)
-
         # Set initial voltage values for all other buses (one object per phase)
         for bus in self.buses:
             bus.set_initial_voltages(v_init)
