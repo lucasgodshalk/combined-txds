@@ -47,6 +47,18 @@ class MatrixBuilder:
 
         return csc_matrix((self._val, (self._row, self._col)), dtype=np.float64)
 
+    def get_row(self, row_idx):
+        for idx in range(self._index):
+            row = self._row[idx]
+            if row == row_idx:
+                yield (self._col[idx], self._val[idx])
+
+    def get_col(self, col_idx):
+        for idx in range(self._index):
+            col = self._col[idx]
+            if col == col_idx:
+                yield (self._row[idx], self._val[idx])
+
     def to_symbolic_matrix(self):
         rows = []
         for _ in range(max(self._row) + 1):
