@@ -8,7 +8,7 @@ from logic.powerflowsettings import PowerFlowSettings
 from models.positiveseq.branch import Branch
 
 from models.shared.bus import GROUND, Bus
-from models.shared.single_phase_transformer import SinglePhaseTransformer
+from models.shared.transformer import Transformer
 from models.shared.slack import Slack
 
 CURR_DIR = os.path.realpath(os.path.dirname(__file__))
@@ -64,7 +64,7 @@ def test_isolated_xfmr_network():
     to_bus = Bus(2, 1, 0.1, 0.1, None, None, None)
     to_bus.assign_nodes(next_idx, False)
 
-    xfrmr = SinglePhaseTransformer(from_bus, GROUND, to_bus, GROUND, 1.1, 1.2, True, 1.1, 1.3, 0, 0, None)
+    xfrmr = Transformer(from_bus, GROUND, to_bus, GROUND, 1.1, 1.2, True, 1.1, 1.3, 0, 0, None)
     xfrmr.assign_nodes(next_idx, False)
 
     slack = Slack(from_bus, 1, 0, 0.1, 0.1)

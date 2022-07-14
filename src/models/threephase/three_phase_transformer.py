@@ -2,7 +2,7 @@ from collections import defaultdict
 import typing
 from logic.matrixbuilder import MatrixBuilder
 from models.shared.bus import GROUND
-from models.shared.single_phase_transformer import SinglePhaseTransformer
+from models.shared.transformer import Transformer
 from models.threephase.primary_transformer_coil import PrimaryTransformerCoil
 from models.threephase.secondary_transformer_coil import SecondaryTransformerCoil
 
@@ -31,7 +31,7 @@ class ThreePhaseTransformer():
 
         phase_list = self.get_phase_list()
 
-        self.xfmrs: typing.Dict[any, SinglePhaseTransformer]
+        self.xfmrs: typing.Dict[any, Transformer]
         self.xfmrs = {}
 
         for (pos_phase_1, neg_phase_1, pos_phase_2, neg_phase_2) in phase_list:
@@ -50,7 +50,7 @@ class ThreePhaseTransformer():
             r = self.secondary_coil.resistance * self.secondary_coil.nominal_voltage ** 2  / self.secondary_coil.rated_power
             x = self.secondary_coil.reactance * self.secondary_coil.nominal_voltage ** 2  / self.secondary_coil.rated_power
 
-            xfmr = SinglePhaseTransformer(
+            xfmr = Transformer(
                 from_bus_pos, 
                 from_bus_neg, 
                 to_bus_pos, 
