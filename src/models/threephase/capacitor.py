@@ -2,11 +2,12 @@
 
 
 from logic.matrixbuilder import MatrixBuilder
+from models.shared.bus import Bus
 from models.shared.line import build_line_stamper
 
 
 class Capacitor:
-    def __init__(self, from_bus, to_bus, var, v_nominal, high_voltage, low_voltage) -> None:
+    def __init__(self, from_bus: Bus, to_bus: Bus, var, v_nominal, high_voltage, low_voltage) -> None:
         self.from_bus = from_bus
         self.to_bus = to_bus
         self.var = var
@@ -47,6 +48,8 @@ class Capacitor:
         return self.line_stamper.calc_residuals([0, self.B, 0], v)
 
     def is_enabled(self, v_previous):
+        #This operation is discontinuous. Also, need to account for different control methods.
+
         f_r, f_i = (self.from_bus.node_Vr, self.from_bus.node_Vi)
         v_r = v_previous[f_r]
         v_i = v_previous[f_i]
@@ -54,9 +57,7 @@ class Capacitor:
         v_magnitude = abs(complex(v_r,v_i))
         if v_magnitude > self.high_voltage:
             self.on = False
-            return False
         if v_magnitude < self.low_voltage:
             self.on = True
-            return True
         
         return self.on

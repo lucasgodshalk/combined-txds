@@ -10,7 +10,7 @@ from ditto.store import Store
 import ditto.models.load
 from logic.powerflowsettings import PowerFlowSettings
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
-from models.shared.capacitor import Capacitor
+from models.threephase.capacitor import Capacitor
 from models.shared.slack import Slack
 
 from models.shared.pqload import PQLoad
