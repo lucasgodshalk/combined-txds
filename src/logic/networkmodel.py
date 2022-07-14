@@ -34,7 +34,18 @@ class NetworkModel():
         self.size_Y = None
 
 class TxNetworkModel(NetworkModel):
-    def __init__(self, buses=[], loads=[], slack=[], generators=[], infeasibility_currents=[], transformers=[], branches=[], shunts=[]):
+    def __init__(
+        self, 
+        buses=[], 
+        loads=[], 
+        slack=[], 
+        generators=[], 
+        infeasibility_currents=[], 
+        transformers=[], 
+        branches=[], 
+        shunts=[],
+        voltage_sources=[]
+        ):
         NetworkModel.__init__(self, is_three_phase=False)
 
         self.buses = buses
@@ -45,9 +56,10 @@ class TxNetworkModel(NetworkModel):
         self.transformer = transformers
         self.branch = branches
         self.shunt = shunts
+        self.voltage_sources = voltage_sources
 
     def get_NR_invariant_elements(self):
-        return self.branch + self.shunt + self.transformer + self.slack + self.infeasibility_currents
+        return self.branch + self.shunt + self.transformer + self.slack + self.infeasibility_currents + self.voltage_sources
 
     def get_NR_variable_elements(self):
         return self.generators + self.loads
