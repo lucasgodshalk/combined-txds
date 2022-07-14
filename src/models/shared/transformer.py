@@ -25,13 +25,19 @@ scaled_trsin = scaled_tr * sin(scaled_angle)
 secondary_current_r = -scaled_trcos * Ir_prim - scaled_trsin * Ii_prim
 secondary_current_i = -scaled_trcos * Ii_prim + scaled_trsin * Ir_prim
 
+Vr_pri = Vr_pri_pos - Vr_pri_neg
+Vi_pri = Vi_pri_pos - Vi_pri_neg
+
+Vr_sec = Vr_sec_pos - Vr_sec_neg
+Vi_sec = Vi_sec_pos - Vi_sec_neg
+
 eqns = [
     Ir_prim,
     Ii_prim,
     -Ir_prim,
     -Ii_prim,
-    (Vr_pri_pos - Vr_pri_neg) - scaled_trcos * (Vr_sec_pos - Vr_sec_neg) + scaled_trsin * (Vi_sec_pos - Vi_sec_neg),
-    (Vi_pri_pos - Vi_pri_neg) - scaled_trcos * (Vi_sec_pos - Vi_sec_neg) - scaled_trsin * (Vr_sec_pos - Vr_sec_neg),
+    Vr_pri - scaled_trcos * Vr_sec + scaled_trsin * Vi_sec,
+    Vi_pri - scaled_trcos * Vi_sec - scaled_trsin * Vr_sec,
     secondary_current_r,
     secondary_current_i,
     -secondary_current_r,
@@ -140,6 +146,13 @@ class Transformer:
 
         self.xfrmr_stamper.stamp_primal(Y, J, [self.tr, self.ang_rad, tx_factor], v_previous)
         self.losses_stamper.stamp_primal(Y, J, [self.G_loss, self.B_loss, tx_factor], v_previous)
+
+    def stamp_primal_symbols(self, Y: MatrixBuilder, J):
+        if not self.status:
+            return
+
+        self.xfrmr_stamper.stamp_primal_symbols(Y, J)
+        self.losses_stamper.stamp_primal_symbols(Y, J)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         if not self.status:
