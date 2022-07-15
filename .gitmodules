@@ -1,0 +1,3 @@
+[submodule "src/anoeds"]
+	path = src/anoeds
+	url = git@github.com:arnavgautam/anoeds.git
