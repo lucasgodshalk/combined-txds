@@ -75,7 +75,7 @@ class LagrangeStamper:
             row_idx = self.get_variable_row_index(dual)
             if row_idx == SKIP:
                 continue
-            residuals[row_idx] += derivative.derivative_eval(*args)
+            residuals[row_idx] += derivative.eqn_eval(*args)
 
         if self.optimization_enabled:
             for primal in self.handler.primals:
@@ -83,7 +83,7 @@ class LagrangeStamper:
                 row_idx = self.get_variable_row_index(primal)
                 if row_idx == SKIP:
                     continue
-                residuals[row_idx] += derivative.derivative_eval(*args)
+                residuals[row_idx] += derivative.eqn_eval(*args)
 
         return residuals
 

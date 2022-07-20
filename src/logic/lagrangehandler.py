@@ -70,21 +70,21 @@ def split_expr(eqn, vars):
     return (constant_expr, variable_expr_dict)
 
 class DerivativeEntry:
-    def __init__(self, derivative_var, derivative, constant_expr, variable_exprs, lambda_inputs) -> None:
-        self.derivative_var = derivative_var
+    def __init__(self, variable, expr, constant_expr, variable_exprs, lambda_inputs) -> None:
+        self.variable = variable
 
-        self.derivative = derivative
-        self.derivative_eval = lambdify(lambda_inputs, derivative)
+        self.expr = expr
+        self.eqn_eval = lambdify(lambda_inputs, expr)
         
         self.constant_expr = constant_expr
         self.constant_eval = lambdify(lambda_inputs, constant_expr)
 
         self.variable_exprs = variable_exprs
         self.variable_evals = {}
-        for var, derivative in variable_exprs.items():
-            self.variable_exprs[var] = derivative
-            if derivative != 0:
-                self.variable_evals[var] = lambdify(lambda_inputs, derivative)
+        for var, variable_eqn in variable_exprs.items():
+            self.variable_exprs[var] = variable_eqn
+            if variable_eqn != 0:
+                self.variable_evals[var] = lambdify(lambda_inputs, variable_eqn)
 
     def get_evals(self):
         if self.constant_expr != 0:
@@ -93,10 +93,10 @@ class DerivativeEntry:
         for (variable, func) in self.variable_evals.items():
             yield(variable, func, self.variable_exprs[variable])
 
-class LagrangeHandler:
-    #Increment whenever you make changes to langrangian handling.
-    VERSION = 1
+    def __repr__(self) -> str:
+        return f"Entry {self.variable}: {self.expr}"
 
+class LagrangeHandler:
     def __init__(self, lagrange, constant_symbols, primal_symbols, dual_symbols) -> None:
         self.lagrange = lagrange
         self.constants = constant_symbols

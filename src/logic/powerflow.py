@@ -2,13 +2,14 @@ import math
 import time
 from logic.homotopycontroller import HomotopyController
 from logic.networkloader import NetworkLoader
+from logic.networkmodel import NetworkModel
 from logic.nrsolver import NRSolver
 from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflowresults import PowerFlowResults
 from logic.v_limiting import PositiveSeqVoltageLimiting
 
 class PowerFlow:
-    def __init__(self, network_model, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
+    def __init__(self, network_model: NetworkModel, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
         self.network_model = network_model
         self.settings = settings
 
