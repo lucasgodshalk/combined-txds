@@ -109,9 +109,11 @@ class Parser:
                         if isSlack:
                             # Create this phase of the slack bus
                             slack = Slack(bus, v_mag, v_ang, 0, 0)
-                            slack.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                             simulation_state.slack.append(slack)
-                            
+        
+        #Match index assignment for the old anoeds codebase.
+        for slack in simulation_state.slack:
+            slack.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
 
     def create_bus(self, simulation_state, v_mag, v_ang, node_name, node_phase):
         bus_id = next(self._bus_index)
