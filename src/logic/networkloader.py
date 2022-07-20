@@ -1,7 +1,7 @@
 from itertools import count
 from typing import Tuple
 from logic.networkmodel import NetworkModel, TxNetworkModel
-from logic.parsers.parser import parse_raw
+from logic.parsers.raw.parser import parse_raw
 from logic.powerflowsettings import PowerFlowSettings
 from logic.parsers.anoeds_parser import Parser
 from models.shared.L2infeasibility import L2InfeasibilityCurrent

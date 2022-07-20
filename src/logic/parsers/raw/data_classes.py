@@ -21,7 +21,7 @@ from models.positiveseq.generator import Generator
 from models.shared.pqload import PQLoad
 from models.shared.slack import Slack
 from models.positiveseq.shunt import Shunt
-from logic.parsers.parse_transformers import TwoWindingXfmrs, ThreeWindingXfmrs
+from logic.parsers.raw.parse_transformers import TwoWindingXfmrs, ThreeWindingXfmrs
 
 class GenType(Enum):
     Generation = 1

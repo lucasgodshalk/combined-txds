@@ -15,9 +15,9 @@ from logic.global_vars import global_vars
 
 from models.shared.bus import Bus
 
-import logic.parsers.data_classes as data_classes
+import logic.parsers.raw.data_classes as data_classes
 
-import logic.parsers.Data as Data  # pared down/modified version of data.py from
+import logic.parsers.raw.Data as Data  # pared down/modified version of data.py from
 # https://github.com/GOCompetition/Evaluation/blob/master/data.py
 
 
