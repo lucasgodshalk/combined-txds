@@ -9,11 +9,11 @@ from logic.matrixbuilder import MatrixBuilder
 from models.shared.line import build_line_stamper
 from models.shared.bus import Bus
 
-constants = B_line, tx_factor = symbols('B_line tx_factor')
+constants = B_shunt, tx_factor = symbols('B_sh tx_factor')
 primals = [Vr_from, Vi_from, Vr_to, Vi_to] = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
 duals = [Lr_from, Li_from, Lr_to, Li_to] = symbols('lambda_from\,r lambda_from\,i lambda_to\,r lambda_to\,i')
 
-scaled_B_line = B_line * (1 - tx_factor)
+scaled_B_line = B_shunt * (1 - tx_factor)
 
 shunt_eqns = [
     -scaled_B_line * Vi_from,

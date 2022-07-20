@@ -11,9 +11,16 @@ class StampEntry:
         self.eval_func = eval_func
 
 class LagrangeStamper:
-    def __init__(self, handler: LagrangeHandler, index_map: dict, optimization_enabled: bool) -> None:
+    def __init__(self, handler: LagrangeHandler, var_map: dict, optimization_enabled: bool, eqn_map: dict = None) -> None:
         self.handler = handler
-        self.index_map = index_map
+
+        #The equation map is really the row index lookup, and the variable map is really the column index lookup.
+        self.var_map = var_map
+        if eqn_map == None:
+            self.eqn_map = var_map
+        else: 
+            self.eqn_map = eqn_map
+
         self.optimization_enabled = optimization_enabled
 
         self.empty_primals = [None] * len(self.handler.primals)
@@ -39,7 +46,7 @@ class LagrangeStamper:
                 if yth_variable == None:
                     components.append((row_index, None, eval, expr))
                 else:
-                    col_index = self.index_map[yth_variable]
+                    col_index = self.var_map[yth_variable]
                     if col_index == SKIP:
                         continue
                     components.append((row_index, col_index, eval, expr))
@@ -48,11 +55,11 @@ class LagrangeStamper:
     
     def get_variable_row_index(self, variable):
         if self.optimization_enabled:
-            return self.index_map[variable]
+            return self.eqn_map[variable]
         else:
             #For the optimization enabled case, we can't use the dual variable's index
             #for the matrix row. Instead, we commandeer the index of it's corresponding primal variable.
-            return self.index_map[self.handler.primals[self.handler.duals.index(variable)]]
+            return self.eqn_map[self.handler.primals[self.handler.duals.index(variable)]]
 
     def stamp_primal(self, Y: MatrixBuilder, J, constant_vals, v_prev):
         primal_vals, dual_vals = self.__extract_kth_primals_duals(v_prev)
@@ -93,7 +100,7 @@ class LagrangeStamper:
 
         primal_vals = []
         for primal in self.handler.primals:
-            index = self.index_map[primal]
+            index = self.var_map[primal]
             if index == SKIP:
                 primal_vals.append(0)
             else:
@@ -102,7 +109,7 @@ class LagrangeStamper:
         if self.optimization_enabled:
             dual_vals = []
             for dual in self.handler.duals:
-                index = self.index_map[dual]
+                index = self.var_map[dual]
                 if index == SKIP:
                     dual_vals.append(0)
                 else:

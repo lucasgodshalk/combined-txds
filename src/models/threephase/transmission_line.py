@@ -3,7 +3,7 @@ import typing
 import numpy as np
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.shared.line import build_line_stamper
+from models.shared.line import line_lh
 from models.positiveseq.branch import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 from models.threephase.transmission_line_phase import TransmissionLinePhase
 from models.threephase.edge import Edge
@@ -38,44 +38,40 @@ class TransmissionLine():
 
         self.stampers = {}
 
-        # Go through all phases and build lagrange stamper for each line combination (including the line with itself)
+        # Go through all phases and build lagrange stamper for each line combination.
         for i in range(len(self.lines)):
             # Get the line
             line1 = self.lines[i]
-
-            # Collect the line's nodes for mutual susceptance calculation
-            line1_from, _ = line1.get_nodes(simulation_state)
-            line1_r_f, line1_i_f, line1_Lr_f, line1_Li_f = (line1_from.node_Vr, line1_from.node_Vi, line1_from.node_lambda_Vr, line1_from.node_lambda_Vi)
+            line1_from, line1_to = line1.get_nodes(simulation_state)
 
             # Go through all lines
             for j in range(len(self.lines)):
                 line2 = self.lines[j]
-                _, line2_to = line2.get_nodes(simulation_state)
-                line2_r_t, line2_i_t, line2_Lr_t, line2_Li_t = (line2_to.node_Vr, line2_to.node_Vi, line2_to.node_lambda_Vr, line2_to.node_lambda_Vi)
+                line2_from, line2_to = line2.get_nodes(simulation_state)
 
-                line_stamper = build_line_stamper(
-                    line1_r_f, 
-                    line1_i_f, 
-                    line2_r_t, 
-                    line2_i_t,
-                    line1_Lr_f, 
-                    line1_Li_f, 
-                    line2_Lr_t, 
-                    line2_Li_t,
-                    optimization_enabled
-                    )
-                
-                index_map = {}
-                index_map[Vr_from] = line1_r_f
-                index_map[Vi_from] = line1_i_f
-                index_map[Vr_to] = line2_r_t
-                index_map[Vi_to] = line2_i_t
-                index_map[Lr_from] = line1_Lr_f
-                index_map[Li_from] = line1_Li_f
-                index_map[Lr_to] = line2_Lr_t
-                index_map[Li_to] = line2_Li_t
+                var_map = {}
+                var_map[Vr_from] = line2_from.node_Vr
+                var_map[Vi_from] = line2_from.node_Vi
+                var_map[Vr_to] = line2_to.node_Vr
+                var_map[Vi_to] = line2_to.node_Vi
+                var_map[Lr_from] = line2_from.node_lambda_Vr
+                var_map[Li_from] = line2_from.node_lambda_Vi
+                var_map[Lr_to] = line2_to.node_lambda_Vr
+                var_map[Li_to] = line2_to.node_lambda_Vi
 
-                shunt_stamper = LagrangeStamper(shunt_lh, index_map, optimization_enabled)
+                eqn_map = {}
+                eqn_map[Vr_from] = line1_from.node_Vr
+                eqn_map[Vi_from] = line1_from.node_Vi
+                eqn_map[Vr_to] = line1_to.node_Vr
+                eqn_map[Vi_to] = line1_to.node_Vi
+                eqn_map[Lr_from] = line1_from.node_lambda_Vr
+                eqn_map[Li_from] = line1_from.node_lambda_Vi
+                eqn_map[Lr_to] = line1_to.node_lambda_Vr
+                eqn_map[Li_to] = line1_to.node_lambda_Vi
+
+                line_stamper = LagrangeStamper(line_lh, var_map, optimization_enabled, eqn_map)
+
+                shunt_stamper = LagrangeStamper(shunt_lh, var_map, optimization_enabled, eqn_map)
 
                 self.stampers[(line1_from, line2_to)] = (line_stamper, shunt_stamper)
 
@@ -85,6 +81,10 @@ class TransmissionLine():
             line_stamper.stamp_primal(Y, J, [g, b, tx_factor], v_previous)
             shunt_stamper.stamp_primal(Y, J, [B/2, tx_factor], v_previous)
 
+    def stamp_primal_symbols(self, Y: MatrixBuilder, J, state):
+        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
+            line_stamper.stamp_primal_symbols(Y, J)
+            shunt_stamper.stamp_primal_symbols(Y, J)    
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(network_model):
