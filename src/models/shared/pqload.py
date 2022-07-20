@@ -48,8 +48,8 @@ class PQLoad:
         self.id = PQLoad._ids.__next__()
 
         self.bus = bus
-        self.P = P / 100
-        self.Q = Q / 100
+        self.P = P
+        self.Q = Q
 
     def assign_nodes(self, node_index, optimization_enabled):
         index_map = {}
