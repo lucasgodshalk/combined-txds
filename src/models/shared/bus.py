@@ -1,7 +1,5 @@
 from __future__ import division
-from itertools import count
 import math
-import typing
 from logic.lagrangestamper import SKIP
 
 #Represents an interconnection point for other network element with a shared voltage. In the three-phase case, this is used for a single phase.
@@ -39,6 +37,15 @@ class Bus:
 
         self.Vr_init = Vm_init * math.cos(Va_init * math.pi / 180)
         self.Vi_init = Vm_init * math.sin(Va_init * math.pi / 180)
+
+    def __hash__(self) -> int:
+        return self.Bus
+
+    def __eq__(self, __o: object) -> bool:
+        if isinstance(__o, Bus):
+            return __o.Bus == self.Bus
+        else:
+            return False
 
     def set_initial_voltages(self, v_estimate):
         f_r, f_i = (self.node_Vr, self.node_Vi)
