@@ -46,20 +46,15 @@ class ThreePhaseTransformer():
         for (pos_phase_1, neg_phase_1, pos_phase_2, neg_phase_2) in phase_list:
             from_bus_pos = self.primary_coil.phase_connections[pos_phase_1]
             if neg_phase_1 == NEUTRAL:
-                if self.primary_coil.connection_type == CONNECTION_TYPE_WYE:
-                    from_bus_neg = GROUND# self.get_or_create_neutral_primary(next_var_idx, optimization_enabled)
-                else:
-                    raise Exception("Unknown connection type")
-                    #Need to handle grounded wye. Probably use a voltage source to ground the neutral bus separately?
+                #Todo: grounded vs ungrounded wye.
+                #self.get_or_create_neutral_primary(next_var_idx, optimization_enabled)
+                from_bus_neg = GROUND 
             else:
                 from_bus_neg = self.primary_coil.phase_connections[neg_phase_1]
             to_bus_pos = self.secondary_coil.phase_connections[pos_phase_2]
             if neg_phase_2 == NEUTRAL:
-                if self.secondary_coil.connection_type == CONNECTION_TYPE_WYE:
-                    to_bus_neg = GROUND# self.get_or_create_neutral_secondary(next_var_idx, optimization_enabled)
-                else:
-                    raise Exception("Unknown connection type")
-                    #Need to handle grounded wye. Probably use a voltage source to ground the neutral bus separately?
+                #self.get_or_create_neutral_primary(next_var_idx, optimization_enabled)
+                to_bus_neg = GROUND 
             else:
                 to_bus_neg = self.secondary_coil.phase_connections[neg_phase_2]
 
