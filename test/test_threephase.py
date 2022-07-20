@@ -1,6 +1,6 @@
 # import pytest as pt
 from math import radians
-from logic.parsers.anoeds_parser import Parser
+from logic.parsers.threephase.threephaseparser import ThreePhaseParser
 from logic.powerflow import FilePowerFlow, PowerFlow
 from logic.powerflowsettings import PowerFlowSettings
 from models.threephase.resistive_load import ResistiveLoad

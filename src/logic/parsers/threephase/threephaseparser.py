@@ -33,7 +33,7 @@ from models.threephase.regulator import Regulator
 from models.threephase.regulator_phase import RegulatorPhase
 from models.threephase.transmission_line_phase import TransmissionLinePhase
 
-class Parser:
+class ThreePhaseParser:
     # Angles in degrees associated with different phases
     _phase_to_degrees = {'A': 0, 'B': 240, 'C': 120, '1': 0, '2': 90}
 
@@ -429,7 +429,7 @@ class Parser:
 if __name__ == "__main__":
     print("starting script")
     glm_file_path = "test/data/ieee_4_node/node.glm"
-    test_parser = Parser(glm_file_path)
+    test_parser = ThreePhaseParser(glm_file_path)
     returned_generators = test_parser.parse()
     print(returned_generators)
     

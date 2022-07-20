@@ -3,7 +3,7 @@ from typing import Tuple
 from logic.networkmodel import NetworkModel, TxNetworkModel
 from logic.parsers.raw.parser import parse_raw
 from logic.powerflowsettings import PowerFlowSettings
-from logic.parsers.anoeds_parser import Parser
+from logic.parsers.threephase.threephaseparser import ThreePhaseParser
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
 
 class NetworkLoader:
@@ -20,7 +20,7 @@ class NetworkLoader:
             raise Exception("Invalid netlist file format")
 
     def __create_three_phase_network(self, network_file: str):
-        parser = Parser(network_file, self.settings, self.optimization_enabled)
+        parser = ThreePhaseParser(network_file, self.settings, self.optimization_enabled)
 
         network_model = parser.parse()
 
