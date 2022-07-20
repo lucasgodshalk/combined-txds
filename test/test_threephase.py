@@ -1,209 +1,107 @@
 # import pytest as pt
+from math import radians
 from logic.parsers.anoeds_parser import Parser
-from logic.powerflow import PowerFlow
+from logic.powerflow import FilePowerFlow, PowerFlow
+from logic.powerflowsettings import PowerFlowSettings
 from models.threephase.resistive_load import ResistiveLoad
 import os
 import numpy as np
+import xml.etree.ElementTree as ET
+import re
+import cmath
 
 CURR_DIR = os.path.realpath(os.path.dirname(__file__))
+DATA_DIR = os.path.join(CURR_DIR, "data")
+
+def get_glm_case_file(casename, glm_file_name = "node.glm"):
+    return os.path.join(DATA_DIR, casename, glm_file_name)
+
+def get_gridlabd_output_file(casename):
+    return os.path.join(DATA_DIR, casename, "result.xml")
+
+def execute_glm_case(casename, glm_file_name = "node.glm"):
+    filepath = get_glm_case_file("ieee_four_bus")
+    powerflow = FilePowerFlow(filepath, PowerFlowSettings())
+    return powerflow.execute()
+
+VOLTAGE_REGEX = r"([\+-]\d*\.?\d*)([\+-]\d*\.?\d*)d V"
+
+def parse_voltage_str(voltage_str: str):
+    #'+7199.56+0d V'
+    match = re.match(VOLTAGE_REGEX, voltage_str)
+
+    if not match:
+        raise Exception(f"Invalid voltage string '{voltage_str}'")
+
+    mag_str, ang_deg_str = match.groups()
+    mag, ang = float(mag_str), radians(float(ang_deg_str))
+    if ang > 6.4:
+        raise Exception("Invalid radian angle")
+    return cmath.rect(mag, ang)
+
+def load_gridlabd_xml(filepath):
+    tree = ET.parse(filepath)
+    root = tree.getroot()
+    powerflow_node = root.find("powerflow")
+    nodelist_node = powerflow_node.find("node_list")
+    nodes = nodelist_node.findall("node")
+
+    lookup = {}
+    for node in nodes:
+        name = node.find("name").text
+        voltage_A = parse_voltage_str(node.find("voltage_A").text)
+        voltage_B = parse_voltage_str(node.find("voltage_B").text)
+        voltage_C = parse_voltage_str(node.find("voltage_C").text)
+
+        lookup[name] = (voltage_A, voltage_B, voltage_C)
+
+    return lookup
+
+def test_powerflowrunner_ieee_four_bus():
+    results = execute_glm_case("ieee_four_bus")
+
+    expected_v = np.array([
+        7199.558000,
+        0.000000,
+        -3599.779000,
+        -6235.000000,
+        -3599.779000,
+        6235.000000,
+        7106.422287,
+        -42.067600,
+        -3606.903032,
+        -6161.628479,
+        -3520.343705,
+        6189.706477,
+        2242.742683,
+        -144.807987,
+        -1251.271366,
+        -1892.203540,
+        -1002.844346,
+        2020.691679,
+        1893.763615,
+        -302.435080,
+        -1277.965079,
+        -1617.280802,
+        -705.200678,
+        1850.977065
+    ], dtype=float)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
 
 # Check that disconnected swing buses just return the nominal voltage.
 def test_powerflowrunner_just_swing():
-    glm_file_path = os.path.join("data", "just_swing", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlow(glm_full_file_path)
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("just_swing")
+    
     expected_v = np.array([2.40000000e+03,
                            0.00000000e+00,
                            -1.20000000e+03,
                            -2.07846097e+03,
                            -1.20000000e+03,
                            2.07846097e+03], dtype=float)
-    assert np.allclose(v_estimate[:6], expected_v, rtol=1e-5)
+    assert np.allclose(results.v_final[:6], expected_v, rtol=1e-5)
 
-# Check that the stamps of resistive loads look correct
-def test_powerflowrunner_just_load_stamp():
-    glm_file_path = os.path.join("data", "just_load_stamp", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    parser = Parser(glm_full_file_path)
-    simulation_state = parser.parse()
-    simulation_state.reset_linear_stamp_collection()
-    model_has_resistive_loads = False
-    for load in simulation_state.loads:
-        if isinstance(load, ResistiveLoad):
-            model_has_resistive_loads = True
-            load.collect_Y_stamps(simulation_state)
-    if not model_has_resistive_loads:
-        # Only run the test when resistive loads are implemented
-        return
-    PowerFlowRunner.stamp_linear(simulation_state)
-    expected_Y = np.matrix([[ 0.3125    ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ],
-        [ 0.        , 0.15135066,  0.        ,  0.        ,  0.        ,0.        ],
-        [ 0.        ,  0.        ,  0.3125    ,  0.        ,  0.        ,0.        ],
-        [ 0.        ,  0.        ,  0.        , 0.15135066,  0.        ,0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.3125    ,0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.15135066]], dtype=float)
-    assert np.allclose(simulation_state.lin_Y.todense(), expected_Y, rtol=1e-5)
-
-# Check that the stamps of infinite sources look correct
-def test_powerflowrunner_just_swing_stamp():
-    glm_file_path = os.path.join("data", "just_swing", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    parser = Parser(glm_full_file_path)
-    simulation_state = parser.parse()
-    simulation_state.reset_linear_stamp_collection()
-    for infinite_source in simulation_state.infinite_sources:
-        infinite_source.collect_Y_stamps(simulation_state)
-        infinite_source.collect_J_stamps(simulation_state)
-    PowerFlowRunner.stamp_linear(simulation_state)
-    expected_Y = np.array([[0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
-        [0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
-        [0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
-        [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
-        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.],
-        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
-        [1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0.]], dtype=float)
-    expected_J = np.array([[    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [ 2400.        ],
-        [    0.        ],
-        [-1200.        ],
-        [-2078.46096908],
-        [-1200.        ],
-        [ 2078.46096908]], dtype=float)
-    assert np.allclose(simulation_state.lin_Y.todense(), expected_Y, rtol=1e-5)
-    assert np.allclose(simulation_state.lin_J.todense(), expected_J, rtol=1e-5)
-
-# Check that the stamps of swing buses plus resistive loads look correct
-def test_powerflowrunner_swing_and_load_stamp():
-    glm_file_path = os.path.join("data", "swing_and_load_stamp", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    parser = Parser(glm_full_file_path)
-    simulation_state = parser.parse()
-    simulation_state.reset_linear_stamp_collection()
-    model_has_resistive_loads = False
-    for load in simulation_state.loads:
-        if isinstance(load, ResistiveLoad):
-            model_has_resistive_loads = True
-            load.collect_Y_stamps(simulation_state)
-    if not model_has_resistive_loads:
-        # Only run the test when resistive loads are implemented
-        return
-    for infinite_source in simulation_state.infinite_sources:
-        infinite_source.collect_Y_stamps(simulation_state)
-        infinite_source.collect_J_stamps(simulation_state)
-    PowerFlowRunner.stamp_linear(simulation_state)
-    # Columns: Voltage variables at swing | Voltage variables at load | Current variables
-    # Rows: KCLs at swing ; KCLs at load; extra equations for infinite sources at swing bus
-    expected_Y = np.array([
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  1.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  1.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  1.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,1.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  1.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  1.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.3125    ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        , 0.15135066,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.3125    ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        , 0.15135066,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.3125    ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        , 0.15135066,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 1.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  1.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  1.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  1.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  1.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ],
-        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,1.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ,  0.        ,  0.        ,0.        ,  0.        ,  0.        ]], dtype=float)
-    expected_J = np.array([[    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [ 2400.        ],
-        [    0.        ],
-        [-1200.        ],
-        [-2078.46096908],
-        [-1200.        ],
-        [ 2078.46096908]], dtype=float)
-    assert np.allclose(simulation_state.lin_Y.todense(), expected_Y, rtol=1e-5)
-    assert np.allclose(simulation_state.lin_J.todense(), expected_J, rtol=1e-5)
-
-def test_powerflowrunner_swing_and_line_to_resistive_stamp():
-    glm_file_path = os.path.join("data", "swing_and_line_to_resistive_stamp", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
-    model_has_resistive_loads = any((isinstance(load, ResistiveLoad) for load in simulation_state.loads))
-    if not model_has_resistive_loads:
-        # Only run the test when resistive loads are implemented
-        return
-
-    # Columns: Voltage variables at swing | Voltage variables at load | Current variables
-    # Rows: KCLs at swing ; KCLs at load; extra equations for infinite sources at swing bus
-    expected_Y = np.array([[1.28442388, 2.66353529, -0.6239444, -0.91412373, -0.22517843, -0.59401059, -1.28442388, -2.66353637, 0.6239444, 0.91412407, 0.22517843, 0.59401072, 1., 0., 0., 0., 0., 0.],
-        [-2.66353529, 1.28442388, 0.91412373, -0.6239444, 0.59401059, -0.22517843, 2.66353637, -1.28442388, -0.91412407, 0.6239444, -0.59401072, 0.22517843, 0., 1., 0., 0., 0., 0.],
-        [-0.6239444, -0.91412373, 1.43662299, 2.7601376, -0.38234995, -0.72506359, 0.6239444, 0.91412407, -1.43662299, -2.76013873, 0.38234995, 0.72506381, 0., 0., 1., 0., 0., 0.],
-        [0.91412373, -0.6239444, -2.7601376, 1.43662299, 0.72506359, -0.38234995, -0.91412407, 0.6239444, 2.76013873, -1.43662299, -0.72506381, 0.38234995, 0., 0., 0., 1., 0., 0.],
-        [-0.22517843, -0.59401059, -0.38234995, -0.72506359, 1.15420534, 2.57087262, 0.22517843, 0.59401072, 0.38234995, 0.72506381, -1.15420534, -2.57087365, 0., 0., 0., 0., 1., 0.],
-        [0.59401059, -0.22517843, 0.72506359, -0.38234995, -2.57087262, 1.15420534, -0.59401072, 0.22517843, -0.72506381, 0.38234995, 2.57087365, -1.15420534, 0., 0., 0., 0., 0., 1.],
-        [-1.28442388, -2.66353637, 0.6239444, 0.91412407, 0.22517843, 0.59401072, 1.28575721, 2.66353529, -0.6239444, -0.91412373, -0.22517843, -0.59401059, 0., 0., 0., 0., 0., 0.],
-        [2.66353637, -1.28442388, -0.91412407, 0.6239444, -0.59401072, 0.22517843, -2.66353529, 1.28575721, 0.91412373, -0.6239444, 0.59401059, -0.22517843, 0., 0., 0., 0., 0., 0.],
-        [0.6239444, 0.91412407, -1.43662299, -2.76013873, 0.38234995, 0.72506381, -0.6239444, -0.91412373, 1.43795633, 2.7601376, -0.38234995, -0.72506359, 0., 0., 0., 0., 0., 0.],
-        [-0.91412407, 0.6239444, 2.76013873, -1.43662299, -0.72506381, 0.38234995, 0.91412373, -0.6239444, -2.7601376, 1.43795633, 0.72506359, -0.38234995, 0., 0., 0., 0., 0., 0.],
-        [0.22517843, 0.59401072, 0.38234995, 0.72506381, -1.15420534, -2.57087365, -0.22517843, -0.59401059, -0.38234995, -0.72506359, 1.15553867, 2.57087262, 0., 0., 0., 0., 0., 0.],
-        [-0.59401072, 0.22517843, -0.72506381, 0.38234995, 2.57087365, -1.15420534, 0.59401059, -0.22517843, 0.72506359, -0.38234995, -2.57087262, 1.15553867, 0., 0., 0., 0., 0., 0.],
-        [1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-        [0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]], dtype=float)
-    expected_J = np.array([
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [    0.        ],
-        [ 2400.        ],
-        [    0.        ],
-        [-1200.        ],
-        [-2078.46096908],
-        [-1200.        ],
-        [ 2078.46096908]], dtype=float)
-    Y = (simulation_state.lin_Y + simulation_state.nonlin_Y).todense()
-    assert Y.shape == expected_Y.shape
-    for i in range(Y.shape[0]):
-        assert np.allclose(np.array(Y[i]), expected_Y[i], rtol=1e-4)
-    assert np.allclose((simulation_state.lin_J + simulation_state.nonlin_J).todense(), expected_J, rtol=1e-4)
-    
 def test_powerflowrunner_swing_and_line_to_pq():
-    glm_file_path = os.path.join("data", "swing_and_line_to_pq", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("swing_and_line_to_pq")
     
     # Voltages at node 1, voltages at node 2
     expected_v = np.array([
@@ -219,14 +117,11 @@ def test_powerflowrunner_swing_and_line_to_pq():
         -1873.096501  ,
          -973.394008  ,
          1981.430136], dtype=float)
-    assert np.allclose(v_estimate[:12], expected_v[:12], rtol=1e-8, atol=1e-8)
+    assert np.allclose(results.v_final[:12], expected_v[:12], rtol=1e-8, atol=1e-8)
 
 def test_powerflowrunner_swing_and_long_line_to_pq():
-    glm_file_path = os.path.join("data", "swing_and_long_line_to_pq", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
-    
+    results = execute_glm_case("swing_and_long_line_to_pq")
+
     # Voltages at node 1, voltages at node 2
     expected_v = np.array([
         2400.000000,
@@ -241,13 +136,10 @@ def test_powerflowrunner_swing_and_long_line_to_pq():
         -704.110354,
         -129.228599,
         1266.560786], dtype=float)
-    assert np.allclose(v_estimate[:12], expected_v[:12], rtol=1e-8, atol=1e-8)
+    assert np.allclose(results.v_final[:12], expected_v[:12], rtol=1e-8, atol=1e-8)
 
 def test_powerflowrunner_swing_and_long_ul_to_pq():
-    glm_file_path = os.path.join("data", "swing_and_long_ul_to_pq", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("swing_and_long_ul_to_pq")
     
     # Voltages at node 1, voltages at node 2
     expected_v = np.array([
@@ -264,13 +156,10 @@ def test_powerflowrunner_swing_and_long_ul_to_pq():
         -977.612628,
         1929.356042
     ], dtype=float)
-    assert np.allclose(v_estimate[:12], expected_v[:12], rtol=1e-8, atol=1e-8)
+    assert np.allclose(results.v_final[:12], expected_v[:12], rtol=1e-8, atol=1e-8)
     
 def test_powerflowrunner_swing_and_underground_lines_to_pq():
-    glm_file_path = os.path.join("data", "swing_and_underground_lines_to_pq", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("swing_and_underground_lines_to_pq")
     
     # Voltages at node 1, voltages at node 2
     expected_v = np.array([
@@ -311,13 +200,11 @@ def test_powerflowrunner_swing_and_underground_lines_to_pq():
         -803.617285,
         1785.374801
     ], dtype=float)
-    assert np.allclose(v_estimate[:36], expected_v[:36], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:36], expected_v[:36], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_swing_2lines_load():
-    glm_file_path = os.path.join("data", "swing_2lines_load", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("swing_2lines_load")
+
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -344,17 +231,11 @@ def test_powerflowrunner_swing_2lines_load():
         -3362.379369,
         6149.430068
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_ieee_four_bus_resistive():
-    glm_file_path = os.path.join("data", "ieee_four_bus_resistive", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
-    model_has_resistive_loads = any((isinstance(load, ResistiveLoad) for load in simulation_state.loads))
-    if not model_has_resistive_loads:
-        # Only run the test when resistive loads are implemented
-        return
+    results = execute_glm_case("ieee_four_bus_resistive")
+
     expected_v = np.array([
         7199.56,
         0.00,
@@ -375,46 +256,11 @@ def test_powerflowrunner_ieee_four_bus_resistive():
         -1200.27,
         2080.21
     ], dtype=float)
-    assert np.allclose(v_estimate[:18], expected_v[:18], rtol=1e-1)
+    assert np.allclose(results.v_final[:18], expected_v[:18], rtol=1e-1)
     
 def test_powerflowrunner_balanced_stepdown_grY_grY():
-    glm_file_path = os.path.join("data", "balanced_stepdown_grY_grY", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
-    expected_v = np.array([
-        7199.558000,
-        0.000000,
-        -3599.779000,
-        -6235.000000,
-        -3599.779000,
-        6235.000000,
-        7106.422287,
-        -42.067600,
-        -3606.903032,
-        -6161.628479,
-        -3520.343705,
-        6189.706477,
-        2242.742683,
-        -144.807987,
-        -1251.271366,
-        -1892.203540,
-        -1002.844346,
-        2020.691679,
-        1893.763615,
-        -302.435080,
-        -1277.965079,
-        -1617.280802,
-        -705.200678,
-        1850.977065
-    ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    results = execute_glm_case("balanced_stepdown_grY_grY")
 
-def test_powerflowrunner_ieee_four_bus():
-    glm_file_path = os.path.join("data", "ieee_four_bus", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -441,13 +287,11 @@ def test_powerflowrunner_ieee_four_bus():
         -705.200678,
         1850.977065
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
     
 def test_powerflowrunner_ieee_four_bus_higher_transformer_impedance():
-    glm_file_path = os.path.join("data", "ieee_four_bus_higher_transformer_impedance", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("ieee_four_bus_higher_transformer_impedance")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -474,13 +318,11 @@ def test_powerflowrunner_ieee_four_bus_higher_transformer_impedance():
         -537.407399,
         1625.719030
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
     
 def test_powerflowrunner_ieee_four_bus_transformer_shunt_impedance():
-    glm_file_path = os.path.join("data", "ieee_four_bus_transformer_shunt_impedance", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("ieee_four_bus_transformer_shunt_impedance")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -507,14 +349,12 @@ def test_powerflowrunner_ieee_four_bus_transformer_shunt_impedance():
         -705.200678,
         1850.977065
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
 
 # This is known to not be as close as desired, but it is in agreement with Amrit's code.
 def test_powerflowrunner_ieee_four_bus_long_lines():
-    glm_file_path = os.path.join("data", "ieee_four_bus_long_lines", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("ieee_four_bus_long_lines")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -541,13 +381,11 @@ def test_powerflowrunner_ieee_four_bus_long_lines():
         -556.530319,
         1675.213647
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-4, atol=1e-11)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-4, atol=1e-11)
 
 def test_powerflowrunner_connected_transformer():
-    glm_file_path = os.path.join("data", "connected_transformer", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("connected_transformer")
+    
     expected_v = np.array([
         7200.000000,
         0.000000,
@@ -562,13 +400,11 @@ def test_powerflowrunner_connected_transformer():
         -1050.703437,
         2058.310815
     ], dtype=float)
-    assert np.allclose(v_estimate[:12], expected_v[:12], rtol=1e-8, atol=1e-8)
+    assert np.allclose(results.v_final[:12], expected_v[:12], rtol=1e-8, atol=1e-8)
 
 def test_powerflowrunner_just_two_transformers():
-    glm_file_path = os.path.join("data", "just_two_transformers", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("just_two_transformers")
+    
     expected_v = np.array([
         7200.000000,
         0.000000,
@@ -589,13 +425,11 @@ def test_powerflowrunner_just_two_transformers():
         -2664.664781,
         6044.822913
     ], dtype=float)
-    assert np.allclose(v_estimate[:18], expected_v[:18], rtol=1e-8, atol=1e-8)
+    assert np.allclose(results.v_final[:18], expected_v[:18], rtol=1e-8, atol=1e-8)
 
 def test_powerflowrunner_two_transformers():
-    glm_file_path = os.path.join("data", "two_transformers", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("two_transformers")
+    
     expected_v = np.array([
         7200.000000,
         0.000000,
@@ -622,13 +456,11 @@ def test_powerflowrunner_two_transformers():
         -1876.011796,
         5563.162167
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-8, atol=1e-8)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-8, atol=1e-8)
 
 def test_powerflowrunner_three_transformers_with_lines():
-    glm_file_path = os.path.join("data", "three_transformers_with_lines", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("three_transformers_with_lines")
+    
     expected_v = np.array([
         7200.000000,
         0.000000,
@@ -667,13 +499,11 @@ def test_powerflowrunner_three_transformers_with_lines():
         -333.311564,
         1617.749324
     ], dtype=float)
-    assert np.allclose(v_estimate[:36], expected_v[:36], rtol=1e-8, atol=1e-8)
+    assert np.allclose(results.v_final[:36], expected_v[:36], rtol=1e-8, atol=1e-8)
 
 def test_powerflowrunner_three_transformers():
-    glm_file_path = os.path.join("data", "three_transformers", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("three_transformers")
+    
     expected_v = np.array([
         7200.000000,
         0.000000,
@@ -700,13 +530,11 @@ def test_powerflowrunner_three_transformers():
         -797.806103,
         1387.534798
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-8, atol=1e-8)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-8, atol=1e-8)
     
 def test_powerflowrunner_kersting_example_4_1():
-    glm_file_path = os.path.join("data", "kersting_example_4_1", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-13})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("kersting_example_4_1")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -721,13 +549,11 @@ def test_powerflowrunner_kersting_example_4_1():
         -3528.624337,
         6213.353304
     ])
-    assert np.allclose(v_estimate[:12], expected_v[:12], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:12], expected_v[:12], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_kersting_example_4_2():
-    glm_file_path = os.path.join("data", "kersting_example_4_2", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-13})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("kersting_example_4_2")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -742,13 +568,11 @@ def test_powerflowrunner_kersting_example_4_2():
         -3547.070648,
         6190.201114
     ])
-    assert np.allclose(v_estimate[:12], expected_v[:12], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:12], expected_v[:12], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_underground_lines_and_transformers():
-    glm_file_path = os.path.join("data", "underground_lines_and_transformers", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("underground_lines_and_transformers")
+    
     expected_v = np.array([
         2400.000000,
         0.000000,
@@ -787,13 +611,11 @@ def test_powerflowrunner_underground_lines_and_transformers():
         -449.247056,
         1587.669932
     ], dtype=float)
-    assert np.allclose(v_estimate[:36], expected_v[:36], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:36], expected_v[:36], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_ieee_four_bus_underground_spaced():
-    glm_file_path = os.path.join("data", "ieee_four_bus_underground_spaced", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_four_bus_underground_spaced")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -820,13 +642,11 @@ def test_powerflowrunner_ieee_four_bus_underground_spaced():
         -945.893791,
         1983.835497
     ], dtype=float)
-    assert np.allclose(v_estimate[:18], expected_v[:18], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:18], expected_v[:18], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_ieee_four_bus_underground():
-    glm_file_path = os.path.join("data", "ieee_four_bus_underground", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_four_bus_underground")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -853,13 +673,11 @@ def test_powerflowrunner_ieee_four_bus_underground():
         -945.893791,
         1983.835498
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
     
 def test_powerflowrunner_ieee_four_bus_underground_step_up():
-    glm_file_path = os.path.join("data", "ieee_four_bus_underground_step_up", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_four_bus_underground_step_up")
+    
     expected_v = np.array([
         2401.777000,
         0.000000,
@@ -886,13 +704,11 @@ def test_powerflowrunner_ieee_four_bus_underground_step_up():
         -3308.383515,
         6053.180755
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_ieee_four_bus_underground_long_lines():
-    glm_file_path = os.path.join("data", "ieee_four_bus_underground_long_lines", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_four_bus_underground_long_lines")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -919,13 +735,11 @@ def test_powerflowrunner_ieee_four_bus_underground_long_lines():
         -898.279760,
         1947.278286
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_ieee_four_bus_switch():
-    glm_file_path = os.path.join("data", "ieee_four_bus_switch", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("ieee_four_bus_switch")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -952,13 +766,11 @@ def test_powerflowrunner_ieee_four_bus_switch():
         -1024.831436,
         2046.991573
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_ieee_four_bus_fuse():
-    glm_file_path = os.path.join("data", "ieee_four_bus_fuse", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("ieee_four_bus_fuse")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -985,13 +797,11 @@ def test_powerflowrunner_ieee_four_bus_fuse():
         -1024.831436,
         2046.991573
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_ieee_four_bus_cap():
-    glm_file_path = os.path.join("data", "ieee_four_bus_cap", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("ieee_four_bus_cap")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -1018,13 +828,11 @@ def test_powerflowrunner_ieee_four_bus_cap():
         -705.200678,
         1850.977065
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_ieee_four_bus_unbalanced_pq_load():
-    glm_file_path = os.path.join("data", "ieee_four_bus_unbalanced_pq_load", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("ieee_four_bus_unbalanced_pq_load")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -1051,13 +859,11 @@ def test_powerflowrunner_ieee_four_bus_unbalanced_pq_load():
         -1047.524077,
         2018.335376
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_load_within_meter():
-    glm_file_path = os.path.join("data", "load_within_meter", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("load_within_meter")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -1090,13 +896,11 @@ def test_powerflowrunner_load_within_meter():
         -705.200678,
         1850.977065
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_transformer_to_meter():
-    glm_file_path = os.path.join("data", "transformer_to_meter", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("transformer_to_meter")
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -1123,13 +927,11 @@ def test_powerflowrunner_transformer_to_meter():
         -705.200678,
         1850.977065
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_regulator_node_load():
-    glm_file_path = os.path.join("data", "regulator_node_load", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("regulator_node_load")
+    
     expected_v = np.array([
         2401.777100,
         0.000000,
@@ -1156,13 +958,11 @@ def test_powerflowrunner_regulator_node_load():
         -1267.632595,
         2220.385662
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], atol=1e-6, rtol=1e-6)
+    assert np.allclose(results.v_final[:24], expected_v[:24], atol=1e-6, rtol=1e-6)
 
 def test_powerflowrunner_regulatorB_node_load():
-    glm_file_path = os.path.join("data", "regulatorB_node_load", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("regulatorB_node_load")
+    
     expected_v = np.array([
         2401.777100,
         0.000000,
@@ -1189,13 +989,11 @@ def test_powerflowrunner_regulatorB_node_load():
         -1250.658198,
         1884.787032,
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], atol=1e-6, rtol=1e-6)
+    assert np.allclose(results.v_final[:24], expected_v[:24], atol=1e-6, rtol=1e-6)
 
 def test_powerflowrunner_ieee_thirteen_bus_pq_top_right():
-    glm_file_path = os.path.join("data", "ieee_thirteen_bus_pq_top_right", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_thirteen_bus_pq_top_right")
+    
     expected_v = np.array([
         2530.112678,
         -13.609827,
@@ -1234,13 +1032,11 @@ def test_powerflowrunner_ieee_thirteen_bus_pq_top_right():
         -1256.473486,
         2211.520676
     ], dtype=float)
-    assert np.allclose(v_estimate[:36], expected_v[:36], rtol=1e-7, atol=1e-7)
+    assert np.allclose(results.v_final[:36], expected_v[:36], rtol=1e-7, atol=1e-7)
 
 def test_powerflowrunner_two_regulators():
-    glm_file_path = os.path.join("data", "two_regulators", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("two_regulators")
+    
     expected_v = np.array([
         2401.777100,
         0.000000,
@@ -1267,13 +1063,11 @@ def test_powerflowrunner_two_regulators():
         -1187.354911,
         2077.711531
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_regulator_lower_impedance_transformer_load():
-    glm_file_path = os.path.join("data", "regulator_lower_impedance_transformer_load", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("regulator_lower_impedance_transformer_load")
+    
     # Lower series impedance of the xfmr
     expected_v = np.array([
         2401.777100,
@@ -1296,13 +1090,11 @@ def test_powerflowrunner_regulator_lower_impedance_transformer_load():
         80.061723
     ])
 
-    assert np.allclose(v_estimate[:18], expected_v[:18], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:18], expected_v[:18], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_regulator_higher_impedance_transformer_load():
-    glm_file_path = os.path.join("data", "regulator_higher_impedance_transformer_load", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("regulator_higher_impedance_transformer_load")
+    
     # Higher impedance
     expected_v = np.array([
         2401.777100,
@@ -1325,13 +1117,11 @@ def test_powerflowrunner_regulator_higher_impedance_transformer_load():
         79.093291
     ])
 
-    assert np.allclose(v_estimate[:18], expected_v[:18], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:18], expected_v[:18], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_regulator_ol():
-    glm_file_path = os.path.join("data", "regulator_ol", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("regulator_ol")
+    
     expected_v = np.array([
         2401.777100,
         0.000000,
@@ -1352,13 +1142,13 @@ def test_powerflowrunner_regulator_ol():
         -1187.354905,
         2077.715294
     ], dtype=float)
-    assert np.allclose(v_estimate[:18], expected_v[:18], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:18], expected_v[:18], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_regulator_overhead_line_transformer_load():
-    glm_file_path = os.path.join("data", "regulator_overhead_line_transformer_load", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("regulator_overhead_line_transformer_load")
+    
+    
+    
     # Overhead
     expected_v = np.array([
         2401.777100,
@@ -1387,13 +1177,13 @@ def test_powerflowrunner_regulator_overhead_line_transformer_load():
         79.973788
     ])
 
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
     
 def test_powerflowrunner_regulator_overhead_lines():
-    glm_file_path = os.path.join("data", "regulator_overhead_lines", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("regulator_overhead_lines")
+    
+    
+    
     expected_v = np.array([
         2401.777100,
         0.000000,
@@ -1439,23 +1229,23 @@ def test_powerflowrunner_regulator_overhead_lines():
         2067.063367
     ])
 
-    assert np.allclose(v_estimate[:42], expected_v[:42], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:42], expected_v[:42], rtol=1e-6, atol=1e-6)
     
 def test_powerflowrunner_gc_12_47_1_only_overhead_lines():
-    glm_file_path = os.path.join("data", "gc_12_47_1_only_overhead_lines", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1_only_overhead_lines")
+    
+    
+    
     expected_v_file_path = os.path.join("data", "gc_12_47_1_only_overhead_lines", "expected_output.txt")
     expected_v_full_file_path = os.path.join(CURR_DIR, expected_v_file_path)
     expected_v = np.loadtxt(expected_v_full_file_path)
-    assert np.allclose(v_estimate[:186], expected_v[:186], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:186], expected_v[:186], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_regulator_overhead_line_underground_line():
-    glm_file_path = os.path.join("data", "regulator_overhead_line_underground_line", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("regulator_overhead_line_underground_line")
+    
+    
+    
     expected_v = np.array([
         2401.777100,
         0.000000,
@@ -1483,13 +1273,13 @@ def test_powerflowrunner_regulator_overhead_line_underground_line():
         2075.079133
     ])
 
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_regulator_ul():
-    glm_file_path = os.path.join("data", "regulator_ul", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("regulator_ul")
+    
+    
+    
     expected_v = np.array([
         2401.777100,
         0.000000,
@@ -1510,13 +1300,13 @@ def test_powerflowrunner_regulator_ul():
         -1197.792792,
         2077.396864
     ], dtype=float)
-    assert np.allclose(v_estimate[:18], expected_v[:18], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:18], expected_v[:18], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_regulator_ul_xfmr():
-    glm_file_path = os.path.join("data", "regulator_ul_xfmr", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("regulator_ul_xfmr")
+    
+    
+    
     expected_v = np.array([
         2401.777100,
         0.000000,
@@ -1543,13 +1333,13 @@ def test_powerflowrunner_regulator_ul_xfmr():
         -31117.645823,
         53969.037055
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_regulator_ul_xfmr_ul():
-    glm_file_path = os.path.join("data", "regulator_ul_xfmr_ul", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("regulator_ul_xfmr_ul")
+    
+    
+    
     expected_v = np.array([
         2401.777100,
         0.000000,
@@ -1582,13 +1372,13 @@ def test_powerflowrunner_regulator_ul_xfmr_ul():
         -31117.526539,
         53968.936767
     ], dtype=float)
-    assert np.allclose(v_estimate[:30], expected_v[:30], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:30], expected_v[:30], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_gc_12_47_1_pared_down_no_regulator():
-    glm_file_path = os.path.join("data", "gc_12_47_1_pared_down_no_regulator", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1_pared_down_no_regulator")
+    
+    
+    
     expected_v = np.array([
         276.922391,
         -0.056781,
@@ -1621,13 +1411,13 @@ def test_powerflowrunner_gc_12_47_1_pared_down_no_regulator():
         -3600.000000,
         6235.000000
     ])
-    assert np.allclose(v_estimate[:30], expected_v[:30], rtol=1e-4, atol=1e-2)
+    assert np.allclose(results.v_final[:30], expected_v[:30], rtol=1e-4, atol=1e-2)
 
 def test_powerflowrunner_gc_12_47_1_somewhat_pared_down_no_regulator():
-    glm_file_path = os.path.join("data", "gc_12_47_1_somewhat_pared_down_no_regulator", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1_somewhat_pared_down_no_regulator")
+    
+    
+    
     expected_v = np.array([
         276.591613,
         -0.206985,
@@ -1702,13 +1492,13 @@ def test_powerflowrunner_gc_12_47_1_somewhat_pared_down_no_regulator():
         -3600.000000,
         6235.000000
     ])
-    assert np.allclose(v_estimate[:72], expected_v[:72], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:72], expected_v[:72], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_gc_12_47_1_no_reg():
-    glm_file_path = os.path.join("data", "gc_12_47_1_no_reg", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1_no_reg")
+    
+    
+    
     expected_v = np.array([
         275.779525,
         -0.554492,
@@ -1897,13 +1687,13 @@ def test_powerflowrunner_gc_12_47_1_no_reg():
         -3600.000000,
         6235.000000
     ])
-    assert np.allclose(v_estimate[:186], expected_v[:186], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:186], expected_v[:186], rtol=1e-4, atol=1e-1)
     
 def test_powerflowrunner_gc_12_47_1_xfmr_as_reg():
-    glm_file_path = os.path.join("data", "gc_12_47_1_xfmr_as_reg", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1_xfmr_as_reg")
+    
+    
+    
     expected_v = np.array([
         275.713531,
         -0.629036,
@@ -2092,13 +1882,13 @@ def test_powerflowrunner_gc_12_47_1_xfmr_as_reg():
         -3600.000000,
         6235.000000
     ])
-    assert np.allclose(v_estimate[:186], expected_v[:186], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:186], expected_v[:186], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_gc_12_47_1_further_simplified():
-    glm_file_path = os.path.join("data", "gc_12_47_1_further_simplified", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1_further_simplified")
+    
+    
+    
     expected_v = np.array([
         276.943849,
         -0.031994,
@@ -2131,13 +1921,13 @@ def test_powerflowrunner_gc_12_47_1_further_simplified():
         -3600.000000,
         6235.000000
     ])
-    assert np.allclose(v_estimate[:30], expected_v[:30], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:30], expected_v[:30], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_gc_12_47_1_simplified():
-    glm_file_path = os.path.join("data", "gc_12_47_1_simplified", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1_simplified")
+    
+    
+    
     expected_v = np.array([
         276.941328,
         -0.032544,
@@ -2188,13 +1978,13 @@ def test_powerflowrunner_gc_12_47_1_simplified():
         -3600.000000,
         6235.000000,
     ])
-    assert np.allclose(v_estimate[:48], expected_v[:48], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:48], expected_v[:48], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_gc_12_47_1_subset():
-    glm_file_path = os.path.join("data", "gc_12_47_1_subset", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1_subset")
+    
+    
+    
     expected_v = np.array([
         276.610623,
         -0.182749,
@@ -2293,21 +2083,21 @@ def test_powerflowrunner_gc_12_47_1_subset():
         -3600.000000,
         6235.000000
     ])
-    assert np.allclose(v_estimate[:96], expected_v[:96], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:96], expected_v[:96], rtol=1e-4, atol=1e-1)
 
 # def test_powerflowrunner_gc_12_no_shunt_impedances():
-#     glm_file_path = os.path.join("data", "gc-12.47-1_no_shunt_impedances", "node.glm")
-#     glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-#     test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-#     v_estimate, simulation_state = test_runner.run(return_state=True)
+#     results = execute_glm_case("gc-12.47-1_no_shunt_impedances")
+#     
+#     
+#     
 #     expected_v = np.array([])
-#     assert np.allclose(v_estimate[:216], expected_v[:216], rtol=1e-3, atol=1e-3)
+#     assert np.allclose(results.v_final[:216], expected_v[:216], rtol=1e-3, atol=1e-3)
 
 def test_powerflowrunner_gc_12_47_1_no_cap():
-    glm_file_path = os.path.join("data", "gc_12_47_1_no_cap", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1_no_cap")
+    
+    
+    
     expected_v = np.array([
         275.778761,
         -0.554674,
@@ -2496,23 +2286,23 @@ def test_powerflowrunner_gc_12_47_1_no_cap():
         -3600.000000,
         6235.000000
     ])
-    assert np.allclose(v_estimate[:186], expected_v[:186], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:186], expected_v[:186], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_gc_12_47_1():
-    glm_file_path = os.path.join("data", "gc_12_47_1", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("gc_12_47_1")
+    
+    
+    
     expected_v_file_path = os.path.join("data", "gc_12_47_1", "gld_expected_output.txt")
     expected_v_full_file_path = os.path.join(CURR_DIR, expected_v_file_path)
     expected_v = np.loadtxt(expected_v_full_file_path)
-    assert np.allclose(v_estimate[:186], expected_v[:186], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:186], expected_v[:186], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_center_tap_xfmr():
-    glm_file_path = os.path.join("data", "center_tap_xfmr", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("center_tap_xfmr")
+    
+    
+    
     expected_v = np.array([
         7216.880000,
         0.000000,
@@ -2549,13 +2339,13 @@ def test_powerflowrunner_center_tap_xfmr():
         -58.5693,
         101.705
     ])
-    assert np.allclose(v_estimate[:34], expected_v[:34], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:34], expected_v[:34], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_regulator_center_tap_xfmr():
-    glm_file_path = os.path.join("data", "regulator_center_tap_xfmr", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("regulator_center_tap_xfmr")
+    
+    
+    
     expected_v = np.array([
         7216.880000,
         0.000000,
@@ -2590,13 +2380,13 @@ def test_powerflowrunner_regulator_center_tap_xfmr():
         -58.6254,
         101.95
     ])
-    assert np.allclose(v_estimate[:32], expected_v[:32], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:32], expected_v[:32], rtol=1e-4, atol=1e-1)
     
 def test_powerflowrunner_triplex_load_class():
-    glm_file_path = os.path.join("data", "triplex_load_class", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("triplex_load_class")
+    
+    
+    
     expected_v = np.array([
         7216.880000,
         0.000000,
@@ -2631,13 +2421,13 @@ def test_powerflowrunner_triplex_load_class():
         -59.5323,
         103.538
     ])
-    assert np.allclose(v_estimate[:32], expected_v[:32], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:32], expected_v[:32], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_basic_triplex_network():
-    glm_file_path = os.path.join("data", "basic_triplex_network", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("basic_triplex_network")
+    
+    
+    
     expected_v = np.array([
         7216.880000,
         0.000000,
@@ -2672,24 +2462,22 @@ def test_powerflowrunner_basic_triplex_network():
         -61.5221,
         105.81
     ])
-    assert np.allclose(v_estimate[:32], expected_v[:32], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:32], expected_v[:32], rtol=1e-4, atol=1e-1)
 
 def test_powerflowrunner_r1_12_47_1():
-    glm_file_path = os.path.join("data", "r1_12_47_1", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-6})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("r1_12_47_1")
+    
     expected_v_file_path = os.path.join("data", "r1_12_47_1", "gld_expected_output.txt")
     expected_v_full_file_path = os.path.join(CURR_DIR, expected_v_file_path)
     expected_v = np.loadtxt(expected_v_full_file_path)
-    assert np.allclose(v_estimate[:6800], expected_v[:6800], rtol=1e-4, atol=1e-1)
+    assert np.allclose(results.v_final[:6800], expected_v[:6800], rtol=1e-4, atol=1e-1)
 
 # Requires support for delta connected transformers (not yet supported)
 def test_powerflowrunner_ieee_four_bus_delta_delta_transformer():
-    glm_file_path = os.path.join("data", "ieee_four_bus_delta_delta_transformer", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("ieee_four_bus_delta_delta_transformer")
+    
+    
+    
     expected_v = np.array([
         7199.558000,
         0.000000,
@@ -2716,13 +2504,13 @@ def test_powerflowrunner_ieee_four_bus_delta_delta_transformer():
         -702.203709,
         1863.812979
     ], dtype=float)
-    assert np.allclose(v_estimate[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-6, atol=1e-6)
 
 def test_powerflowrunner_ieee_thirteen_bus_Y_Y_pq_loads_top_half():
-    glm_file_path = os.path.join("data", "ieee_thirteen_bus_Y_Y_pq_loads_top_half", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_thirteen_bus_Y_Y_pq_loads_top_half")
+    
+    
+    
     expected_v = np.array([
         2527.413813,
         21.026001,
@@ -2769,14 +2557,14 @@ def test_powerflowrunner_ieee_thirteen_bus_Y_Y_pq_loads_top_half():
         -1256.890030,
         2239.114466
     ], dtype=float)
-    assert np.allclose(v_estimate[:44], expected_v[:44], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:44], expected_v[:44], rtol=1e-6, atol=1e-6)
 
 # Requires support for delta-connected loads, (not yet supported)
 def test_powerflowrunner_ieee_thirteen_bus_core():
-    glm_file_path = os.path.join("data", "ieee_13_core", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_13_core")
+    
+    
+    
     expected_v = np.array([
         2551.872178,
         0.009692,
@@ -2809,14 +2597,14 @@ def test_powerflowrunner_ieee_thirteen_bus_core():
         -1169.990388,
         2185.943230
     ], dtype=float)
-    assert np.allclose(v_estimate[:30], expected_v[:30], rtol=1e-5, atol=1e-5)
+    assert np.allclose(results.v_final[:30], expected_v[:30], rtol=1e-5, atol=1e-5)
 
 # Requires support for delta loads (not yet supported)
 def test_powerflowrunner_ieee_thirteen_bus_pq_loads_top_half():
-    glm_file_path = os.path.join("data", "ieee_thirteen_bus_pq_loads_top_half", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_thirteen_bus_pq_loads_top_half")
+    
+    
+    
     expected_v = np.array([
         2527.687894,
         4.211254,
@@ -2863,14 +2651,14 @@ def test_powerflowrunner_ieee_thirteen_bus_pq_loads_top_half():
         -1248.875136,
         2214.99793
     ], dtype=float)
-    assert np.allclose(v_estimate[:44], expected_v[:44], rtol=1e-6, atol=1e-6)
+    assert np.allclose(results.v_final[:44], expected_v[:44], rtol=1e-6, atol=1e-6)
 
 # Requires support for delta loads (not yet supported)
 def test_powerflowrunner_ieee_thirteen_bus_pq():
-    glm_file_path = os.path.join("data", "ieee_13_pq_loads", "node.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_13_pq_loads")
+    
+    
+    
     expected_v = np.array([
         2407.799947,
         -146.086205,
@@ -2949,24 +2737,22 @@ def test_powerflowrunner_ieee_thirteen_bus_pq():
         -1055.898256,
         2061.674605
     ], dtype=float)
-    assert np.allclose(v_estimate[:76], expected_v[:76], rtol=1e-3, atol=1e-3)
+    assert np.allclose(results.v_final[:76], expected_v[:76], rtol=1e-3, atol=1e-3)
 
 def test_powerflowrunner_ieee_thirteen_bus_overhead():
-    glm_file_path = os.path.join("data", "ieee_13_node_overhead_nr", "test_IEEE_13_NR_overhead.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate = test_runner.execute()
+    results = execute_glm_case("ieee_13_node_overhead_nr", "test_IEEE_13_NR_overhead.glm")
+    
+    
+    
     expected_v = np.array([
         
     ], dtype=float)
-    assert np.allclose(v_estimate[:18], expected_v[:18], rtol=1e-3)
+    assert np.allclose(results.v_final[:18], expected_v[:18], rtol=1e-3)
 
 # Requires resistive loads, current loads, and IP loads
 def test_powerflowrunner_ieee_thirteen_bus():
-    glm_file_path = os.path.join("data", "ieee_13_node_nr", "test_IEEE_13_NR.glm")
-    glm_full_file_path = os.path.join(CURR_DIR, glm_file_path)
-    test_runner = PowerFlowRunner(glm_full_file_path, {'max_iterations':50, 'tolerance': 1e-10})
-    v_estimate, simulation_state = test_runner.run(return_state=True)
+    results = execute_glm_case("ieee_13_node_nr", "test_IEEE_13_NR.glm")
+    
     expected_v = np.array([
         2442.766782,
         -108.916789,
@@ -3045,7 +2831,7 @@ def test_powerflowrunner_ieee_thirteen_bus():
         -1110.249873,
         2152.154125
     ], dtype=float)
-    assert np.allclose(v_estimate[:82], expected_v[:82], rtol=1e-3, atol=1e-3)
+    assert np.allclose(results.v_final[:82], expected_v[:82], rtol=1e-3, atol=1e-3)
 
 
 if __name__ == "__main__":
