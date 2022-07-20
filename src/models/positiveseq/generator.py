@@ -52,13 +52,13 @@ class Generator:
         self.id = self._ids.__next__()
 
         self.bus = bus
-        self.P = -P / 100
+        self.P = -P
         self.Vset = Vset
 
-        self.Qinit = -Qinit / 100
+        self.Qinit = -Qinit
 
-        self.Qmax = -Qmax / 100
-        self.Qmin = -Qmin / 100
+        self.Qmax = -Qmax
+        self.Qmin = -Qmin
 
     def assign_nodes(self, node_index, optimization_enabled):
         index_map = {}

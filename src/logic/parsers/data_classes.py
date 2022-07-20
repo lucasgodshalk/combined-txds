@@ -223,8 +223,8 @@ class Generator_data:
     def integrate(self, all_bus_key: typing.Dict[int, Bus], isGenerator=True):
         if isGenerator:
             self.rmpct = self.rmpct
-            new_obj = Generator(all_bus_key[self.i], self.pg, self.vs, self.qt, self.qb,
-                                 self.pt, self.pb, self.qg, self.ireg, self.rmpct, GenType.Generation)
+            new_obj = Generator(all_bus_key[self.i], self.pg / 100, self.vs, self.qt / 100, self.qb / 100,
+                                 self.pt, self.pb, self.qg / 100, self.ireg, self.rmpct, GenType.Generation)
 
         else:
             area = -1
