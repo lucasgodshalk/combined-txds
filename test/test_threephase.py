@@ -20,7 +20,7 @@ def get_gridlabd_output_file(casename):
     return os.path.join(DATA_DIR, casename, "result.xml")
 
 def execute_glm_case(casename, glm_file_name = "node.glm"):
-    filepath = get_glm_case_file("ieee_four_bus")
+    filepath = get_glm_case_file(casename, glm_file_name)
     powerflow = FilePowerFlow(filepath, PowerFlowSettings())
     return powerflow.execute()
 
@@ -2291,8 +2291,6 @@ def test_powerflowrunner_gc_12_47_1_no_cap():
 def test_powerflowrunner_gc_12_47_1():
     results = execute_glm_case("gc_12_47_1")
     
-    
-    
     expected_v_file_path = os.path.join("data", "gc_12_47_1", "gld_expected_output.txt")
     expected_v_full_file_path = os.path.join(CURR_DIR, expected_v_file_path)
     expected_v = np.loadtxt(expected_v_full_file_path)
@@ -2300,8 +2298,6 @@ def test_powerflowrunner_gc_12_47_1():
 
 def test_powerflowrunner_center_tap_xfmr():
     results = execute_glm_case("center_tap_xfmr")
-    
-    
     
     expected_v = np.array([
         7216.880000,
