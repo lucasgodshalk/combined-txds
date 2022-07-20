@@ -51,10 +51,10 @@ class Reader(AbstractReader):
     """
     register_names = ["glm", "gridlabd"]
 
-    all_gld_objects = {}
-    all_api_objects = {}
-
     def __init__(self, **kwargs):
+        self.all_gld_objects = {}
+        self.all_api_objects = {}
+
         """Gridlabd class CONSTRUCTOR."""
 
         self.input_file = kwargs.get("input_file", "./input.glm")
