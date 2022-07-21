@@ -9,6 +9,7 @@ from models.shared.L2infeasibility import L2InfeasibilityCurrent
 from models.shared.bus import Bus
 from models.shared.pqload import PQLoad
 from models.shared.slack import Slack
+from models.shared.transformer import Transformer
 
 BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0
@@ -29,6 +30,8 @@ class NetworkModel():
         self.slack = []
         self.generators: List[Generator]
         self.generators = []
+        self.transformers: List[Transformer]
+        self.transformers = []
         self.infeasibility_currents: List[L2InfeasibilityCurrent]
         self.infeasibility_currents = []
         self.size_Y = None
@@ -47,7 +50,7 @@ class TxNetworkModel(NetworkModel):
         voltage_sources=[]
         ):
         NetworkModel.__init__(self, is_three_phase=False)
-
+        
         self.buses = buses
         self.loads = loads
         self.slack = slack
@@ -114,9 +117,7 @@ class DxNetworkModel(NetworkModel):
         self.bus_name_map = {}
 
         # All of the transmission lines
-        self.transmission_lines = []
-        # All of the transformers
-        self.transformers = []
+        self.branches = []
         # All of the capacitors
         self.capacitors = []
         # All of the fuses
@@ -133,7 +134,7 @@ class DxNetworkModel(NetworkModel):
         self.reference_i = None
     
     def get_NR_invariant_elements(self):
-        return self.transmission_lines + self.slack + self.transformers + self.regulators + self.switches + self.infeasibility_currents
+        return self.branches + self.slack + self.transformers + self.regulators + self.switches + self.infeasibility_currents
 
     def get_NR_variable_elements(self):
         return self.loads + self.capacitors + self.fuses

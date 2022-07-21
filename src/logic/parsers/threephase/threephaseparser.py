@@ -8,6 +8,7 @@ from logic.networkmodel import DxNetworkModel
 from ditto.readers.gridlabd.read import Reader
 from ditto.store import Store
 import ditto.models.load
+from logic.parsers.threephase.transformerhandler import TransformerHandler
 from logic.powerflowsettings import PowerFlowSettings
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
 from models.threephase.capacitor import Capacitor
@@ -15,13 +16,7 @@ from models.shared.slack import Slack
 
 from models.shared.pqload import PQLoad
 from models.shared.bus import GROUND, Bus
-from models.threephase.three_phase_transformer import ThreePhaseTransformer
-from models.threephase.center_tap_transformer import CenterTapTransformer
-from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
 from models.threephase.transmission_line import TransmissionLine
-from models.threephase.transmission_line_triplex import TriplexTransmissionLine
-from models.threephase.primary_transformer_coil import PrimaryTransformerCoil
-from models.threephase.secondary_transformer_coil import SecondaryTransformerCoil
 from models.threephase.fuse import Fuse
 from models.threephase.fuse_phase import FusePhase
 
@@ -31,7 +26,6 @@ from models.threephase.switch import Switch
 from models.threephase.switch_phase import SwitchPhase
 from models.threephase.regulator import Regulator
 from models.threephase.regulator_phase import RegulatorPhase
-from models.threephase.transmission_line_phase import TransmissionLinePhase
 
 class ThreePhaseParser:
     # Angles in degrees associated with different phases
@@ -63,11 +57,11 @@ class ThreePhaseParser:
         self.create_buses(simulation_state)
 
         self.create_loads(simulation_state)
-        self.create_transformers(simulation_state)
+        transformerhandler = TransformerHandler(self.optimization_enabled)
+        transformerhandler.create_transformers(self.ditto_store, simulation_state)
         self.create_capacitors(simulation_state)
         self.create_regulators(simulation_state)
         # TODO add and call methods to create other objects
-
 
         self.create_transmission_lines(simulation_state)
 
@@ -192,139 +186,6 @@ class ThreePhaseParser:
                         simulation_state.loads.append(phase_load)
                 # TODO add cases for other types (ZIP, etc)
                 
-                    
-    def create_transformers(self, simulation_state):
-        # Go through the ditto store for each transformer object
-        for model in self.ditto_store.models:
-            if isinstance(model, ditto.models.powertransformer.PowerTransformer):
-                if model.is_center_tap:
-                    self.create_center_tap_transformer(model, simulation_state)
-                elif len(model.windings) != 2:
-                    raise Exception("Only 2 winding or center-tap transformers currently supported")
-                else:
-                    self.create_three_phase_transformer(model, simulation_state)
-
-    def create_center_tap_transformer(self, model, simulation_state):
-        phase = model.phases[0].default_value
-        
-        winding0 = model.windings[0]
-        transformer_coil_0 = CenterTapTransformerCoil(winding0.nominal_voltage, winding0.rated_power, winding0.connection_type, winding0.voltage_limit, winding0.resistance, model.reactances[0])
-        winding1 = model.windings[1]
-        transformer_coil_1 = CenterTapTransformerCoil(winding1.nominal_voltage, winding1.rated_power, winding1.connection_type, winding1.voltage_limit, winding1.resistance, model.reactances[1])
-        winding2 = model.windings[2]
-        transformer_coil_2 = CenterTapTransformerCoil(winding2.nominal_voltage, winding2.rated_power, winding2.connection_type, winding2.voltage_limit, winding2.resistance, model.reactances[2])
-        
-        turn_ratio = winding0.nominal_voltage / winding1.nominal_voltage
-        
-        if hasattr(model, "shunt_impedance") and model.shunt_impedance != 0:
-            shunt_impedance = model.shunt_impedance
-            r_shunt, x_shunt = shunt_impedance.real, shunt_impedance.imag
-            r_shunt = (r_shunt  * (transformer_coil_0.nominal_voltage ** 2))  / (transformer_coil_2.rated_power)
-            x_shunt = (x_shunt * (transformer_coil_0.nominal_voltage ** 2))  / (transformer_coil_2.rated_power)
-            g_shunt = r_shunt / (r_shunt ** 2 + x_shunt ** 2)
-            b_shunt = -x_shunt / (r_shunt ** 2 + x_shunt ** 2)
-        else:
-            g_shunt = 0
-            b_shunt = 0
-        
-        # Add the transformer's from bus to the primary coil
-        from_bus = simulation_state.bus_name_map[model.from_element + '_' + phase]
-        transformer_coil_0.from_node = from_bus
-
-        # Create a new bus on the primary coil, for KCL
-        primary_bus = Bus()
-        simulation_state.bus_name_map[model.name + "_primary_" + phase] = primary_bus.bus_id
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        simulation_state.bus_map[primary_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
-        
-        transformer_coil_0.primary_node = primary_bus.bus_id
-
-        # Create a new bus on the first triplex coil, for KCL
-        secondary1_bus = Bus()
-        simulation_state.bus_name_map[model.name + "_sending_1"] = secondary1_bus.bus_id
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        simulation_state.bus_map[secondary1_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
-        
-        transformer_coil_1.sending_node = secondary1_bus.bus_id
-        
-        # Create a new variable for the voltage equations on the first triplex coil (not an actual node)
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        
-        transformer_coil_1.real_voltage_idx = real_voltage_idx
-        transformer_coil_1.imag_voltage_idx = imag_voltage_idx
-        
-        # Add the transformer's first from node to the first triplex coil
-        to1_bus = simulation_state.bus_name_map[model.to_element + '_1']
-        transformer_coil_1.to_node = to1_bus
-
-        # Create a new bus on the second triplex coil, for KCL
-        secondary2_bus = Bus()
-        simulation_state.bus_name_map[model.name + "_sending_2"] = secondary2_bus.bus_id
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        simulation_state.bus_map[secondary2_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
-        
-        transformer_coil_2.sending_node = secondary2_bus.bus_id
-        
-        # Create a new variable for the voltage equations on the second triplex coil (not an actual node)
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        
-        transformer_coil_2.real_voltage_idx = real_voltage_idx
-        transformer_coil_2.imag_voltage_idx = imag_voltage_idx
-        
-        # Add the transformer's second from node to the second triplex coil
-        to2_bus = simulation_state.bus_name_map[model.to_element + '_2']
-        transformer_coil_2.to_node = to2_bus
-
-        transformer = CenterTapTransformer(transformer_coil_0, transformer_coil_1, transformer_coil_2, phase, turn_ratio, model.power_ratings[0], g_shunt, b_shunt)
-        
-        simulation_state.transformers.append(transformer)
-    
-    def create_three_phase_transformer(self, model, simulation_state: DxNetworkModel):
-        winding1 = model.windings[0]
-        primary_transformer_coil = PrimaryTransformerCoil(winding1.nominal_voltage, winding1.rated_power, winding1.connection_type, winding1.voltage_limit)
-        winding2 = model.windings[1]
-        secondary_transformer_coil = SecondaryTransformerCoil(winding2.nominal_voltage, winding2.rated_power, winding2.connection_type, winding2.voltage_limit, winding2.resistance * 2, sum(model.reactances))
-
-        turn_ratio = winding1.nominal_voltage / winding2.nominal_voltage
-
-        # Assume the same set of phases on primary and secondary windings
-        phases = []
-        for phase_winding in winding1.phase_windings:
-            phases.append(phase_winding.phase)
-            
-            from_bus = simulation_state.bus_name_map[model.from_element + '_' + phase_winding.phase]
-            primary_transformer_coil.phase_connections[phase_winding.phase] = from_bus
-
-            to_bus = simulation_state.bus_name_map[model.to_element + '_' + phase_winding.phase]
-            secondary_transformer_coil.phase_connections[phase_winding.phase] = to_bus
-
-        phase_shift = 0 if model.phase_shift is None else model.phase_shift # TODO is this in degrees or radians
-        if hasattr(model, "shunt_impedance") and model.shunt_impedance != 0:
-            shunt_impedance = (model.shunt_impedance * (secondary_transformer_coil.nominal_voltage ** 2))  / (secondary_transformer_coil.rated_power)
-            r_shunt, x_shunt = shunt_impedance.real, shunt_impedance.imag
-            g_shunt = r_shunt / (r_shunt ** 2 + x_shunt ** 2)
-            b_shunt = -x_shunt / (r_shunt ** 2 + x_shunt ** 2)
-        else:
-            g_shunt = 0
-            b_shunt = 0
-        transformer = ThreePhaseTransformer(
-            primary_transformer_coil, 
-            secondary_transformer_coil, 
-            phases, 
-            turn_ratio, 
-            phase_shift, 
-            g_shunt, 
-            b_shunt, 
-            self.optimization_enabled,
-            simulation_state.next_var_idx
-            )
-        simulation_state.transformers.append(transformer)
-    
     def create_capacitors(self, simulation_state: DxNetworkModel):
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.capacitor.Capacitor):
@@ -416,7 +277,7 @@ class ThreePhaseParser:
                     phases = [wire.phase for wire in model.wires if wire.phase != 'N']
                     
                     transmission_line = TransmissionLine(simulation_state, self.optimization_enabled, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
-                    simulation_state.transmission_lines.append(transmission_line)
+                    simulation_state.branches.append(transmission_line)
 
 
     def setup_infeasibility(self, simulation_state: DxNetworkModel):
