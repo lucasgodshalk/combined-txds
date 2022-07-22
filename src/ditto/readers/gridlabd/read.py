@@ -47,15 +47,14 @@ def compute_secondary_matrix(
     wire_list, freq=60, resistivity=100, kron_reduce=True
 ):
     wire_map = {'1':0,'2':1,'N':2}
-    # wire_map = {"A": 0, "B": 1, "N": 2}
     matrix = [[0 for i in range(3)] for j in range(3)]
     d12 = 0
     d1n = 0
     distances_mapped = False
     for w in wire_list:
         if w.diameter is not None and w.insulation_thickness is not None:
-            d12 = (w.diameter + 2 * w.insulation_thickness) / 12.0
-            d1n = (w.diameter + w.insulation_thickness) / 12.0 # Should this use w.radius instead of w.diameter?
+            d12 = w.diameter + 2 * w.insulation_thickness
+            d1n = w.diameter + w.insulation_thickness
             distances_mapped = True
             break
 
@@ -67,22 +66,13 @@ def compute_secondary_matrix(
                     wire_list[i].resistance is not None
                     and wire_list[i].gmr is not None
                 ):
-                    z = complex(
-                        wire_list[i].resistance + 0.00158836 * freq,
-                        0.00202237
-                        * freq
-                        * (
-                            math.log(1 / wire_list[i].gmr)
-                            + 7.6786
-                            + 0.5 * math.log(resistivity / freq)
-                        ),
-                    )
+                    z = calc_Zii(wire_list[i].resistance, wire_list[i].gmr)
                 else:
                     logger.debug("Warning: resistance or GMR is missing from wire")
 
                 if wire_list[i].phase is not None:
                     index = wire_map[wire_list[i].phase]
-                    matrix[index][index] = z / 1609.344
+                    matrix[index][index] = z
                 else:
                     logger.debug("Warning: phase missing from wire")
 
@@ -94,48 +84,53 @@ def compute_secondary_matrix(
                     and distances_mapped
                 ):
                     if wire_list[i].phase == "N" or wire_list[j].phase == "N":
-                        z = complex(
-                            0.00158836 * freq,
-                            0.00202237
-                            * freq
-                            * (
-                                math.log(1 / d1n)
-                                + 7.6786
-                                + 0.5 * math.log(resistivity / freq)
-                            ),
-                        )
+                        z = calc_Zij(d1n)
                     else:
-                        z = complex(
-                            0.00158836 * freq,
-                            0.00202237
-                            * freq
-                            * (
-                                math.log(1 / d12)
-                                + 7.6786
-                                + 0.5 * math.log(resistivity / freq)
-                            ),
-                        )
+                        z = calc_Zij(d12)
                     index1 = wire_map[wire_list[i].phase]
                     index2 = wire_map[wire_list[j].phase]
-                    matrix[index1][index2] = z / 1609.344  # ohms per meter
+                    matrix[index1][index2] = z# / 1609.344  # ohms per meter
 
                 else:
                     # import pdb; pdb.set_trace()
                     logger.debug(
                         "Warning phase missing from wire, or Insulation_thickness/diameter not set"
                     )
-
+    
     if kron_reduce:
-        kron_matrix = [[0 for i in range(2)] for j in range(2)]
-        for i in range(2):
-            for j in range(2):
-                kron_matrix[i][j] = (
-                    matrix[i][j] - matrix[i][2] * 1 / matrix[2][2] * matrix[2][j]
-                )
+        # Evaluate Zij, Zin, Znj, Znn
+        matrix = np.array(matrix)
+        matrix_ij = matrix[:2, :2]
+        matrix_in = matrix[:2, 2:]
+        matrix_nj = matrix[2:, :2]
+        matrix_nn = matrix[2:, 2:]
+        matrix = kron_reduction(matrix_ij, matrix_in, matrix_nj, matrix_nn)
 
-        matrix = kron_matrix
     return matrix
 
+def calc_Zii(r_i, GMRi, resistivity = 100, freq = 60):
+    # returns Zii in ohms/mile
+    Zii = complex(r_i + 0.00158836 * freq, 0.00202237 * freq * (np.math.log(1/GMRi) + 7.6786 + math.log(resistivity / freq)/2.0))
+    # Zii = r_i + 0.09327 + 1j * 0.12134 * (np.math.log(GMRi ** -1) + 7.95153)
+    return Zii
+
+def calc_Zij(Dij, resistivity = 100, freq = 60):
+    # returns Zij in ohms/mile
+    Zij = complex(0.00158836 * freq, 0.00202237 * freq * (math.log(1 / Dij) + 7.6786 + math.log(resistivity / freq)/2.0))
+    # Zij = 0.09327 + 1j * 0.12134 * (np.math.log(Dij ** -1) + 7.95153)
+    return Zij
+
+def kron_reduction(Zij, Zin, Znj, Znn):
+    #  _r = Zij.shape[0]
+    #  _c = Zij.shape[1]
+    if hasattr(Znn, "__len__"):
+        Znn_inv = np.linalg.inv(Znn)
+    else:
+        Znn_inv = Znn ** -1
+    _tempZ = np.dot(np.dot(Zin, Znn_inv), Znj)
+    Zabc = Zij - _tempZ
+    matrix = Zabc.tolist()
+    return matrix
 
 class Reader(AbstractReader):
     """
@@ -153,7 +148,7 @@ class Reader(AbstractReader):
         self.input_file = kwargs.get("input_file", "./input.glm")
         super(Reader, self).__init__(**kwargs)
 
-    def compute_distances(self, spacing, num_dists, lookup, remove_nonnum, max_dist, max_from, max_to):
+    def compute_distances(self, outer_diameters, spacing, num_dists, lookup, remove_nonnum, max_dist, max_from, max_to):
         distances = [[-1 for i in range(num_dists)] for j in range(num_dists)]
         for i in range(num_dists):
             for j in range(i + 1, num_dists):
@@ -161,6 +156,10 @@ class Reader(AbstractReader):
                 try:
                     spacing[name] = remove_nonnum.sub('', spacing[name])
                     dist = float(spacing[name])
+                    # if dist == 0:
+                    #     # A distance of zero was given, which is not accepted. Silently switching to default
+                    #     # TODO proper error handling in this case
+                    #     dist = (outer_diameters[i % len(outer_diameters)] + outer_diameters[j % len(outer_diameters)]) / 2
                     distances[i][j] = dist
                     distances[j][i] = dist
                     distances[i][i] = 0
@@ -451,16 +450,7 @@ class Reader(AbstractReader):
                         wire_list[i].resistance is not None
                         and wire_list[i].gmr is not None
                     ):
-                        z = complex(
-                            wire_list[i].resistance + 0.00158836 * freq,
-                            0.00202237
-                            * freq
-                            * (
-                                math.log(1 / wire_list[i].gmr)
-                                + 7.6786
-                                + 0.5 * math.log(resistivity / freq)
-                            ),
-                        )
+                        z = calc_Zii(wire_list[i].resistance, wire_list[i].gmr)
                         
                     else:
                         logger.debug("Warning: resistance or GMR is missing from wire")
@@ -474,28 +464,10 @@ class Reader(AbstractReader):
                 else:
                     z = 0
                     if (
-                        # wire_list[i].X is not None
-                        # and wire_list[i].Y is not None
-                        # and wire_list[j].X is not None
-                        # and wire_list[j].Y is not None
                         distances[i][j] is not None
                     ):
-                        # x1 = wire_list[i].X
-                        # x2 = wire_list[j].X
-                        # y1 = wire_list[i].Y
-                        # y2 = wire_list[j].Y
-                        # distance = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
                         distance = distances[i][j]
-                        z = complex(
-                            0.00158836 * freq,
-                            0.00202237
-                            * freq
-                            * (
-                                math.log(1 / distance)
-                                + 7.6786
-                                + 0.5 * math.log(resistivity / freq)
-                            ),
-                        )
+                        z = calc_Zij(distance)
                     else:
                         logger.debug("Warning X or Y values missing from wire")
                         # import pdb; pdb.set_trace()
@@ -544,9 +516,9 @@ class Reader(AbstractReader):
         num_non_neutral = 0
         for wire in wire_list:
             if wire.phase == "N":
-                conductor_own_neutral_distances.append((wire.outer_diameter - wire.concentric_neutral_diameter) / 24)
-                neutral_resistances.append(wire.concentric_neutral_resistance)
-                neutral_gmrs.append(wire.concentric_neutral_gmr)
+                conductor_own_neutral_distances.append(0)
+                neutral_resistances.append(wire.resistance)
+                neutral_gmrs.append(wire.gmr)
             else:
                 num_non_neutral += 1
                 conductor_resistances.append(wire.resistance)
@@ -597,10 +569,10 @@ class Reader(AbstractReader):
         for i in range(len(_R)):
             for j in range(len(_R)):
                 if i == j:
-                    _Z[i, j] = self.calc_underground_Zii(_R[i], _GMR[i])
+                    _Z[i, j] = calc_Zii(_R[i], _GMR[i])
                 else:
                     _D_ij = all_distances[i][j]
-                    _Z[i, j] = self.calc_underground_Zij(_D_ij)
+                    _Z[i, j] = calc_Zij(_D_ij)
                     
         # Evaluate Zij, Zin, Znj, Znn
         _Zij = _Z[:len(_R)//2, :len(_R)//2]
@@ -608,33 +580,6 @@ class Reader(AbstractReader):
         _Znj = _Z[len(_R)//2:, :len(_R)//2]
         _Znn = _Z[len(_R)//2:, len(_R)//2:]
         return self.kron_reduction(_Zij, _Zin, _Znj, _Znn)
-
-    @staticmethod
-    def calc_underground_Zii(r_i, GMRi, resistivity = 100, freq = 60):
-        # returns Zii in ohms/mile
-        Zii = complex(r_i + 0.00158836 * freq, 0.00202237 * freq * (np.math.log(1/GMRi) + 7.6786 + math.log(resistivity / freq)/2.0))
-        # Zii = r_i + 0.09327 + 1j * 0.12134 * (np.math.log(GMRi ** -1) + 7.95153)
-        return Zii
-
-    @staticmethod
-    def calc_underground_Zij(Dij, resistivity = 100, freq = 60):
-        # returns Zij in ohms/mile
-        Zij = complex(0.00158836 * freq, 0.00202237 * freq * (math.log(1 / Dij) + 7.6786 + math.log(resistivity / freq)/2.0))
-        # Zij = 0.09327 + 1j * 0.12134 * (np.math.log(Dij ** -1) + 7.95153)
-        return Zij
-
-    @staticmethod
-    def kron_reduction(Zij, Zin, Znj, Znn):
-        #  _r = Zij.shape[0]
-        #  _c = Zij.shape[1]
-        if hasattr(Znn, "__len__"):
-            Znn_inv = np.linalg.inv(Znn)
-        else:
-            Znn_inv = Znn ** -1
-        _tempZ = np.dot(np.dot(Zin, Znn_inv), Znj)
-        Zabc = Zij - _tempZ
-        matrix = Zabc.tolist()
-        return matrix
 
     def parse(self, model, origin_datetime="2017 Jun 1 2:00PM"):
         origin_datetime = datetime.strptime(origin_datetime, "%Y %b %d %I:%M%p")
@@ -704,8 +649,8 @@ class Reader(AbstractReader):
                 if curr_object == None and curr_schedule == None:
                     continue
                 if curr_object != None:
-                    if len(row) > 0 and row[-1] == ";":
-                        row = row[:-1]
+                    if len(row) > 0 and row.find(";") != -1:	
+                        row = row[:row.find(";")]
                     entries = row.split()
                     if len(entries) > 1:
                         element = entries[0]
@@ -799,7 +744,11 @@ class Reader(AbstractReader):
 
                 try:
                     api_node.voltage_A = complex(obj["voltage_A"])
+                except AttributeError:
+                    pass
                     api_node.voltage_B = complex(obj["voltage_B"])
+                except AttributeError:
+                    pass
                     api_node.voltage_C = complex(obj["voltage_C"])
                 except AttributeError:
                     pass
@@ -822,8 +771,8 @@ class Reader(AbstractReader):
 
             if obj_type == "triplex_node" or obj_type == "triplex_meter":
                 if hasattr(obj, "_power_12") or hasattr(obj, "_power_1") or hasattr(obj, "_power_2"):
-                    # Actually a triplex load. Change obj_type and skip "triplex_node" code, to pick up at "load" code
-                    obj_type = "load"
+                    # Actually a triplex load. Change obj_type and skip "triplex_node" code, to pick up at "triplex_load" code
+                    obj_type = "triplex_load"
                 else:
                     api_node = Node(model)
                     try:
@@ -845,10 +794,11 @@ class Reader(AbstractReader):
                     try:
                         phases = []
                         cnt = 0
-                        for i in obj["phases"].strip('"'):  # Ignore the 'S' at the end and just say if A,B or C
-                            # With lists of traitlets, the strings aren't automatically cast
+                        for i in obj["phases"].strip('"'):
+                            # This should ideally be replaced, since having "ABS" makes zero sense. So it should just be "12" always
                             cnt = cnt + 1
                             phases.append(Unicode(str(cnt)))
+                        api_node.triplex_phase = obj["phases"].strip('"')[0]
                         api_node.phases = phases
                     except AttributeError:
                         pass
@@ -1242,12 +1192,19 @@ class Reader(AbstractReader):
                 except AttributeError:
                     pass
 
+                try:	
+                    api_load.voltage_1 = complex(obj["voltage_1"])	
+                    api_load.voltage_2 = complex(obj["voltage_2"])	
+                except AttributeError:	
+                    pass
+
                 phases = []
                 phaseloads = []
                 try:
                     phase_str = obj["phases"].strip('"')
                     if "S" in phase_str:
                         # Triplex load
+                        api_load.triplex_phase = phase_str[:-1]
                         phase_str = "12"
                     for i in phase_str:
                         if i == "A" or i == "B" or i == "C" or i == "1" or i == "2":
@@ -2016,23 +1973,23 @@ class Reader(AbstractReader):
                         pass
 
                     try:
-                        conn1 = config["conductor_N"]
+                        conn3 = config["conductor_N"]
                         num_phases = num_phases + 1
                         api_wire = Wire(model)
                         api_wire.phase = "N"
-                        conductors[api_wire] = conn2
+                        conductors[api_wire] = conn3
                     except AttributeError:
                         pass
 
                     try:
                         api_wire.insulation_thickness = (
-                            float(config["insulation_thickness"]) * 0.0254 # why convert to meters
+                            float(config["insulation_thickness"]) / 12 # convert to feet
                         )
                     except AttributeError:
                         pass
 
                     try:
-                        api_wire.diameter = float(config["diameter"]) * 0.0254 # why convert to meters
+                        api_wire.diameter = float(config["diameter"]) / 12 # convert to feet
                     except AttributeError:
                         pass
 
@@ -2041,7 +1998,7 @@ class Reader(AbstractReader):
                         conductor = self.all_gld_objects[cond_name]
                         try:
                             api_wire.gmr = (
-                                float(conductor["geometric_mean_radius"]) * 0.3048 # why convert to meters
+                                float(conductor["geometric_mean_radius"]) # * 0.3048 to convert feet to meters
                             )
                         except AttributeError:
                             pass
@@ -2074,6 +2031,10 @@ class Reader(AbstractReader):
                     impedance_matrix = compute_secondary_matrix(
                         list(conductors.keys())
                     )
+
+                    for i in range(len(impedance_matrix)):	
+                        for j in range(len(impedance_matrix[0])):	
+                            impedance_matrix[i][j] = impedance_matrix[i][j] / 1609.344
 
                 api_line.impedance_matrix = impedance_matrix
                 for wire in conductors.keys():
@@ -2232,7 +2193,7 @@ class Reader(AbstractReader):
                         lookup = ["A", "B", "C", "N"]
                         rev_lookup = {"A": 0, "B": 1, "C": 2, "N": 3, "E": 4}
                         num_dists = len(lookup)
-                        distances = self.compute_distances(spacing, num_dists, lookup, remove_nonnum, max_dist=-100, max_from=-1, max_to=-1)
+                        distances = self.compute_distances(spacing, [api_wire.outer_diameter for api_wire in conductors], num_dists, lookup, remove_nonnum, max_dist=-100, max_from=-1, max_to=-1)
                         
                         # Drop all rows and columns with only distances of -1
                         # distances_arr = np.array(distances)
@@ -2439,33 +2400,6 @@ class Reader(AbstractReader):
                 api_line.impedance_matrix = impedance_matrix
                 for wire in conductors.keys():
                     api_line.wires.append(wire)
-                for api_wire in conductors:
-                    try:
-                        if api_wire.gmr is not None:
-                            api_wire.gmr = api_wire.gmr # * 0.3048
-                    except AttributeError:
-                        pass
-                    try:
-                        if api_wire.concentric_neutral_gmr is not None:
-                            api_wire.concentric_neutral_gmr = (
-                                api_wire.concentric_neutral_gmr # * 0.3048
-                            )
-                    except AttributeError:
-                        pass
-                    try:
-                        if api_wire.resistance is not None:
-                            api_wire.resistance = (
-                                api_wire.resistance # / 1609.344
-                            )  # In Ohms per meter?
-                    except AttributeError:
-                        pass
-                    try:
-                        if api_wire.concentric_neutral_resistance is not None:
-                            api_wire.concentric_neutral_resistance = (
-                                api_wire.concentric_neutral_resistance # / 1609.344
-                            )  # In Ohms per meter?
-                    except AttributeError:
-                        pass
 
             if obj_type == "capacitor":
 
