@@ -11,6 +11,18 @@ module tape;
 // 	mode RECT;
 // }
 
+// object group_recorder {
+// 	group "class=triplex_node";
+//     property voltage_1;
+//     file triplex_voltage1s.csv;
+// }
+
+// object group_recorder {
+// 	group "class=triplex_node";
+//     property voltage_2;
+//     file triplex_voltage2s.csv;
+// }
+
 object node:4385 {
 	name R1-12-47-1_node_617;
 	bustype SWING;
@@ -248,88 +260,88 @@ object triplex_node:1226 {
     // };
 }
 
-object triplex_line:30401 {
-	name R1-12-47-1_tl_5561;
-	phases CS;
-	from R1-12-47-1_tn_556;
-	to R1-12-47-1_tn_5561;
-	length 30;
-	configuration triplex_line_configuration:1;
-}
+// object triplex_line:30401 {
+// 	name R1-12-47-1_tl_5561;
+// 	phases CS;
+// 	from R1-12-47-1_tn_556;
+// 	to R1-12-47-1_tn_5561;
+// 	length 30;
+// 	configuration triplex_line_configuration:1;
+// }
 
-object triplex_node:12261 {
-	name R1-12-47-1_tn_5561;
-	phases CS;
-	voltage_1 -60+103.92j;
-	voltage_2 -60+103.92j;
-	voltage_N 0;
-	nominal_voltage 120;
-    // object recorder {
-    //     file tn_556_voltages.csv;
-    //     property voltage_1, voltage_2, voltage_N;
-    // };
-}
+// object triplex_node:12261 {
+// 	name R1-12-47-1_tn_5561;
+// 	phases CS;
+// 	voltage_1 -60+103.92j;
+// 	voltage_2 -60+103.92j;
+// 	voltage_N 0;
+// 	nominal_voltage 120;
+//     // object recorder {
+//     //     file tn_556_voltages.csv;
+//     //     property voltage_1, voltage_2, voltage_N;
+//     // };
+// }
 
-object triplex_line:30402 {
-	name R1-12-47-1_tl_5562;
-	phases CS;
-	from R1-12-47-1_tn_5561;
-	to R1-12-47-1_tn_5562;
-	length 30;
-	configuration triplex_line_configuration:1;
-}
+// object triplex_line:30402 {
+// 	name R1-12-47-1_tl_5562;
+// 	phases CS;
+// 	from R1-12-47-1_tn_5561;
+// 	to R1-12-47-1_tn_5562;
+// 	length 30;
+// 	configuration triplex_line_configuration:1;
+// }
 
-object triplex_node:12262{
-	name R1-12-47-1_tn_5562;
-	phases CS;
-	voltage_1 -60+103.92j;
-	voltage_2 -60+103.92j;
-	voltage_N 0;
-	nominal_voltage 120;
-    // object recorder {
-    //     file tn_556_voltages.csv;
-    //     property voltage_1, voltage_2, voltage_N;
-    // };
-}
+// object triplex_node:12262{
+// 	name R1-12-47-1_tn_5562;
+// 	phases CS;
+// 	voltage_1 -60+103.92j;
+// 	voltage_2 -60+103.92j;
+// 	voltage_N 0;
+// 	nominal_voltage 120;
+//     // object recorder {
+//     //     file tn_556_voltages.csv;
+//     //     property voltage_1, voltage_2, voltage_N;
+//     // };
+// }
 
-object triplex_line:3040 {
-	name R1-12-47-1_tl_556;
-	phases CS;
-	from R1-12-47-1_tn_5562;
-	to R1-12-47-1_tm_556;
-	length 30;
-	configuration triplex_line_configuration:1;
-}
+// object triplex_line:3040 {
+// 	name R1-12-47-1_tl_556;
+// 	phases CS;
+// 	from R1-12-47-1_tn_5562;
+// 	to R1-12-47-1_tm_556;
+// 	length 30;
+// 	configuration triplex_line_configuration:1;
+// }
 
-object triplex_meter:2422 {
-	name R1-12-47-1_tm_556;
-	phases CS;
-	voltage_1 -60+103.92j;
-	voltage_2 -60+103.92j;
-	voltage_N 0;
-	nominal_voltage 120;
-    // object recorder {
-    //     file tm_556_voltages.csv;
-    //     interval 1;
-    //     property measured_voltage_1, measured_voltage_2, measured_voltage_N;
-    // };
-}
+// object triplex_meter:2422 {
+// 	name R1-12-47-1_tm_556;
+// 	phases CS;
+// 	voltage_1 -60+103.92j;
+// 	voltage_2 -60+103.92j;
+// 	voltage_N 0;
+// 	nominal_voltage 120;
+//     // object recorder {
+//     //     file tm_556_voltages.csv;
+//     //     interval 1;
+//     //     property measured_voltage_1, measured_voltage_2, measured_voltage_N;
+//     // };
+// }
 
-object triplex_node:1824 {
-	name R1-12-47-1_tn_1154;
-	phases CS;
-	parent R1-12-47-1_tm_556;
-	power_1 2300+1200j;
-	power_2 2300+1200j;
-	voltage_1 -60+103.92j;
-	voltage_2 -60+103.92j;
-	voltage_N 0;
-	nominal_voltage 120;
-    // object recorder {
-    //     file tn_1154_voltages.csv;
-    //     property voltage_1, voltage_2, voltage_N;
-    // };
-}
+// object triplex_node:1824 {
+// 	name R1-12-47-1_tn_1154;
+// 	phases CS;
+// 	parent R1-12-47-1_tm_556;
+// 	power_1 2300+1200j;
+// 	power_2 2300+1200j;
+// 	voltage_1 -60+103.92j;
+// 	voltage_2 -60+103.92j;
+// 	voltage_N 0;
+// 	nominal_voltage 120;
+//     // object recorder {
+//     //     file tn_1154_voltages.csv;
+//     //     property voltage_1, voltage_2, voltage_N;
+//     // };
+// }
 
 
 
@@ -342,15 +354,3 @@ object triplex_node:1824 {
 // }; 
 
 
-
-// object group_recorder {
-// 	group "class=triplex_node";
-//     property voltage_1;
-//     file triplex_voltage1s.csv;
-// }
-
-// object group_recorder {
-// 	group "class=triplex_node";
-//     property voltage_2;
-//     file triplex_voltage2s.csv;
-// }
