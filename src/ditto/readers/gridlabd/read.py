@@ -43,6 +43,99 @@ from ..abstract_reader import AbstractReader
 
 logger = logging.getLogger(__name__)
 
+def compute_secondary_matrix(
+    wire_list, freq=60, resistivity=100, kron_reduce=True
+):
+    wire_map = {'1':0,'2':1,'N':2}
+    # wire_map = {"A": 0, "B": 1, "N": 2}
+    matrix = [[0 for i in range(3)] for j in range(3)]
+    d12 = 0
+    d1n = 0
+    distances_mapped = False
+    for w in wire_list:
+        if w.diameter is not None and w.insulation_thickness is not None:
+            d12 = (w.diameter + 2 * w.insulation_thickness) / 12.0
+            d1n = (w.diameter + w.insulation_thickness) / 12.0 # Should this use w.radius instead of w.diameter?
+            distances_mapped = True
+            break
+
+    for i in range(len(wire_list)):
+        for j in range(len(wire_list)):
+            if i == j:
+                z = 0
+                if (
+                    wire_list[i].resistance is not None
+                    and wire_list[i].gmr is not None
+                ):
+                    z = complex(
+                        wire_list[i].resistance + 0.00158836 * freq,
+                        0.00202237
+                        * freq
+                        * (
+                            math.log(1 / wire_list[i].gmr)
+                            + 7.6786
+                            + 0.5 * math.log(resistivity / freq)
+                        ),
+                    )
+                else:
+                    logger.debug("Warning: resistance or GMR is missing from wire")
+
+                if wire_list[i].phase is not None:
+                    index = wire_map[wire_list[i].phase]
+                    matrix[index][index] = z / 1609.344
+                else:
+                    logger.debug("Warning: phase missing from wire")
+
+            else:
+                z = 0
+                if (
+                    wire_list[i].phase is not None
+                    and wire_list[j].phase is not None
+                    and distances_mapped
+                ):
+                    if wire_list[i].phase == "N" or wire_list[j].phase == "N":
+                        z = complex(
+                            0.00158836 * freq,
+                            0.00202237
+                            * freq
+                            * (
+                                math.log(1 / d1n)
+                                + 7.6786
+                                + 0.5 * math.log(resistivity / freq)
+                            ),
+                        )
+                    else:
+                        z = complex(
+                            0.00158836 * freq,
+                            0.00202237
+                            * freq
+                            * (
+                                math.log(1 / d12)
+                                + 7.6786
+                                + 0.5 * math.log(resistivity / freq)
+                            ),
+                        )
+                    index1 = wire_map[wire_list[i].phase]
+                    index2 = wire_map[wire_list[j].phase]
+                    matrix[index1][index2] = z / 1609.344  # ohms per meter
+
+                else:
+                    # import pdb; pdb.set_trace()
+                    logger.debug(
+                        "Warning phase missing from wire, or Insulation_thickness/diameter not set"
+                    )
+
+    if kron_reduce:
+        kron_matrix = [[0 for i in range(2)] for j in range(2)]
+        for i in range(2):
+            for j in range(2):
+                kron_matrix[i][j] = (
+                    matrix[i][j] - matrix[i][2] * 1 / matrix[2][2] * matrix[2][j]
+                )
+
+        matrix = kron_matrix
+    return matrix
+
 
 class Reader(AbstractReader):
     """
@@ -343,99 +436,6 @@ class Reader(AbstractReader):
         # Drop all rows and columns with only distances of -1
         distances_arr = np.array(distances)
         return distances_arr[:,~np.all(distances_arr, axis=0, where=[-1])][~np.all(distances_arr, axis=1, where=[-1]),:]
-
-    def compute_secondary_matrix(
-        self, wire_list, freq=60, resistivity=100, kron_reduce=True
-    ):
-        wire_map = {'1':0,'2':1,'N':2}
-        # wire_map = {"A": 0, "B": 1, "N": 2}
-        matrix = [[0 for i in range(3)] for j in range(3)]
-        d12 = 0
-        d1n = 0
-        distances_mapped = False
-        for w in wire_list:
-            if w.diameter is not None and w.insulation_thickness is not None:
-                d12 = (w.diameter + 2 * w.insulation_thickness) / 12.0
-                d1n = (w.diameter + w.insulation_thickness) / 12.0 # Should this use w.radius instead of w.diameter?
-                distances_mapped = True
-                break
-
-        for i in range(len(wire_list)):
-            for j in range(len(wire_list)):
-                if i == j:
-                    z = 0
-                    if (
-                        wire_list[i].resistance is not None
-                        and wire_list[i].gmr is not None
-                    ):
-                        z = complex(
-                            wire_list[i].resistance + 0.00158836 * freq,
-                            0.00202237
-                            * freq
-                            * (
-                                math.log(1 / wire_list[i].gmr)
-                                + 7.6786
-                                + 0.5 * math.log(resistivity / freq)
-                            ),
-                        )
-                    else:
-                        logger.debug("Warning: resistance or GMR is missing from wire")
-
-                    if wire_list[i].phase is not None:
-                        index = wire_map[wire_list[i].phase]
-                        matrix[index][index] = z / 1609.344
-                    else:
-                        logger.debug("Warning: phase missing from wire")
-
-                else:
-                    z = 0
-                    if (
-                        wire_list[i].phase is not None
-                        and wire_list[j].phase is not None
-                        and distances_mapped
-                    ):
-                        if wire_list[i].phase == "N" or wire_list[j].phase == "N":
-                            z = complex(
-                                0.00158836 * freq,
-                                0.00202237
-                                * freq
-                                * (
-                                    math.log(1 / d1n)
-                                    + 7.6786
-                                    + 0.5 * math.log(resistivity / freq)
-                                ),
-                            )
-                        else:
-                            z = complex(
-                                0.00158836 * freq,
-                                0.00202237
-                                * freq
-                                * (
-                                    math.log(1 / d12)
-                                    + 7.6786
-                                    + 0.5 * math.log(resistivity / freq)
-                                ),
-                            )
-                        index1 = wire_map[wire_list[i].phase]
-                        index2 = wire_map[wire_list[j].phase]
-                        matrix[index1][index2] = z / 1609.344  # ohms per meter
-
-                    else:
-                        # import pdb; pdb.set_trace()
-                        logger.debug(
-                            "Warning phase missing from wire, or Insulation_thickness/diameter not set"
-                        )
-
-        if kron_reduce:
-            kron_matrix = [[0 for i in range(2)] for j in range(2)]
-            for i in range(2):
-                for j in range(2):
-                    kron_matrix[i][j] = (
-                        matrix[i][j] - matrix[i][2] * 1 / matrix[2][2] * matrix[2][j]
-                    )
-
-            matrix = kron_matrix
-        return matrix
 
     def compute_overhead_impedance_matrix(self, wire_list, distances, freq=60, resistivity=100, kron_reduce=True):
         wire_map = {"A": 0, "B": 1, "C": 2, "N": 3}
@@ -2071,7 +2071,7 @@ class Reader(AbstractReader):
                     pass
 
                 if not impedance_matrix_direct:
-                    impedance_matrix = self.compute_secondary_matrix(
+                    impedance_matrix = compute_secondary_matrix(
                         list(conductors.keys())
                     )
 
