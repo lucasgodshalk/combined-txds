@@ -6,7 +6,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.shared.line import build_line_stamper
+from models.shared.line import build_line_stamper_bus
 from models.shared.bus import Bus
 
 constants = B_shunt, tx_factor = symbols('B_sh tx_factor')
@@ -57,15 +57,9 @@ class Branch:
         self.status = status
 
     def assign_nodes(self, node_index, optimization_enabled):
-        self.line_stamper = build_line_stamper(
-            self.from_bus.node_Vr, 
-            self.from_bus.node_Vi, 
-            self.to_bus.node_Vr, 
-            self.to_bus.node_Vi,
-            self.from_bus.node_lambda_Vr, 
-            self.from_bus.node_lambda_Vi, 
-            self.to_bus.node_lambda_Vr, 
-            self.to_bus.node_lambda_Vi,
+        self.line_stamper = build_line_stamper_bus(
+            self.from_bus, 
+            self.to_bus, 
             optimization_enabled
             )
 

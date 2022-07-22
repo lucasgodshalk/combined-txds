@@ -2,6 +2,7 @@ import numpy as np
 from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
+from models.shared.bus import Bus
 
 TX_LARGE_G = 20
 TX_LARGE_B = 20
@@ -23,6 +24,19 @@ eqns = [
 lagrange = np.dot(duals, eqns)
 
 line_lh = LagrangeHandler(lagrange, constants, primals, duals)
+
+def build_line_stamper_bus(from_bus: Bus, to_bus: Bus, optimization_enabled):
+    return build_line_stamper(
+        from_bus.node_Vr,
+        from_bus.node_Vi,
+        to_bus.node_Vr,
+        to_bus.node_Vi,
+        from_bus.node_lambda_Vr,
+        from_bus.node_lambda_Vi,
+        to_bus.node_lambda_Vr,
+        to_bus.node_lambda_Vi,
+        optimization_enabled
+        )
 
 def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_idx, Li_from_idx, Lr_to_idx, Li_to_idx, optimization_enabled):
     index_map = {}
