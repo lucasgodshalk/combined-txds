@@ -53,8 +53,8 @@ def compute_secondary_matrix(
     distances_mapped = False
     for w in wire_list:
         if w.diameter is not None and w.insulation_thickness is not None:
-            d12 = w.diameter + 2 * w.insulation_thickness
-            d1n = w.diameter + w.insulation_thickness
+            d12 = (w.diameter + 2 * w.insulation_thickness) / 12
+            d1n = (w.diameter + w.insulation_thickness) / 12
             distances_mapped = True
             break
 
@@ -107,6 +107,8 @@ def compute_secondary_matrix(
         matrix = kron_reduction(matrix_ij, matrix_in, matrix_nj, matrix_nn)
 
     return matrix
+
+
 
 def calc_Zii(r_i, GMRi, resistivity = 100, freq = 60):
     # returns Zii in ohms/mile
