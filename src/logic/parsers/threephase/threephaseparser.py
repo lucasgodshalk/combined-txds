@@ -57,7 +57,7 @@ class ThreePhaseParser:
         self.create_buses(simulation_state)
 
         self.create_loads(simulation_state)
-        transformerhandler = TransformerHandler(self.optimization_enabled)
+        transformerhandler = TransformerHandler(self.optimization_enabled, self)
         transformerhandler.create_transformers(self.ditto_store, simulation_state)
         self.create_capacitors(simulation_state)
         self.create_regulators(simulation_state)

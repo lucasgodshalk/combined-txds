@@ -16,8 +16,9 @@ CONNECTION_TYPE_DELTA = "D"
 CONNECTION_TYPE_GWYE = None
 
 class TransformerHandler:
-    def __init__(self, optimization_enabled: bool) -> None:
+    def __init__(self, optimization_enabled: bool, parser) -> None:
         self.optimization_enabled = optimization_enabled
+        self.parser = parser
 
     def create_transformers(self, ditto_store, simulation_state: DxNetworkModel):
         # Go through the ditto store for each transformer object
@@ -58,22 +59,14 @@ class TransformerHandler:
         transformer_coil_0.from_node = from_bus
 
         # Create a new bus on the primary coil, for KCL
-        primary_bus = Bus()
-        simulation_state.bus_name_map[model.name + "_primary_" + phase] = primary_bus.bus_id
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        simulation_state.bus_map[primary_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
+        primary_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_primary", phase)
         
-        transformer_coil_0.primary_node = primary_bus.bus_id
+        transformer_coil_0.primary_node = primary_bus
 
         # Create a new bus on the first triplex coil, for KCL
-        secondary1_bus = Bus()
-        simulation_state.bus_name_map[model.name + "_sending_1"] = secondary1_bus.bus_id
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        simulation_state.bus_map[secondary1_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
+        secondary1_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_sending_1", phase)
         
-        transformer_coil_1.sending_node = secondary1_bus.bus_id
+        transformer_coil_1.sending_node = secondary1_bus
         
         # Create a new variable for the voltage equations on the first triplex coil (not an actual node)
         real_voltage_idx = simulation_state.next_var_idx.__next__()
@@ -87,13 +80,9 @@ class TransformerHandler:
         transformer_coil_1.to_node = to1_bus
 
         # Create a new bus on the second triplex coil, for KCL
-        secondary2_bus = Bus()
-        simulation_state.bus_name_map[model.name + "_sending_2"] = secondary2_bus.bus_id
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        simulation_state.bus_map[secondary2_bus.bus_id] = (real_voltage_idx, imag_voltage_idx)
+        secondary2_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_sending_2", phase)
         
-        transformer_coil_2.sending_node = secondary2_bus.bus_id
+        transformer_coil_2.sending_node = secondary2_bus
         
         # Create a new variable for the voltage equations on the second triplex coil (not an actual node)
         real_voltage_idx = simulation_state.next_var_idx.__next__()
