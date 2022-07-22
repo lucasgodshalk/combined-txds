@@ -192,7 +192,11 @@ class ThreePhaseParser:
                 gld_cap = self.all_gld_objects[model.name]
                 for phase_capacitor in model.phase_capacitors:
                     parent_bus = simulation_state.bus_name_map[gld_cap._parent + '_' + phase_capacitor.phase]
-                    capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, model.nominal_voltage, model.high, model.low)
+                    nominal_voltage = float(gld_cap._cap_nominal_voltage) #Or could use model.nominal_voltage?
+                    voltage_angle = self._phase_to_angle[phase_capacitor.phase]
+                    v_r_nom = abs(nominal_voltage)*math.cos(voltage_angle)
+                    v_i_nom = abs(nominal_voltage)*math.sin(voltage_angle)
+                    capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, v_r_nom, v_i_nom, model.high, model.low)
                     capacitor.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                     simulation_state.capacitors.append(capacitor)
 

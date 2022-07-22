@@ -7,15 +7,22 @@ from models.shared.line import build_line_stamper
 
 
 class Capacitor:
-    def __init__(self, from_bus: Bus, to_bus: Bus, var, v_nominal, high_voltage, low_voltage) -> None:
+    def __init__(self, from_bus: Bus, to_bus: Bus, var, Vr_nom, Vi_nom, high_voltage, low_voltage) -> None:
         self.from_bus = from_bus
         self.to_bus = to_bus
         self.var = var
-        self.v_nominal = v_nominal
+        self.Vr_nom = Vr_nom
+        self.Vi_nom = Vi_nom
         self.high_voltage = high_voltage
         self.low_voltage = low_voltage
 
-        self.B = var / (v_nominal ** 2)
+        V = complex(Vr_nom,Vi_nom)
+
+        Z = (V * V.conjugate() / var).conjugate()
+        Y = 1 / Z
+
+        #todo: This should use the line stamper.
+        self.G, self.B = Y.real, Y.imag
 
         self.on = True
     
@@ -33,21 +40,23 @@ class Capacitor:
             )
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        if not self.is_enabled(v_previous):
-            return
+        #if not self.is_enabled(v_previous):
+        #    return
 
-        self.line_stamper.stamp_primal(Y, J, [0, self.B, tx_factor], v_previous)
+        self.line_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
     
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         if not self.is_enabled(v_previous):
             return
         
-        self.line_stamper.stamp_dual(Y, J, [0, self.B, tx_factor], v_previous)
+        self.line_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
     
     def calculate_residuals(self, network_model, v):
-        return self.line_stamper.calc_residuals([0, self.B, 0], v)
+        return self.line_stamper.calc_residuals([self.G, self.B, 0], v)
 
     def is_enabled(self, v_previous):
+        #Update: this doesn't work because the matrix builder expects the same set of index stamps every time.
+
         #This operation is discontinuous. Also, need to account for different control methods.
 
         f_r, f_i = (self.from_bus.node_Vr, self.from_bus.node_Vi)
