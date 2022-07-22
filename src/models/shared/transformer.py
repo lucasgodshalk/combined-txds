@@ -140,6 +140,9 @@ class Transformer:
             optimization_enabled
             )
 
+    def get_connections(self):
+        return [(self.from_bus_pos, self.from_bus_neg, self.to_bus_pos, self.to_bus_neg)]
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         if not self.status:
             return

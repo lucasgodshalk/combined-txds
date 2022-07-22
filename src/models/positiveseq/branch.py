@@ -81,6 +81,9 @@ class Branch:
 
         self.shunt_stamper = LagrangeStamper(shunt_lh, index_map, optimization_enabled)
 
+    def get_connections(self):
+        return [(self.from_bus, self.to_bus)]
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
         if not self.status:
             return

@@ -56,13 +56,13 @@ class TxNetworkModel(NetworkModel):
         self.slack = slack
         self.generators = generators
         self.infeasibility_currents = infeasibility_currents
-        self.transformer = transformers
-        self.branch = branches
-        self.shunt = shunts
+        self.transformers = transformers
+        self.branches = branches
+        self.shunts = shunts
         self.voltage_sources = voltage_sources
 
     def get_NR_invariant_elements(self):
-        return self.branch + self.shunt + self.transformer + self.slack + self.infeasibility_currents + self.voltage_sources
+        return self.branches + self.shunts + self.transformers + self.slack + self.infeasibility_currents + self.voltage_sources
 
     def get_NR_variable_elements(self):
         return self.generators + self.loads

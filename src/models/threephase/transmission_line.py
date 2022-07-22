@@ -32,6 +32,7 @@ class TransmissionLine():
         self.from_element = from_element
         self.to_element = to_element
         self.length = length
+        self.simulation_state = simulation_state
 
         for phase in phases:
             self.lines.append(TransmissionLinePhase(self.from_element, self.to_element, phase))
@@ -75,6 +76,10 @@ class TransmissionLine():
 
                 self.stampers[(line1_from, line2_to)] = (line_stamper, shunt_stamper)
 
+    def get_connections(self):
+        for line in self.lines:
+            from_bus, to_bus = line.get_nodes(self.simulation_state)
+            yield (from_bus, to_bus)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
         for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
