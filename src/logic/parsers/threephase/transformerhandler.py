@@ -128,44 +128,44 @@ class TransformerHandler:
             g_shunt = 0
             b_shunt = 0
 
-            phase_list = get_phase_list(primary_coil, secondary_coil, phases)
+        phase_list = get_phase_list(primary_coil, secondary_coil, phases)
 
-            for (pos_phase_1, neg_phase_1, pos_phase_2, neg_phase_2) in phase_list:
-                from_bus_pos = primary_coil.phase_connections[pos_phase_1]
-                if neg_phase_1 == NEUTRAL:
-                    #Todo: grounded vs ungrounded wye.
-                    from_bus_neg = GROUND 
-                else:
-                    from_bus_neg = primary_coil.phase_connections[neg_phase_1]
-                to_bus_pos = secondary_coil.phase_connections[pos_phase_2]
-                if neg_phase_2 == NEUTRAL:
-                    #Todo: grounded vs ungrounded wye.
-                    to_bus_neg = GROUND 
-                else:
-                    to_bus_neg = secondary_coil.phase_connections[neg_phase_2]
+        for (pos_phase_1, neg_phase_1, pos_phase_2, neg_phase_2) in phase_list:
+            from_bus_pos = primary_coil.phase_connections[pos_phase_1]
+            if neg_phase_1 == NEUTRAL:
+                #Todo: grounded vs ungrounded wye.
+                from_bus_neg = GROUND 
+            else:
+                from_bus_neg = primary_coil.phase_connections[neg_phase_1]
+            to_bus_pos = secondary_coil.phase_connections[pos_phase_2]
+            if neg_phase_2 == NEUTRAL:
+                #Todo: grounded vs ungrounded wye.
+                to_bus_neg = GROUND 
+            else:
+                to_bus_neg = secondary_coil.phase_connections[neg_phase_2]
 
-                # Values for the secondary coil stamps, converted out of per-unit
-                r = secondary_coil.resistance * secondary_coil.nominal_voltage ** 2  / secondary_coil.rated_power
-                x = secondary_coil.reactance * secondary_coil.nominal_voltage ** 2  / secondary_coil.rated_power
+            # Values for the secondary coil stamps, converted out of per-unit
+            r = secondary_coil.resistance * secondary_coil.nominal_voltage ** 2  / secondary_coil.rated_power
+            x = secondary_coil.reactance * secondary_coil.nominal_voltage ** 2  / secondary_coil.rated_power
 
-                xfmr = Transformer(
-                    from_bus_pos, 
-                    from_bus_neg, 
-                    to_bus_pos, 
-                    to_bus_neg, 
-                    r, 
-                    x, 
-                    True, 
-                    turn_ratio,
-                    phase_shift, 
-                    g_shunt,
-                    b_shunt,
-                    None
-                    )
-                
-                xfmr.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+            xfmr = Transformer(
+                from_bus_pos, 
+                from_bus_neg, 
+                to_bus_pos, 
+                to_bus_neg, 
+                r, 
+                x, 
+                True, 
+                turn_ratio,
+                phase_shift, 
+                g_shunt,
+                b_shunt,
+                None
+                )
+            
+            xfmr.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
 
-                simulation_state.transformers.append(xfmr)
+            simulation_state.transformers.append(xfmr)
 
 def get_phase_list(primary_coil, secondary_coil, phases):
     rotated_phases = phases[1:] + phases[:1]

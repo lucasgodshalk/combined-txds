@@ -53,8 +53,8 @@ def compute_secondary_matrix(
     distances_mapped = False
     for w in wire_list:
         if w.diameter is not None and w.insulation_thickness is not None:
-            d12 = (w.diameter + 2 * w.insulation_thickness) / 12
-            d1n = (w.diameter + w.insulation_thickness) / 12
+            d12 = (w.diameter + 2 * w.insulation_thickness)
+            d1n = (w.diameter + w.insulation_thickness)
             distances_mapped = True
             break
 
@@ -107,8 +107,6 @@ def compute_secondary_matrix(
         matrix = kron_reduction(matrix_ij, matrix_in, matrix_nj, matrix_nn)
 
     return matrix
-
-
 
 def calc_Zii(r_i, GMRi, resistivity = 100, freq = 60):
     # returns Zii in ohms/mile
@@ -581,7 +579,7 @@ class Reader(AbstractReader):
         _Zin = _Z[:len(_R)//2, len(_R)//2:]
         _Znj = _Z[len(_R)//2:, :len(_R)//2]
         _Znn = _Z[len(_R)//2:, len(_R)//2:]
-        return self.kron_reduction(_Zij, _Zin, _Znj, _Znn)
+        return kron_reduction(_Zij, _Zin, _Znj, _Znn)
 
     def parse(self, model, origin_datetime="2017 Jun 1 2:00PM"):
         origin_datetime = datetime.strptime(origin_datetime, "%Y %b %d %I:%M%p")
@@ -748,9 +746,11 @@ class Reader(AbstractReader):
                     api_node.voltage_A = complex(obj["voltage_A"])
                 except AttributeError:
                     pass
+                try:
                     api_node.voltage_B = complex(obj["voltage_B"])
                 except AttributeError:
                     pass
+                try:
                     api_node.voltage_C = complex(obj["voltage_C"])
                 except AttributeError:
                     pass
@@ -2195,7 +2195,7 @@ class Reader(AbstractReader):
                         lookup = ["A", "B", "C", "N"]
                         rev_lookup = {"A": 0, "B": 1, "C": 2, "N": 3, "E": 4}
                         num_dists = len(lookup)
-                        distances = self.compute_distances(spacing, [api_wire.outer_diameter for api_wire in conductors], num_dists, lookup, remove_nonnum, max_dist=-100, max_from=-1, max_to=-1)
+                        distances = self.compute_distances([api_wire.outer_diameter for api_wire in conductors], spacing, num_dists, lookup, remove_nonnum, max_dist=-100, max_from=-1, max_to=-1)
                         
                         # Drop all rows and columns with only distances of -1
                         # distances_arr = np.array(distances)
