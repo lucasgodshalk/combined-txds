@@ -63,3 +63,10 @@ class NRSolver:
             Y.clear(retain_idx=linear_index)
 
         return (False, v_next, iteration_num)
+
+
+def dump_Y(Y):
+    with open('Y_output.txt', 'a') as outputfile:
+        for i in range(Y.shape[0]):
+            for j in range(Y.shape[0]):
+                outputfile.write(f"{i}, {j}: {Y[i, j]:.5g}\r")
