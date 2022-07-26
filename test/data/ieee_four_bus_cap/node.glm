@@ -21,10 +21,11 @@ module powerflow {
     // NR_matrix_output_references true;
 };
 
-// object voltdump {
-//     filename ieee_4_bus_cap_voltage.csv;
-// 	mode RECT;
-// }
+object voltdump {
+    name bogus;
+    filename result.csv;
+	mode RECT;
+}
 
 object overhead_line_conductor:100 {
     geometric_mean_radius 0.0244;
@@ -111,9 +112,12 @@ object capacitor:72 {
      pt_phase A; 
      parent node2; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 7300; 
-     voltage_set_low 7200; 
+     voltage_set_low 7299; 
+     switchA CLOSED;
+     switchB CLOSED;
+     switchC CLOSED;
      capacitor_A 0.6 MVAr; 
      capacitor_B 0.6 MVAr; 
      capacitor_C 0.6 MVAr; 

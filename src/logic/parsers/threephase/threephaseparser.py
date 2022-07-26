@@ -196,7 +196,9 @@ class ThreePhaseParser:
                     voltage_angle = self._phase_to_angle[phase_capacitor.phase]
                     v_r_nom = abs(nominal_voltage)*math.cos(voltage_angle)
                     v_i_nom = abs(nominal_voltage)*math.sin(voltage_angle)
-                    capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, v_r_nom, v_i_nom, model.high, model.low)
+                    parent_bus.Vr_init = v_r_nom
+                    parent_bus.Vi_init = v_i_nom
+                    capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, nominal_voltage, model.high, model.low)
                     capacitor.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                     simulation_state.capacitors.append(capacitor)
 

@@ -1,48 +1,33 @@
 
 
 
+import math
 from logic.matrixbuilder import MatrixBuilder
 from models.shared.bus import Bus
 from models.shared.line import build_line_stamper_bus
 
 
 class Capacitor:
-    def __init__(self, from_bus: Bus, to_bus: Bus, var, Vr_nom, Vi_nom, high_voltage, low_voltage) -> None:
+    def __init__(self, from_bus: Bus, to_bus: Bus, var, nominal_voltage, high_voltage, low_voltage) -> None:
         self.from_bus = from_bus
         self.to_bus = to_bus
         self.var = var
-        self.Vr_nom = Vr_nom
-        self.Vi_nom = Vi_nom
         self.high_voltage = high_voltage
         self.low_voltage = low_voltage
 
-        V = complex(Vr_nom,Vi_nom)
-
-        Z = (V * V.conjugate() / var).conjugate()
-        Y = 1 / Z
-
-        #todo: This should use the line stamper.
-        self.G, self.B = Y.real, Y.imag
+        self.G = 0
+        #https://github.com/gridlab-d/gridlab-d/blob/62dec057ab340ac100c4ae38a47b7400da975156/powerflow/capacitor.cpp#L316
+        self.B = var / (nominal_voltage * nominal_voltage)
 
         self.on = True
     
     def assign_nodes(self, node_index, optimization_enabled):
-        self.line_stamper = build_line_stamper_bus(
-            self.from_bus, 
-            self.to_bus, 
-            optimization_enabled
-            )
+        self.line_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        #if not self.is_enabled(v_previous):
-        #    return
-
         self.line_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
     
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        if not self.is_enabled(v_previous):
-            return
-        
         self.line_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
     
     def calculate_residuals(self, network_model, v):

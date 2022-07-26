@@ -1,14 +1,12 @@
 # import pytest as pt
+import cmath
 from math import radians
-from logic.parsers.threephase.threephaseparser import ThreePhaseParser
-from logic.powerflow import FilePowerFlow, PowerFlow
+from logic.powerflow import FilePowerFlow
+from logic.powerflowresults import PowerFlowResults
 from logic.powerflowsettings import PowerFlowSettings
-from models.threephase.resistive_load import ResistiveLoad
 import os
 import numpy as np
-import xml.etree.ElementTree as ET
-import re
-import cmath
+import csv
 
 CURR_DIR = os.path.realpath(os.path.dirname(__file__))
 DATA_DIR = os.path.join(CURR_DIR, "data")
@@ -16,46 +14,40 @@ DATA_DIR = os.path.join(CURR_DIR, "data")
 def get_glm_case_file(casename, glm_file_name = "node.glm"):
     return os.path.join(DATA_DIR, casename, glm_file_name)
 
-def get_gridlabd_output_file(casename):
-    return os.path.join(DATA_DIR, casename, "result.xml")
+def get_gridlabd_csv_voltdump(casename):
+    return os.path.join(DATA_DIR, casename, "result.csv")
 
 def execute_glm_case(casename, glm_file_name = "node.glm"):
     filepath = get_glm_case_file(casename, glm_file_name)
     powerflow = FilePowerFlow(filepath, PowerFlowSettings())
     return powerflow.execute()
 
-VOLTAGE_REGEX = r"([\+-]\d*\.?\d*)([\+-]\d*\.?\d*)d V"
+def load_gridlabd_csv(casename):
+    filepath = get_gridlabd_csv_voltdump(casename)
+    with open(filepath, newline='\r\n') as csvfile:
+        spamreader = csv.DictReader(filter(lambda row: row[0]!='#', csvfile), delimiter=',', quotechar='|')
+        lookup = {}
+        for row in spamreader:
+            nodeName = row["node_name"]
 
-def parse_voltage_str(voltage_str: str):
-    #'+7199.56+0d V'
-    match = re.match(VOLTAGE_REGEX, voltage_str)
+            vA = complex(float(row["voltA_real"]), float(row["voltA_imag"]))
+            vB = complex(float(row["voltB_real"]), float(row["voltB_imag"]))
+            vC = complex(float(row["voltC_real"]), float(row["voltC_imag"]))
 
-    if not match:
-        raise Exception(f"Invalid voltage string '{voltage_str}'")
+            lookup[nodeName] = (vA, vB, vC)
+        
+        return lookup
 
-    mag_str, ang_deg_str = match.groups()
-    mag, ang = float(mag_str), radians(float(ang_deg_str))
-    if ang > 6.4:
-        raise Exception("Invalid radian angle")
-    return cmath.rect(mag, ang)
+def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
+    for busresult in results.bus_results:
+        (vA, vB, vC) = gridlab_vdump[busresult.bus.NodeName]
 
-def load_gridlabd_xml(filepath):
-    tree = ET.parse(filepath)
-    root = tree.getroot()
-    powerflow_node = root.find("powerflow")
-    nodelist_node = powerflow_node.find("node_list")
-    nodes = nodelist_node.findall("node")
-
-    lookup = {}
-    for node in nodes:
-        name = node.find("name").text
-        voltage_A = parse_voltage_str(node.find("voltage_A").text)
-        voltage_B = parse_voltage_str(node.find("voltage_B").text)
-        voltage_C = parse_voltage_str(node.find("voltage_C").text)
-
-        lookup[name] = (voltage_A, voltage_B, voltage_C)
-
-    return lookup
+        if busresult.bus.NodePhase == "A":
+            assert cmath.isclose(vA, complex(busresult.V_r, busresult.V_i))
+        elif busresult.bus.NodePhase == "B":
+            assert cmath.isclose(vB, complex(busresult.V_r, busresult.V_i))
+        elif busresult.bus.NodePhase == "C":
+            assert cmath.isclose(vC, complex(busresult.V_r, busresult.V_i))
 
 def test_powerflowrunner_ieee_four_bus():
     results = execute_glm_case("ieee_four_bus")
@@ -801,34 +793,8 @@ def test_powerflowrunner_ieee_four_bus_fuse():
 
 def test_powerflowrunner_ieee_four_bus_cap():
     results = execute_glm_case("ieee_four_bus_cap")
-    
-    expected_v = np.array([
-        7199.558000,
-        0.000000,
-        -3599.779000,
-        -6235.000000,
-        -3599.779000,
-        6235.000000,
-        7106.422287,
-        -42.067600,
-        -3606.903032,
-        -6161.628479,
-        -3520.343705,
-        6189.706477,
-        2242.742683,
-        -144.807987,
-        -1251.271366,
-        -1892.203540,
-        -1002.844346,
-        2020.691679,
-        1893.763615,
-        -302.435080,
-        -1277.965079,
-        -1617.280802,
-        -705.200678,
-        1850.977065
-    ], dtype=float)
-    assert np.allclose(results.v_final[:24], expected_v[:24], rtol=1e-7, atol=1e-7)
+    output = load_gridlabd_csv("ieee_four_bus_cap")
+    assert_busresults_gridlabdvoltdump(results, output)
 
 def test_powerflowrunner_ieee_four_bus_unbalanced_pq_load():
     results = execute_glm_case("ieee_four_bus_unbalanced_pq_load")
