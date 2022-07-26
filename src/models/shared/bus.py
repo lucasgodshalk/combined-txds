@@ -17,7 +17,7 @@ class Bus:
             Bus (int): The bus number.
             Type (int): The type of bus (e.g., PV, PQ, of Slack)
             Vm_init (float): The initial voltage magnitude at the bus.
-            Va_init (float): The initial voltage angle at the bus.
+            Va_init (float): The initial voltage angle at the bus **in radians**
             Area (int): The zone that the bus is in.
         """
 
@@ -35,8 +35,8 @@ class Bus:
         self.node_Vi = None
         self.node_Q = None
 
-        self.Vr_init = Vm_init * math.cos(Va_init * math.pi / 180)
-        self.Vi_init = Vm_init * math.sin(Va_init * math.pi / 180)
+        self.Vr_init = Vm_init * math.cos(Va_init)
+        self.Vi_init = Vm_init * math.sin(Va_init)
 
     def __hash__(self) -> int:
         return self.Bus

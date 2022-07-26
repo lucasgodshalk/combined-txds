@@ -42,7 +42,10 @@ class CenterTapTransformer():
         self.g2 = r2 / (r2**2 + x2**2) if not (r2 == 0 and x2 == 0) else 0
         self.b2 = -x2 / (r2**2 + x2**2) if not (r2 == 0 and x2 == 0) else 0
         self.L2_impedance_stamper = build_line_stamper_bus(self.coils[2].sending_node, self.coils[2].to_node, False)
-        
+
+    def get_connections(self):
+        return []
+
     def stamp_primal(self, Y, J, v_previous, tx_factor, state):
         v_r_p, v_i_p = self.coils[0].primary_node.node_Vr, self.coils[0].primary_node.node_Vi
         v_r_1x, v_i_1x = self.coils[1].sending_node.node_Vr, self.coils[1].sending_node.node_Vi

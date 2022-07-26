@@ -66,7 +66,7 @@ class Bus_data:
         return (str(self.i) + ' ' + str(self.name))
 
     def integrate(self, all_bus_key: typing.Dict[int, Bus]):
-        new_bus = Bus(self.i, self.ide, self.vm, self.va, self.area, self.name, "PosSeq")
+        new_bus = Bus(self.i, self.ide, self.vm, self.va * math.pi / 180, self.area, self.name, "PosSeq")
         all_bus_key[self.i] = new_bus
         return new_bus
 
