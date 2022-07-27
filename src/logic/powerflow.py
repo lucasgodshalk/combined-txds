@@ -1,5 +1,6 @@
 import math
 import time
+from logic.devicecontroller import DeviceController
 from logic.homotopycontroller import HomotopyController
 from logic.networkloader import NetworkLoader
 from logic.networkmodel import NetworkModel
@@ -26,7 +27,9 @@ class PowerFlow:
 
         homotopy_controller = HomotopyController(self.settings, nrsolver)
 
-        is_success, v_final, iteration_num, tx_factor = homotopy_controller.run_powerflow(v_init)
+        device_controller = DeviceController(self.settings, homotopy_controller)
+
+        is_success, v_final, iteration_num, tx_factor = device_controller.run_powerflow(v_init)
 
         end_time = time.perf_counter_ns()
 

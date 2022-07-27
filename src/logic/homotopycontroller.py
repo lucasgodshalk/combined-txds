@@ -6,9 +6,9 @@ TX_ITERATIONS = 1000
 TX_SCALE = 1.0 / TX_ITERATIONS
 
 class HomotopyController:
-    def __init__(self, settings: PowerFlowSettings, nrsolver: NRSolver) -> None:
+    def __init__(self, settings: PowerFlowSettings, solver: NRSolver) -> None:
         self.settings = settings
-        self.nrsolver = nrsolver
+        self.nrsolver = solver
 
     def run_powerflow(self, v_init):
         #optimistically try to solve without homotopy first.

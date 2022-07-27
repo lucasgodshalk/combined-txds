@@ -1,11 +1,12 @@
 import numpy as np
 from scipy.sparse.linalg import spsolve
 from logic.matrixbuilder import MatrixBuilder
+from logic.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
 
 class NRSolver:
 
-    def __init__(self, settings: PowerFlowSettings, network_model, v_limiting):
+    def __init__(self, settings: PowerFlowSettings, network_model: NetworkModel, v_limiting):
         self.settings = settings
         self.network_model = network_model
         self.v_limiting = v_limiting

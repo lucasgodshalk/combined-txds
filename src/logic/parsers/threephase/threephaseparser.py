@@ -11,7 +11,7 @@ import ditto.models.load
 from logic.parsers.threephase.transformerhandler import TransformerHandler
 from logic.powerflowsettings import PowerFlowSettings
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
-from models.threephase.capacitor import Capacitor
+from models.threephase.capacitor import Capacitor, CapacitorMode, CapSwitchState
 from models.shared.slack import Slack
 
 from models.shared.pqload import PQLoad
@@ -191,6 +191,7 @@ class ThreePhaseParser:
             if isinstance(model, ditto.models.capacitor.Capacitor):
                 gld_cap = self.all_gld_objects[model.name]
                 for phase_capacitor in model.phase_capacitors:
+                    mode = CapacitorMode[gld_cap._control]
                     parent_bus = simulation_state.bus_name_map[gld_cap._parent + '_' + phase_capacitor.phase]
                     nominal_voltage = float(gld_cap._cap_nominal_voltage) #Or could use model.nominal_voltage?
                     voltage_angle = self._phase_to_angle[phase_capacitor.phase]
@@ -198,7 +199,16 @@ class ThreePhaseParser:
                     v_i_nom = abs(nominal_voltage)*math.sin(voltage_angle)
                     parent_bus.Vr_init = v_r_nom
                     parent_bus.Vi_init = v_i_nom
-                    capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, nominal_voltage, model.high, model.low)
+                    capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, nominal_voltage, mode, model.high, model.low)
+                    if mode == CapacitorMode.MANUAL:
+                        #Todo: implement ControlLevel
+                        if phase_capacitor.phase == "A":
+                            capacitor.switch = CapSwitchState[gld_cap._switchA]
+                        elif phase_capacitor.phase == "B":
+                            capacitor.switch = CapSwitchState[gld_cap._switchB]
+                        elif phase_capacitor.phase == "C":
+                            capacitor.switch = CapSwitchState[gld_cap._switchC]
+                    
                     capacitor.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                     simulation_state.capacitors.append(capacitor)
 

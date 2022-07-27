@@ -23,6 +23,7 @@ lagrange = np.dot(duals, eqns)
 
 lh = LagrangeHandler(lagrange, constants, primals, duals)
 
+#Todo: this should be unified with the capacitor class.
 class Shunt:
     _ids = count(0)
 
