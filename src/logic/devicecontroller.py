@@ -1,6 +1,7 @@
 from logic.powerflowsettings import PowerFlowSettings
 from logic.homotopycontroller import HomotopyController
 from models.threephase.capacitor import CapSwitchState, Capacitor, CapacitorMode
+from models.threephase.fuse import Fuse, FuseStatus
 
 MAX_DEVICE_ITERATIONS = 10
 
@@ -25,16 +26,36 @@ class DeviceController:
         
         raise Exception("Could not find solution where no device adjustments were required.")
 
+
     #Returns True if a device adjustment is performed.
     def try_adjust_devices(self, v):
         adjustment_made = False
         if self.network.is_three_phase:
-            if self.try_adjust_capacitors(v):
+            if self.try_switch_capacitors(v):
+                adjustment_made = True
+            if self.try_blow_fuses(v):
                 adjustment_made = True
 
         return adjustment_made
 
-    def try_adjust_capacitors(self, v):
+    def try_blow_fuses(self, v):
+        adjustment_made = False
+        fuse: Fuse
+        for fuse in self.network.fuses:
+            if fuse.status == FuseStatus.BLOWN:
+                continue
+
+            i_r, i_i = fuse.get_current(v)
+
+            i = complex(i_r, i_i)
+            if abs(i) > fuse.current_limit:
+                self.status = FuseStatus.BLOWN
+                adjustment_made = True
+                #We assume that once a fuse is blown, we will never un-blow it.
+    
+        return adjustment_made
+
+    def try_switch_capacitors(self, v):
         adjustment_made = False
         cap: Capacitor
         for cap in self.network.capacitors:

@@ -17,8 +17,8 @@ from models.shared.slack import Slack
 from models.shared.pqload import PQLoad
 from models.shared.bus import GROUND, Bus
 from models.threephase.transmission_line import TransmissionLine
+from models.threephase.fuse import Fuse, FuseStatus
 from models.threephase.fuse import Fuse
-from models.threephase.fuse_phase import FusePhase
 
 from models.threephase.resistive_load import ResistiveLoad
 from models.threephase.resistive_phase_load import ResistivePhaseLoad
@@ -243,21 +243,28 @@ class ThreePhaseParser:
                     regulator.regulator_phases.append(single_regulator_phase)
                 simulation_state.regulators.append(regulator)
     
-    def create_transmission_lines(self, simulation_state):
+    def create_transmission_lines(self, simulation_state: DxNetworkModel):
         # Go through the ditto store for each line object
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.line.Line):
                 # Check for fuses, some are encoded as zero-length lines with no features
                 if model.is_fuse:
-                    fuse = Fuse("CLOSED")
                     for wire in model.wires:
                         from_bus = simulation_state.bus_name_map[model.from_element + "_" + wire.phase]
                         to_bus = simulation_state.bus_name_map[model.to_element + "_" + wire.phase]
+
                         current_limit = float(model._current_limit)
-                        phase_status = getattr(model, "phase_" + wire.phase + "_status") if hasattr(model, "phase_" + wire.phase + "_status") else "GOOD"
-                        phase_fuse = FusePhase(from_bus, to_bus, current_limit, phase_status, wire.phase)#, real_voltage_idx, imag_voltage_idx)
-                        fuse.phase_fuses.append(phase_fuse)
-                    simulation_state.fuses.append(fuse)
+
+                        fuse_status = FuseStatus.GOOD
+                        if hasattr(model, "phase_" + wire.phase + "_status"):
+                           fuse_status = FuseStatus[getattr(model, "phase_" + wire.phase + "_status")]
+
+                        fuse_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Fuse", wire.phase)
+
+                        fuse = Fuse(from_bus, to_bus, fuse_bus, current_limit, fuse_status, wire.phase)
+                        fuse.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+
+                        simulation_state.fuses.append(fuse)
                     continue
                 # Check for switches, some are encoded as 1-length lines with no features
                 elif model.is_switch:

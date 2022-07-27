@@ -66,3 +66,6 @@ class VoltageSource:
 
     def calculate_residuals(self, state, v):
         return self.stamper.calc_residuals([self.Vr_set, self.Vi_set], v)
+    
+    def get_current(self, v):
+        return (v[self.Ir_index], v[self.Ii_index])

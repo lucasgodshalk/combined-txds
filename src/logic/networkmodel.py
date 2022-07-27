@@ -134,10 +134,10 @@ class DxNetworkModel(NetworkModel):
         self.reference_i = None
     
     def get_NR_invariant_elements(self):
-        return self.branches + self.slack + self.transformers + self.regulators + self.switches + self.infeasibility_currents
+        return self.branches + self.slack + self.transformers + self.regulators + self.switches + self.infeasibility_currents + self.fuses + self.capacitors
 
     def get_NR_variable_elements(self):
-        return self.loads + self.capacitors + self.fuses
+        return self.loads
 
     def generate_v_init(self, settings: PowerFlowSettings):
         v_init = np.zeros(self.size_Y)

@@ -17,9 +17,9 @@ def get_glm_case_file(casename, glm_file_name = "node.glm"):
 def get_gridlabd_csv_voltdump(casename):
     return os.path.join(DATA_DIR, casename, "result.csv")
 
-def execute_glm_case(casename, glm_file_name = "node.glm"):
+def execute_glm_case(casename, glm_file_name = "node.glm", debug = False):
     filepath = get_glm_case_file(casename, glm_file_name)
-    powerflow = FilePowerFlow(filepath, PowerFlowSettings())
+    powerflow = FilePowerFlow(filepath, PowerFlowSettings(debug=debug))
     return powerflow.execute()
 
 def load_gridlabd_csv(casename):
