@@ -1,136 +1,80 @@
-from collections import defaultdict
-
+from enum import Enum
 import math
-from typing import List
+from logic.matrixbuilder import MatrixBuilder
+from models.shared.bus import GROUND, Bus
+from models.shared.transformer import Transformer
 
-from models.threephase.regulator_phase import RegulatorPhase
+class RegControl(Enum):
+    MANUAL = "MANUAL"
+    REMOTE_NODE = "REMOTE_NODE"
+    OUTPUT_VOLTAGE = "OUTPUT_VOLTAGE"
+    LINE_DROP_COMP = "LINE_DROP_COMP"
 
 class Regulator():
     
     def __init__(self
-                , phases
-                , ar_step = 0.00625
-                , type = "B"):
-        
-        self.regulator_phases: List[RegulatorPhase]
-        self.regulator_phases = []
-        self.phases = phases
+                , from_node: Bus 
+                , to_node: Bus
+                , phase
+                , tap_position
+                , ar_step
+                , reg_type
+                , reg_control: RegControl
+                ):
+        self.from_node = from_node
+        self.to_node = to_node
+        self.phase = phase
         self.ar_step = ar_step
-        self.type = type
+        self.reg_type = reg_type
+        self.reg_control = reg_control
 
-    def stamp_primal(self, Y, J, v_previous, tx_factor, state):
-        for regulator in self.regulator_phases:
-            v_r_f, v_i_f = regulator.from_node.node_Vr, regulator.from_node.node_Vi
-            v_r_p = regulator.real_voltage_idx
-            v_i_p = regulator.imag_voltage_idx
-            v_r_s, v_i_s = regulator.secondary_node.node_Vr, regulator.secondary_node.node_Vi
-            v_r_t, v_i_t = regulator.to_node.node_Vr, regulator.to_node.node_Vi
+        #this is temporary before we update the tap position for the first time.
+        self.turn_ratio = 0
 
-            aR = (1 + (self.ar_step * regulator.tap_position)) ** -1 if self.type == "A" else 1 - (self.ar_step * regulator.tap_position)
+        #todo: is this correct?
+        self.phase_shift = 0 
 
-            # Stamps for the voltage equations for the primary coil
-            Y.stamp(v_r_p, v_r_f, 1)
-            Y.stamp(v_r_p, v_r_s, -aR)
-            # Y.stamp(v_r_p, v_i_s, aR)
-            Y.stamp(v_i_p, v_i_f, 1)
-            # Y.stamp(v_i_p, v_r_s, -aR)
-            Y.stamp(v_i_p, v_i_s, -aR)
+        #todo: pull better values?
+        r = 1e4
+        x = 0
 
-            # Stamps for the new state variables (current at the voltage source)
-            Y.stamp(v_r_f, v_r_p, 1)
-            Y.stamp(v_i_f, v_i_p, 1)
+        self.transformer = Transformer(
+            self.from_node, 
+            GROUND, 
+            self.to_node, 
+            GROUND,
+            r,
+            x,
+            True,
+            self.turn_ratio,
+            self.phase_shift,
+            0,
+            0,
+            None
+            )
 
-            # Stamps for the current sources on the secondary coil (KCL)
-            Y.stamp(v_r_s, v_r_p, -aR)
-            # Y.stamp(v_r_s, v_i_p, -aR)
-            # Y.stamp(v_i_s, v_r_p, aR)
-            Y.stamp(v_i_s, v_i_p, -aR)
-            
-    
-            # Values for the secondary coil stamps
-            #r = 0#self.resistance * self.nominal_voltage ** 2  / self.rated_power
-            #x = 0#self.reactance * self.nominal_voltage ** 2  / self.rated_power
-            g = 1e4#r / (r**2 + x**2)
-            b = 0#-x / (r**2 + x**2)
+        self.update_tap_position(tap_position)
 
-            # Stamps for the current equations for the secondary coil at the to node
-            Y.stamp(v_r_t, v_r_t, g)
-            Y.stamp(v_r_t, v_r_s, -g)
-            Y.stamp(v_r_t, v_i_t, -b)
-            Y.stamp(v_r_t, v_i_s, b)
+    def update_tap_position(self, tap_position):
+        #todo: the regulator position needs to be updated by the device controller according to reg behavior.
 
-            Y.stamp(v_i_t, v_r_t, b)
-            Y.stamp(v_i_t, v_r_s, -b)
-            Y.stamp(v_i_t, v_i_t, g)
-            Y.stamp(v_i_t, v_i_s, -g)
+        self.tap_position = tap_position
 
-            # And for the secondary node
-            Y.stamp(v_r_s, v_r_t, -g)
-            Y.stamp(v_r_s, v_r_s, g)
-            Y.stamp(v_r_s, v_i_t, b)
-            Y.stamp(v_r_s, v_i_s, -b)
-
-            Y.stamp(v_i_s, v_r_t, -b)
-            Y.stamp(v_i_s, v_r_s, b)
-            Y.stamp(v_i_s, v_i_t, -g)
-            Y.stamp(v_i_s, v_i_s, g)
-
-    def calculate_residuals(self, state, v):
-        residual_contributions = defaultdict(lambda: 0)
-        for regulator in self.regulator_phases:
-            v_r_f, v_i_f = regulator.from_node.node_Vr, regulator.from_node.node_Vi
-            v_r_p = regulator.real_voltage_idx
-            v_i_p = regulator.imag_voltage_idx
-            v_r_s, v_i_s = regulator.secondary_node.node_Vr, regulator.secondary_node.node_Vi
-            v_r_t, v_i_t = regulator.to_node.node_Vr, regulator.to_node.node_Vi
-
-            aR = (1 + (self.ar_step * regulator.tap_position)) ** -1 if self.type == "A" else 1 - (self.ar_step * regulator.tap_position)
-
-            # Stamps for the voltage equations for the primary coil
-            residual_contributions[v_r_p] += v[v_r_f] * 1
-            residual_contributions[v_r_p] += v[v_r_s] * -aR
-            # residual_contributions[v_r_p] += v[v_i_s] * aR
-            residual_contributions[v_i_p] += v[v_i_f] * 1
-            # residual_contributions[v_i_p] += v[v_r_s] * -aR
-            residual_contributions[v_i_p] += v[v_i_s] * -aR
-
-            # Stamps for the new state variables (current at the voltage source)
-            residual_contributions[v_r_f] += v[v_r_p] * 1
-            residual_contributions[v_i_f] += v[v_i_p] * 1
-
-            # Stamps for the current sources on the secondary coil (KCL)
-            residual_contributions[v_r_s] += v[v_r_p] * -aR
-            # residual_contributions[v_r_s] += v[v_i_p] * -aR
-            # residual_contributions[v_i_s] += v[v_r_p] * aR
-            residual_contributions[v_i_s] += v[v_i_p] * -aR
-            
-    
-            # Values for the secondary coil stamps
-            #r = 0#self.resistance * self.nominal_voltage ** 2  / self.rated_power
-            #x = 0#self.reactance * self.nominal_voltage ** 2  / self.rated_power
-            g = 1e4#r / (r**2 + x**2)
-            b = 0#-x / (r**2 + x**2)
-
-            # Stamps for the current equations for the secondary coil at the to node
-            residual_contributions[v_r_t] += v[v_r_t] * g
-            residual_contributions[v_r_t] += v[v_r_s] * -g
-            residual_contributions[v_r_t] += v[v_i_t] * -b
-            residual_contributions[v_r_t] += v[v_i_s] * b
-
-            residual_contributions[v_i_t] += v[v_r_t] * b
-            residual_contributions[v_i_t] += v[v_r_s] * -b
-            residual_contributions[v_i_t] += v[v_i_t] * g
-            residual_contributions[v_i_t] += v[v_i_s] * -g
-
-            # And for the secondary node
-            residual_contributions[v_r_s] += v[v_r_t] * -g
-            residual_contributions[v_r_s] += v[v_r_s] * g
-            residual_contributions[v_r_s] += v[v_i_t] * b
-            residual_contributions[v_r_s] += v[v_i_s] * -b
-
-            residual_contributions[v_i_s] += v[v_r_t] * -b
-            residual_contributions[v_i_s] += v[v_r_s] * b
-            residual_contributions[v_i_s] += v[v_i_t] * -g
-            residual_contributions[v_i_s] += v[v_i_s] * g
+        if self.reg_type == "A":
+            self.turn_ratio = (1 + (self.ar_step * self.tap_position)) ** -1
+        else:
+            self.turn_ratio = 1 - (self.ar_step * self.tap_position)
         
-        return residual_contributions
+        self.transformer.tr = self.turn_ratio
+
+    def assign_nodes(self, node_index, optimization_enabled):
+        self.transformer.assign_nodes(node_index, optimization_enabled)
+
+    def stamp_primal(self, Y, J, v, tx_factor, state):
+        self.transformer.stamp_primal(Y, J, v, tx_factor, state)
+
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
+        self.transformer.stamp_dual(Y, J, v_previous, tx_factor, state)
+
+    def calculate_residuals(self, network_model, v):
+        return self.transformer.calculate_residuals(network_model, v)

@@ -24,8 +24,7 @@ from models.threephase.resistive_load import ResistiveLoad
 from models.threephase.resistive_phase_load import ResistivePhaseLoad
 from models.threephase.switch import Switch
 from models.threephase.switch_phase import SwitchPhase
-from models.threephase.regulator import Regulator
-from models.threephase.regulator_phase import RegulatorPhase
+from models.threephase.regulator import RegControl, Regulator
 
 class ThreePhaseParser:
     # Angles in degrees associated with different phases
@@ -212,7 +211,7 @@ class ThreePhaseParser:
                     capacitor.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                     simulation_state.capacitors.append(capacitor)
 
-    def create_regulators(self, simulation_state):
+    def create_regulators(self, simulation_state: DxNetworkModel):
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.regulator.Regulator):
                 if len(model.windings) != 2:
@@ -223,25 +222,22 @@ class ThreePhaseParser:
                     # gridlabD only supports a Wye-Wye connected regulator as of Jan 20 2022, so do we
                     raise Exception("Only wye-wye currently supported")
                 
+                reg_config = self.all_gld_objects[self.all_gld_objects[model.name]['configuration']]
+
                 ar_step = (model.regulation * 2) / (model.highstep + model.lowstep)
                 reg_type = model.type if hasattr(model, "type") else "B"
-                regulator = Regulator('ABC', ar_step, reg_type)
-                for phase in regulator.phases:
-                    from_bus = simulation_state.bus_name_map[model.high_from + '_' + phase]
-                    to_bus = simulation_state.bus_name_map[model.low_to + '_' + phase]
+                reg_control = RegControl[reg_config._Control]
 
-                    # Create a new variable for the voltage equations on the primary coil (not an actual node)
-                    real_voltage_idx = simulation_state.next_var_idx.__next__()
-                    imag_voltage_idx = simulation_state.next_var_idx.__next__()
+                for winding in model.windings[0].phase_windings:
+                    from_bus = simulation_state.bus_name_map[model.high_from + '_' + winding.phase]
+                    to_bus = simulation_state.bus_name_map[model.low_to + '_' + winding.phase]
 
-                    # Create a new bus on the secondary coil, for KCL
-                    secondary_bus = self.create_bus(simulation_state, 0, 0, model.name + "_secondary", phase)
-
-                    tap_position = float(getattr(self.all_gld_objects[self.all_gld_objects[model.name]['configuration']],'_tap_pos_' + phase))
+                    tap_position = float(getattr(reg_config, '_tap_pos_' + winding.phase))
                                       
-                    single_regulator_phase = RegulatorPhase(from_bus, real_voltage_idx, imag_voltage_idx, secondary_bus, to_bus, phase, tap_position)
-                    regulator.regulator_phases.append(single_regulator_phase)
-                simulation_state.regulators.append(regulator)
+                    regulator = Regulator(from_bus, to_bus, winding.phase, tap_position, ar_step, reg_type, reg_control)
+                    regulator.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+                    
+                    simulation_state.regulators.append(regulator)
     
     def create_transmission_lines(self, simulation_state: DxNetworkModel):
         # Go through the ditto store for each line object
