@@ -17,19 +17,19 @@ eqns = [
     -1/scaled_tr * Ii_L1 - 1/scaled_tr * Ii_L2,
     Vr_L1 - 1/scaled_tr * Vr_pri,
     Vi_L1 - 1/scaled_tr * Vi_pri,
-    Vr_L2 - 1/scaled_tr * Vr_pri,
-    Vi_L2 - 1/scaled_tr * Vi_pri,
     Ir_L1,
     Ii_L1,
+    Vr_L2 - 1/scaled_tr * Vr_pri,
+    Vi_L2 - 1/scaled_tr * Vi_pri,
     Ir_L2,
     Ii_L2
 ]
 
 lagrange = np.dot(duals, eqns)
 
-reg_lh = LagrangeHandler(lagrange, constants, primals, duals)
+center_tap_xfmr_lh = LagrangeHandler(lagrange, constants, primals, duals)
 
-USE_SYMBOLIC = False
+USE_SYMBOLIC = True
 
 class CenterTapTransformer():
     def __init__(self
@@ -93,7 +93,7 @@ class CenterTapTransformer():
         index_map[Lr_L2] = SKIP
         index_map[Li_L2] = SKIP
 
-        self.reg_stamper = LagrangeStamper(reg_lh, index_map, optimization_enabled)
+        self.center_tap_xfmr_stamper = LagrangeStamper(center_tap_xfmr_lh, index_map, optimization_enabled)
 
     def get_connections(self):
         return []
@@ -133,7 +133,7 @@ class CenterTapTransformer():
             Y.stamp(v_r_2x, v_r_2s, 1)
             Y.stamp(v_i_2x, v_i_2s, 1)
         else:
-            self.reg_stamper.stamp_primal(Y, J, [self.turn_ratio, tx_factor], v_previous)
+            self.center_tap_xfmr_stamper.stamp_primal(Y, J, [self.turn_ratio, tx_factor], v_previous)
                 
         self.primary_impedance_stamper.stamp_primal(Y, J, [self.g0, self.b0, tx_factor], v_previous)
         self.L1_impedance_stamper.stamp_primal(Y, J, [self.g1, self.b1, tx_factor], v_previous)
@@ -144,12 +144,12 @@ class CenterTapTransformer():
 
     def calculate_residuals(self, state, v):
         if USE_SYMBOLIC:
-            reg_resid = self.reg_stamper.calc_residuals([self.turn_ratio, tx_factor], v)
-            pri_imp_resid = self.primary_impedance_stamper.calc_residuals([self.g0, self.b0, tx_factor], v)
-            L1_imp_resid = self.L1_impedance_stamper.calc_residuals([self.g1, self.b1, tx_factor], v)
-            L2_imp_resid = self.L2_impedance_stamper.calc_residuals([self.g2, self.b2, tx_factor], v)
+            center_tap_xfmr_resid = self.center_tap_xfmr_stamper.calc_residuals([self.turn_ratio, 0], v)
+            pri_imp_resid = self.primary_impedance_stamper.calc_residuals([self.g0, self.b0, 0], v)
+            L1_imp_resid = self.L1_impedance_stamper.calc_residuals([self.g1, self.b1, 0], v)
+            L2_imp_resid = self.L2_impedance_stamper.calc_residuals([self.g2, self.b2, 0], v)
 
-            return merge_residuals({}, reg_resid, pri_imp_resid, L1_imp_resid, L2_imp_resid)
+            return merge_residuals({}, center_tap_xfmr_resid, pri_imp_resid, L1_imp_resid, L2_imp_resid)
         else:
             return {}
 
