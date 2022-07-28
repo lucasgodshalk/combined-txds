@@ -1,7 +1,32 @@
 from collections import defaultdict
-
+import numpy as np
+from sympy import symbols
+from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangestamper import SKIP, LagrangeStamper
 from models.shared.line import build_line_stamper_bus
 
+constants = tr, tx_factor = symbols('tr tx_factor')
+primals = [Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2] = symbols('Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2')
+duals = [Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2] = symbols('Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2')
+
+scaled_tr = tr + (1 - tr) * tx_factor 
+
+eqns = [
+    -1/scaled_tr * Ir_L1 - 1/scaled_tr * Ir_L2,
+    -1/scaled_tr * Ii_L1 - 1/scaled_tr * Ii_L2,
+    Vr_L1 - 1/scaled_tr * Vr_pri,
+    Vi_L1 - 1/scaled_tr * Vi_pri,
+    Vr_L2 - 1/scaled_tr * Vr_pri,
+    Vi_L2 - 1/scaled_tr * Vi_pri,
+    Ir_L1,
+    Ii_L1,
+    Ir_L2,
+    Ii_L2
+]
+
+lagrange = np.dot(duals, eqns)
+
+reg_lh = LagrangeHandler(lagrange, constants, primals, duals)
 
 class CenterTapTransformer():
     
@@ -22,26 +47,51 @@ class CenterTapTransformer():
         self.g_shunt = g_shunt
         self.b_shunt = b_shunt
 
+    def assign_nodes(self, node_index, optimization_enabled):
         # Values for the primary coil impedance stamps, converted out of per-unit
         r0 = self.coils[0].resistance * self.coils[0].nominal_voltage ** 2  / self.power_rating
         x0 = self.coils[0].reactance * self.coils[0].nominal_voltage ** 2  / self.power_rating
         self.g0 = r0 / (r0**2 + x0**2) if not (r0 == 0 and x0 == 0) else 0
         self.b0 = -x0 / (r0**2 + x0**2) if not (r0 == 0 and x0 == 0) else 0
-        self.primary_impedance_stamper = build_line_stamper_bus(self.coils[0].from_node, self.coils[0].primary_node, False)
+        self.primary_impedance_stamper = build_line_stamper_bus(self.coils[0].from_node, self.coils[0].primary_node, optimization_enabled)
                 
         # Values for the first triplex coil impedance stamps, converted out of per-unit
         r1 = self.coils[1].resistance * self.coils[1].nominal_voltage ** 2  / self.power_rating
         x1 = self.coils[1].reactance * self.coils[1].nominal_voltage ** 2  / self.power_rating
         self.g1 = r1 / (r1**2 + x1**2) if not (r1 == 0 and x1 == 0) else 0
         self.b1 = -x1 / (r1**2 + x1**2) if not (r1 == 0 and x1 == 0) else 0
-        self.L1_impedance_stamper = build_line_stamper_bus(self.coils[1].sending_node, self.coils[1].to_node, False)
+        self.L1_impedance_stamper = build_line_stamper_bus(self.coils[1].sending_node, self.coils[1].to_node, optimization_enabled)
                 
         # Values for the second triplex coil impedance stamps, converted out of per-unit
         r2 = self.coils[2].resistance * self.coils[2].nominal_voltage ** 2  / self.power_rating
         x2 = self.coils[2].reactance * self.coils[2].nominal_voltage ** 2  / self.power_rating
         self.g2 = r2 / (r2**2 + x2**2) if not (r2 == 0 and x2 == 0) else 0
         self.b2 = -x2 / (r2**2 + x2**2) if not (r2 == 0 and x2 == 0) else 0
-        self.L2_impedance_stamper = build_line_stamper_bus(self.coils[2].sending_node, self.coils[2].to_node, False)
+        self.L2_impedance_stamper = build_line_stamper_bus(self.coils[2].sending_node, self.coils[2].to_node, optimization_enabled)
+
+        index_map = {}
+        index_map[Vr_pri] = self.coils[0].primary_node.node_Vr
+        index_map[Vi_pri] = self.coils[0].primary_node.node_Vi
+        index_map[Ir_L1] = self.coils[1].real_voltage_idx
+        index_map[Ii_L1] = self.coils[1].imag_voltage_idx
+        index_map[Ir_L2] = self.coils[2].real_voltage_idx
+        index_map[Ii_L2] = self.coils[2].imag_voltage_idx
+        index_map[Vr_L1] = self.coils[1].sending_node.node_Vr
+        index_map[Vi_L1] = self.coils[1].sending_node.node_Vi
+        index_map[Vr_L2] = self.coils[2].sending_node.node_Vr
+        index_map[Vi_L2] = self.coils[2].sending_node.node_Vi
+        index_map[Lr_pri] = SKIP
+        index_map[Li_pri] = SKIP
+        index_map[Lir_L1] = SKIP
+        index_map[Lii_L1] = SKIP
+        index_map[Lir_L2] = SKIP
+        index_map[Lii_L2] = SKIP
+        index_map[Lr_L1] = SKIP
+        index_map[Li_L1] = SKIP
+        index_map[Lr_L2] = SKIP
+        index_map[Li_L2] = SKIP
+
+        self.reg_stamper = LagrangeStamper(reg_lh, index_map, optimization_enabled)
 
     def get_connections(self):
         return []
@@ -86,99 +136,3 @@ class CenterTapTransformer():
 
     def calculate_residuals(self, state, v):
         return {}
-
-        residual_contributions = defaultdict(lambda: 0)
-        v_r_f, v_i_f = state.bus_map[self.coils[0].from_node]
-        v_r_p, v_i_p = state.bus_map[self.coils[0].primary_node]
-        v_r_1x, v_i_1x = state.bus_map[self.coils[1].sending_node]
-        v_r_2x, v_i_2x = state.bus_map[self.coils[2].sending_node]
-        v_r_1s = self.coils[1].real_voltage_idx
-        v_i_1s = self.coils[1].imag_voltage_idx
-        v_r_2s = self.coils[2].real_voltage_idx
-        v_i_2s = self.coils[2].imag_voltage_idx
-        v_r_1t, v_i_1t = state.bus_map[self.coils[1].to_node]
-        v_r_2t, v_i_2t = state.bus_map[self.coils[2].to_node]
-
-        # Stamps for the current sources on the primary coil
-        residual_contributions[v_r_p] += v[v_r_1s] * -1/self.turn_ratio
-        residual_contributions[v_r_p] += v[v_r_2s] * -1/self.turn_ratio
-        residual_contributions[v_i_p] += v[v_i_1s] * -1/self.turn_ratio
-        residual_contributions[v_i_p] += v[v_i_2s] * -1/self.turn_ratio
-
-        # # Stamps for the voltage sources
-        # residual_contributions[v_r_1s] += v[v_r_1x] * 1
-        # residual_contributions[v_r_1s] += v[v_r_p] * -1/self.turn_ratio
-
-        # residual_contributions[v_r_2s] += v[v_r_2x] * 1
-        # residual_contributions[v_r_2s] += v[v_r_p] * -1/self.turn_ratio
-
-        # residual_contributions[v_i_1s] += v[v_i_1x] * 1
-        # residual_contributions[v_i_1s] += v[v_i_p] * -1/self.turn_ratio
-
-        # residual_contributions[v_i_2s] += v[v_i_2x] * 1
-        # residual_contributions[v_i_2s] += v[v_i_p] * -1/self.turn_ratio
-        
-        # Stamps for the new state variables (current at the voltage source)
-        residual_contributions[v_r_1x] += v[v_r_1s] * 1
-        residual_contributions[v_i_1x] += v[v_i_1s] * 1
-        residual_contributions[v_r_2x] += v[v_r_2s] * 1
-        residual_contributions[v_i_2x] += v[v_i_2s] * 1
-                
-        # Values for the primary coil impedance stamps, converted out of per-unit
-        r0 = self.coils[0].resistance * self.coils[0].nominal_voltage ** 2  / self.power_rating
-        x0 = self.coils[0].reactance * self.coils[0].nominal_voltage ** 2  / self.power_rating
-        g0 = r0 / (r0**2 + x0**2) if not (r0 == 0 and x0 == 0) else 0
-        b0 = -x0 / (r0**2 + x0**2) if not (r0 == 0 and x0 == 0) else 0
-        self.add_series_impedance_residual_contribution(residual_contributions, v, g0, b0, v_r_f, v_i_f, v_r_p, v_i_p)
-                
-        # Values for the first triplex coil impedance stamps, converted out of per-unit
-        r1 = self.coils[1].resistance * self.coils[1].nominal_voltage ** 2  / self.power_rating
-        x1 = self.coils[1].reactance * self.coils[1].nominal_voltage ** 2  / self.power_rating
-        g1 = r1 / (r1**2 + x1**2) if not (r1 == 0 and x1 == 0) else 0
-        b1 = -x1 / (r1**2 + x1**2) if not (r1 == 0 and x1 == 0) else 0
-        self.add_series_impedance_residual_contribution(residual_contributions, v, g1, b1, v_r_1x, v_i_1x, v_r_1t, v_i_1t)
-                
-        # Values for the first triplex coil impedance stamps, converted out of per-unit
-        r2 = self.coils[2].resistance * self.coils[2].nominal_voltage ** 2  / self.power_rating
-        x2 = self.coils[2].reactance * self.coils[2].nominal_voltage ** 2  / self.power_rating
-        g2 = r2 / (r2**2 + x2**2) if not (r2 == 0 and x2 == 0) else 0
-        b2 = -x2 / (r2**2 + x2**2) if not (r2 == 0 and x2 == 0) else 0
-        self.add_series_impedance_residual_contribution(residual_contributions, v, g2, b2, v_r_2x, v_i_2x, v_r_2t, v_i_2t)
-
-        return residual_contributions
-
-
-    def add_series_impedance_residual_contribution(self, residual_contributions, v, g, b, impedance_r_f, impedance_i_f, impedance_r_t, impedance_i_t):
-        # Stamps for the current equations for the secondary coil at the to node
-        residual_contributions[impedance_r_t] += v[impedance_r_t] * g
-        residual_contributions[impedance_r_t] += v[impedance_r_f] * -g
-        residual_contributions[impedance_r_t] += v[impedance_i_t] * -b
-        residual_contributions[impedance_r_t] += v[impedance_i_f] * b
-
-        residual_contributions[impedance_i_t] += v[impedance_r_t] * b
-        residual_contributions[impedance_i_t] += v[impedance_r_f] * -b
-        residual_contributions[impedance_i_t] += v[impedance_i_t] * g
-        residual_contributions[impedance_i_t] += v[impedance_i_f] * -g
-
-        # And for the secondary node
-        residual_contributions[impedance_r_f] += v[impedance_r_t] * -g
-        residual_contributions[impedance_r_f] += v[impedance_r_f] * g
-        residual_contributions[impedance_r_f] += v[impedance_i_t] * b
-        residual_contributions[impedance_r_f] += v[impedance_i_f] * -b
-
-        residual_contributions[impedance_i_f] += v[impedance_r_t] * -b
-        residual_contributions[impedance_i_f] += v[impedance_r_f] * b
-        residual_contributions[impedance_i_f] += v[impedance_i_t] * -g
-        residual_contributions[impedance_i_f] += v[impedance_i_f] * g
-
-        # # Values for shunt impedance TODO: debug this
-        # Y.stamp(v_r_1t, v_r_1t, self.g_shunt)
-        # Y.stamp(v_r_1t, v_i_1t, -self.b_shunt)
-        # Y.stamp(v_i_1t, v_r_1t, self.b_shunt)
-        # Y.stamp(v_i_1t, v_i_1t, self.g_shunt)
-        
-        # Y.stamp(v_r_2t, v_r_2t, self.g_shunt)
-        # Y.stamp(v_r_2t, v_i_2t, -self.b_shunt)
-        # Y.stamp(v_i_2t, v_r_2t, self.b_shunt)
-        # Y.stamp(v_i_2t, v_i_2t, self.g_shunt)
-

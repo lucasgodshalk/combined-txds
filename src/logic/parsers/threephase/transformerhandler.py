@@ -96,7 +96,8 @@ class TransformerHandler:
         transformer_coil_2.to_node = to2_bus
 
         transformer = CenterTapTransformer(transformer_coil_0, transformer_coil_1, transformer_coil_2, phase, turn_ratio, model.power_ratings[0], g_shunt, b_shunt)
-        
+        transformer.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+
         simulation_state.transformers.append(transformer)
 
     def create_three_phase_transformer(self, model, simulation_state: DxNetworkModel):
