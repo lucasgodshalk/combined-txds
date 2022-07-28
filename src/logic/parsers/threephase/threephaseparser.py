@@ -253,7 +253,6 @@ class ThreePhaseParser:
                         from_bus, 
                         to_bus, 
                         current_bus, 
-                        winding.phase, 
                         tap_position, 
                         ar_step, 
                         reg_type, 

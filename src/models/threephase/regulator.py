@@ -18,7 +18,6 @@ class Regulator():
                 , from_node: Bus 
                 , to_node: Bus
                 , current_node: Bus
-                , phase
                 , tap_position: int
                 , ar_step
                 , reg_type
@@ -31,7 +30,6 @@ class Regulator():
         self.from_node = from_node
         self.to_node = to_node
         self.current_node = current_node
-        self.phase = phase
         self.tap_position = tap_position
         self.ar_step = ar_step
         self.reg_type = reg_type
