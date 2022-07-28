@@ -228,18 +228,49 @@ class ThreePhaseParser:
                 reg_type = model.type if hasattr(model, "type") else "B"
                 reg_control = RegControl[reg_config._Control]
 
+                #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/regulator.cpp#L251
+                band_center = float(reg_config._band_center)
+                band_width = float(reg_config._band_width)
+
+                vlow = band_center - band_width / 2.0;
+                vhigh = band_center + band_width / 2.0;
+
+                raise_taps = int(reg_config._raise_taps)
+                lower_taps = int(reg_config._lower_taps)
+
+                tap_change_per = float(reg_config._regulation) / float(reg_config._raise_taps)
+                v_tap_change = band_center * tap_change_per;
+
                 for winding in model.windings[0].phase_windings:
                     from_bus = simulation_state.bus_name_map[model.high_from + '_' + winding.phase]
                     to_bus = simulation_state.bus_name_map[model.low_to + '_' + winding.phase]
 
-                    tap_position = float(getattr(reg_config, '_tap_pos_' + winding.phase))
-
+                    tap_position = int(getattr(reg_config, '_tap_pos_' + winding.phase))
 
                     current_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Reg", winding.phase)
 
-                    regulator = Regulator(from_bus, to_bus, current_bus, winding.phase, tap_position, ar_step, reg_type, reg_control)
+                    regulator = Regulator(
+                        from_bus, 
+                        to_bus, 
+                        current_bus, 
+                        winding.phase, 
+                        tap_position, 
+                        ar_step, 
+                        reg_type, 
+                        reg_control,
+                        vlow,
+                        vhigh,
+                        raise_taps,
+                        lower_taps
+                        )
+
                     regulator.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                     
+                    v_mag = abs(complex(to_bus.Vr_init, to_bus.Vi_init))
+
+                    tap_guess = math.ceil((band_center - v_mag)/v_tap_change)
+                    regulator.try_increment_tap_position(tap_guess)
+
                     simulation_state.regulators.append(regulator)
     
     def create_transmission_lines(self, simulation_state: DxNetworkModel):

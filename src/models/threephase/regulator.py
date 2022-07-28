@@ -19,18 +19,27 @@ class Regulator():
                 , to_node: Bus
                 , current_node: Bus
                 , phase
-                , tap_position
+                , tap_position: int
                 , ar_step
                 , reg_type
                 , reg_control: RegControl
+                , vlow: float
+                , vhigh: float
+                , raise_taps: int
+                , lower_taps: int
                 ):
         self.from_node = from_node
         self.to_node = to_node
         self.current_node = current_node
         self.phase = phase
+        self.tap_position = tap_position
         self.ar_step = ar_step
         self.reg_type = reg_type
         self.reg_control = reg_control
+        self.vlow = vlow
+        self.vhigh = vhigh
+        self.raise_taps = raise_taps
+        self.lower_taps = lower_taps
 
         #this is temporary before we update the tap position for the first time.
         self.turn_ratio = 0
@@ -60,12 +69,19 @@ class Regulator():
         #Some control modes require a current measurement on the output of the reg.
         self.current_sensor = CurrentSensor(self.current_node, self.to_node)
 
-        self.update_tap_position(tap_position)
+        self.try_increment_tap_position(0)
 
-    def update_tap_position(self, tap_position):
-        #todo: the regulator position needs to be updated by the device controller according to reg behavior.
+    def try_increment_tap_position(self, increment):
+        old_position = self.tap_position
+        if self.tap_position + increment >= self.raise_taps:
+            self.tap_position = self.raise_taps
+        elif self.tap_position + increment <= -self.lower_taps:
+            self.tap_position = -self.lower_taps
+        else:
+            self.tap_position += increment
 
-        self.tap_position = tap_position
+        if old_position == self.tap_position:
+            return False
 
         if self.reg_type == "A":
             self.turn_ratio = (1 + (self.ar_step * self.tap_position)) ** -1
@@ -73,6 +89,8 @@ class Regulator():
             self.turn_ratio = 1 - (self.ar_step * self.tap_position)
         
         self.transformer.tr = self.turn_ratio
+
+        return True
 
     def assign_nodes(self, node_index, optimization_enabled):
         self.transformer.assign_nodes(node_index, optimization_enabled)

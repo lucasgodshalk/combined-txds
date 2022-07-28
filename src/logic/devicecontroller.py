@@ -89,6 +89,16 @@ class DeviceController:
         for reg in self.network.regulators:
             if reg.reg_control == RegControl.MANUAL:
                 continue
+            elif reg.reg_control == RegControl.OUTPUT_VOLTAGE:
+                v_r, v_i = v[reg.to_node.node_Vr], v[reg.to_node.node_Vi]
+                v_mag = abs(complex(v_r, v_i))
+
+                if v_mag < reg.vlow:
+                    if reg.try_increment_tap_position(1):
+                        adjustment_made = True
+                elif v_mag > reg.vhigh:
+                    if reg.try_increment_tap_position(-1):
+                        adjustment_made = True
             else:
                 raise Exception(f"{reg.reg_control} mode for regulator not implemented")
     
