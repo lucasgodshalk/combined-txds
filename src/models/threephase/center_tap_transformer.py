@@ -13,14 +13,15 @@ duals = [Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li
 scaled_tr = tr + (1 - tr) * tx_factor 
 
 eqns = [
-    -1/scaled_tr * Ir_L1 - 1/scaled_tr * Ir_L2,
-    -1/scaled_tr * Ii_L1 - 1/scaled_tr * Ii_L2,
-    Vr_L1 - 1/scaled_tr * Vr_pri,
-    Vi_L1 - 1/scaled_tr * Vi_pri,
+    # Equations from Kersting
+    -1/(2 * scaled_tr) * (Ir_L1 - Ir_L2),
+    -1/(2 * scaled_tr) * (Ii_L1 - Ii_L2),
+    Vr_pri - 2 * scaled_tr * Vr_L1,
+    Vi_pri - 2 * scaled_tr * Vi_L1,
     Ir_L1,
     Ii_L1,
-    Vr_L2 - 1/scaled_tr * Vr_pri,
-    Vi_L2 - 1/scaled_tr * Vi_pri,
+    Vr_pri - 2 * scaled_tr * Vr_L2,
+    Vi_pri - 2 * scaled_tr * Vi_L2,
     Ir_L2,
     Ii_L2
 ]
@@ -99,42 +100,7 @@ class CenterTapTransformer():
         return []
 
     def stamp_primal(self, Y, J, v_previous, tx_factor, state):
-        if not USE_SYMBOLIC:
-            v_r_p, v_i_p = self.coils[0].primary_node.node_Vr, self.coils[0].primary_node.node_Vi
-            v_r_1x, v_i_1x = self.coils[1].sending_node.node_Vr, self.coils[1].sending_node.node_Vi
-            v_r_2x, v_i_2x = self.coils[2].sending_node.node_Vr, self.coils[2].sending_node.node_Vi
-            v_r_1s = self.coils[1].real_voltage_idx
-            v_i_1s = self.coils[1].imag_voltage_idx
-            v_r_2s = self.coils[2].real_voltage_idx
-            v_i_2s = self.coils[2].imag_voltage_idx
-
-            # Stamps for the current sources on the primary coil
-            Y.stamp(v_r_p, v_r_1s, -1/self.turn_ratio)
-            Y.stamp(v_r_p, v_r_2s, -1/self.turn_ratio)
-            Y.stamp(v_i_p, v_i_1s, -1/self.turn_ratio)
-            Y.stamp(v_i_p, v_i_2s, -1/self.turn_ratio)
-
-            # Stamps for the voltage sources
-            Y.stamp(v_r_1s, v_r_1x, 1)
-            Y.stamp(v_r_1s, v_r_p, -1/self.turn_ratio)
-
-            Y.stamp(v_r_2s, v_r_2x, 1)
-            Y.stamp(v_r_2s, v_r_p, -1/self.turn_ratio)
-
-            Y.stamp(v_i_1s, v_i_1x, 1)
-            Y.stamp(v_i_1s, v_i_p, -1/self.turn_ratio)
-
-            Y.stamp(v_i_2s, v_i_2x, 1)
-            Y.stamp(v_i_2s, v_i_p, -1/self.turn_ratio)
-            
-            # Stamps for the new state variables (current at the voltage source)
-            Y.stamp(v_r_1x, v_r_1s, 1)
-            Y.stamp(v_i_1x, v_i_1s, 1)
-            Y.stamp(v_r_2x, v_r_2s, 1)
-            Y.stamp(v_i_2x, v_i_2s, 1)
-        else:
-            self.center_tap_xfmr_stamper.stamp_primal(Y, J, [self.turn_ratio, tx_factor], v_previous)
-                
+        self.center_tap_xfmr_stamper.stamp_primal(Y, J, [self.turn_ratio, tx_factor], v_previous)
         self.primary_impedance_stamper.stamp_primal(Y, J, [self.g0, self.b0, tx_factor], v_previous)
         self.L1_impedance_stamper.stamp_primal(Y, J, [self.g1, self.b1, tx_factor], v_previous)
         self.L2_impedance_stamper.stamp_primal(Y, J, [self.g2, self.b2, tx_factor], v_previous)
@@ -143,13 +109,10 @@ class CenterTapTransformer():
         raise Exception("Not implemented")
 
     def calculate_residuals(self, state, v):
-        if USE_SYMBOLIC:
-            center_tap_xfmr_resid = self.center_tap_xfmr_stamper.calc_residuals([self.turn_ratio, 0], v)
-            pri_imp_resid = self.primary_impedance_stamper.calc_residuals([self.g0, self.b0, 0], v)
-            L1_imp_resid = self.L1_impedance_stamper.calc_residuals([self.g1, self.b1, 0], v)
-            L2_imp_resid = self.L2_impedance_stamper.calc_residuals([self.g2, self.b2, 0], v)
+        center_tap_xfmr_resid = self.center_tap_xfmr_stamper.calc_residuals([self.turn_ratio, 0], v)
+        pri_imp_resid = self.primary_impedance_stamper.calc_residuals([self.g0, self.b0, 0], v)
+        L1_imp_resid = self.L1_impedance_stamper.calc_residuals([self.g1, self.b1, 0], v)
+        L2_imp_resid = self.L2_impedance_stamper.calc_residuals([self.g2, self.b2, 0], v)
 
-            return merge_residuals({}, center_tap_xfmr_resid, pri_imp_resid, L1_imp_resid, L2_imp_resid)
-        else:
-            return {}
+        return merge_residuals({}, center_tap_xfmr_resid, pri_imp_resid, L1_imp_resid, L2_imp_resid)
 

@@ -1196,6 +1196,9 @@ class Reader(AbstractReader):
 
                 try:	
                     api_load.voltage_1 = complex(obj["voltage_1"])	
+                except AttributeError:	
+                    pass
+                try:
                     api_load.voltage_2 = complex(obj["voltage_2"])	
                 except AttributeError:	
                     pass
@@ -1547,8 +1550,8 @@ class Reader(AbstractReader):
                                     1
                                 )  # The opendss model number (specifying constant power)
                                 phaseload.use_zip = 0
-                                phaseloads.append(phaseload)
-                                continue
+                        phaseloads.append(phaseload)
+                        continue
                     
                     elif phase == "2":
                         num_phases = num_phases + 1
@@ -1577,8 +1580,8 @@ class Reader(AbstractReader):
                                     1
                                 )  # The opendss model number (specifying constant power)
                                 phaseload.use_zip = 0
-                                phaseloads.append(phaseload)
-                                continue
+                        phaseloads.append(phaseload)
+                        continue
 
                 if num_phases > 0:
                     api_load.phase_loads = phaseloads

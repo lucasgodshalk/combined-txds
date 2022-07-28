@@ -41,7 +41,7 @@ class TransformerHandler:
         winding2 = model.windings[2]
         transformer_coil_2 = CenterTapTransformerCoil(winding2.nominal_voltage, winding2.rated_power, winding2.connection_type, winding2.voltage_limit, winding2.resistance, model.reactances[2])
         
-        turn_ratio = winding0.nominal_voltage / winding1.nominal_voltage
+        turn_ratio = winding0.nominal_voltage / (2 * winding1.nominal_voltage)
         
         if hasattr(model, "shunt_impedance") and model.shunt_impedance != 0:
             shunt_impedance = model.shunt_impedance
