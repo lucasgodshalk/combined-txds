@@ -6,6 +6,10 @@ from models.shared.bus import GROUND, Bus
 from models.shared.transformer import Transformer
 from models.shared.voltagesource import CurrentSensor
 
+class RegType(Enum):
+    A = "A"
+    B = "B"
+
 class RegControl(Enum):
     MANUAL = "MANUAL"
     REMOTE_NODE = "REMOTE_NODE"
@@ -20,7 +24,7 @@ class Regulator():
                 , current_node: Bus
                 , tap_position: int
                 , ar_step
-                , reg_type
+                , reg_type: RegType
                 , reg_control: RegControl
                 , vlow: float
                 , vhigh: float
@@ -78,10 +82,12 @@ class Regulator():
         else:
             self.tap_position += increment
 
-        if self.reg_type == "A":
+        if self.reg_type == RegType.A:
             self.turn_ratio = (1 + (self.ar_step * self.tap_position)) ** -1
-        else:
+        elif self.reg_type == RegType.B:
             self.turn_ratio = 1 - (self.ar_step * self.tap_position)
+        else:
+            raise Exception(f"Unknown regulator type {self.reg_type}")
         
         self.transformer.tr = self.turn_ratio
 

@@ -24,7 +24,7 @@ from models.threephase.resistive_load import ResistiveLoad
 from models.threephase.resistive_phase_load import ResistivePhaseLoad
 from models.threephase.switch import Switch
 from models.threephase.switch_phase import SwitchPhase
-from models.threephase.regulator import RegControl, Regulator
+from models.threephase.regulator import RegControl, RegType, Regulator
 
 class ThreePhaseParser:
     # Angles in degrees associated with different phases
@@ -225,7 +225,7 @@ class ThreePhaseParser:
                 reg_config = self.all_gld_objects[self.all_gld_objects[model.name]['configuration']]
 
                 ar_step = (model.regulation * 2) / (model.highstep + model.lowstep)
-                reg_type = model.type if hasattr(model, "type") else "B"
+                reg_type = RegType[model.type if hasattr(model, "type") else "B"]
                 reg_control = RegControl[reg_config._Control]
 
                 #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/regulator.cpp#L251
@@ -239,7 +239,7 @@ class ThreePhaseParser:
                 lower_taps = int(reg_config._lower_taps)
 
                 tap_change_per = float(reg_config._regulation) / float(reg_config._raise_taps)
-                v_tap_change = band_center * tap_change_per;
+                v_tap_change = band_center * tap_change_per
 
                 for winding in model.windings[0].phase_windings:
                     from_bus = simulation_state.bus_name_map[model.high_from + '_' + winding.phase]

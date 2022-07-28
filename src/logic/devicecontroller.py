@@ -84,14 +84,13 @@ class DeviceController:
         return adjustment_made
 
     def try_set_regulator_taps(self, v):
-        return False
-
         adjustment_made = False
         reg: Regulator
         for reg in self.network.regulators:
             if reg.reg_control == RegControl.MANUAL:
                 continue
             elif reg.reg_control == RegControl.OUTPUT_VOLTAGE:
+                continue
                 v_r, v_i = v[reg.to_node.node_Vr], v[reg.to_node.node_Vi]
                 v_mag = abs(complex(v_r, v_i))
 
