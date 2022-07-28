@@ -46,7 +46,7 @@ class Regulator():
         self.phase_shift = 0 
 
         #todo: pull better values?
-        r = 1e4
+        r = 1e-4
         x = 0
 
         self.transformer = Transformer(
@@ -78,9 +78,6 @@ class Regulator():
         else:
             self.tap_position += increment
 
-        if old_position == self.tap_position:
-            return False
-
         if self.reg_type == "A":
             self.turn_ratio = (1 + (self.ar_step * self.tap_position)) ** -1
         else:
@@ -88,7 +85,7 @@ class Regulator():
         
         self.transformer.tr = self.turn_ratio
 
-        return True
+        return old_position == self.tap_position
 
     def assign_nodes(self, node_index, optimization_enabled):
         self.transformer.assign_nodes(node_index, optimization_enabled)
@@ -104,6 +101,6 @@ class Regulator():
 
     def calculate_residuals(self, network_model, v):
         xfrmr_residuals = self.transformer.calculate_residuals(network_model, v)
-        sensor_residuas = self.current_sensor.calculate_residuals(network_model, v)
+        sensor_residuals = self.current_sensor.calculate_residuals(network_model, v)
 
-        return merge_residuals({}, xfrmr_residuals, sensor_residuas)
+        return merge_residuals({}, xfrmr_residuals, sensor_residuals)

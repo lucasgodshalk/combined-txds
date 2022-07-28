@@ -268,7 +268,7 @@ class ThreePhaseParser:
                     v_mag = abs(complex(to_bus.Vr_init, to_bus.Vi_init))
 
                     tap_guess = math.ceil((band_center - v_mag)/v_tap_change)
-                    regulator.try_increment_tap_position(tap_guess)
+                    #regulator.try_increment_tap_position(tap_guess)
 
                     simulation_state.regulators.append(regulator)
     

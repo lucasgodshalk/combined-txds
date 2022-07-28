@@ -84,6 +84,8 @@ class DeviceController:
         return adjustment_made
 
     def try_set_regulator_taps(self, v):
+        return False
+
         adjustment_made = False
         reg: Regulator
         for reg in self.network.regulators:
