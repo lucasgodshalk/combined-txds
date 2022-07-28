@@ -4,6 +4,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from models.shared.line import build_line_stamper_bus
+from models.helpers import merge_residuals
 
 constants = tr, tx_factor = symbols('tr tx_factor')
 primals = [Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2] = symbols('Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2')
@@ -28,8 +29,9 @@ lagrange = np.dot(duals, eqns)
 
 reg_lh = LagrangeHandler(lagrange, constants, primals, duals)
 
+USE_SYMBOLIC = False
+
 class CenterTapTransformer():
-    
     def __init__(self
                 , coil_1
                 , coil_2
@@ -97,42 +99,57 @@ class CenterTapTransformer():
         return []
 
     def stamp_primal(self, Y, J, v_previous, tx_factor, state):
-        v_r_p, v_i_p = self.coils[0].primary_node.node_Vr, self.coils[0].primary_node.node_Vi
-        v_r_1x, v_i_1x = self.coils[1].sending_node.node_Vr, self.coils[1].sending_node.node_Vi
-        v_r_2x, v_i_2x = self.coils[2].sending_node.node_Vr, self.coils[2].sending_node.node_Vi
-        v_r_1s = self.coils[1].real_voltage_idx
-        v_i_1s = self.coils[1].imag_voltage_idx
-        v_r_2s = self.coils[2].real_voltage_idx
-        v_i_2s = self.coils[2].imag_voltage_idx
+        if not USE_SYMBOLIC:
+            v_r_p, v_i_p = self.coils[0].primary_node.node_Vr, self.coils[0].primary_node.node_Vi
+            v_r_1x, v_i_1x = self.coils[1].sending_node.node_Vr, self.coils[1].sending_node.node_Vi
+            v_r_2x, v_i_2x = self.coils[2].sending_node.node_Vr, self.coils[2].sending_node.node_Vi
+            v_r_1s = self.coils[1].real_voltage_idx
+            v_i_1s = self.coils[1].imag_voltage_idx
+            v_r_2s = self.coils[2].real_voltage_idx
+            v_i_2s = self.coils[2].imag_voltage_idx
 
-        # Stamps for the current sources on the primary coil
-        Y.stamp(v_r_p, v_r_1s, -1/self.turn_ratio)
-        Y.stamp(v_r_p, v_r_2s, -1/self.turn_ratio)
-        Y.stamp(v_i_p, v_i_1s, -1/self.turn_ratio)
-        Y.stamp(v_i_p, v_i_2s, -1/self.turn_ratio)
+            # Stamps for the current sources on the primary coil
+            Y.stamp(v_r_p, v_r_1s, -1/self.turn_ratio)
+            Y.stamp(v_r_p, v_r_2s, -1/self.turn_ratio)
+            Y.stamp(v_i_p, v_i_1s, -1/self.turn_ratio)
+            Y.stamp(v_i_p, v_i_2s, -1/self.turn_ratio)
 
-        # Stamps for the voltage sources
-        Y.stamp(v_r_1s, v_r_1x, 1)
-        Y.stamp(v_r_1s, v_r_p, -1/self.turn_ratio)
+            # Stamps for the voltage sources
+            Y.stamp(v_r_1s, v_r_1x, 1)
+            Y.stamp(v_r_1s, v_r_p, -1/self.turn_ratio)
 
-        Y.stamp(v_r_2s, v_r_2x, 1)
-        Y.stamp(v_r_2s, v_r_p, -1/self.turn_ratio)
+            Y.stamp(v_r_2s, v_r_2x, 1)
+            Y.stamp(v_r_2s, v_r_p, -1/self.turn_ratio)
 
-        Y.stamp(v_i_1s, v_i_1x, 1)
-        Y.stamp(v_i_1s, v_i_p, -1/self.turn_ratio)
+            Y.stamp(v_i_1s, v_i_1x, 1)
+            Y.stamp(v_i_1s, v_i_p, -1/self.turn_ratio)
 
-        Y.stamp(v_i_2s, v_i_2x, 1)
-        Y.stamp(v_i_2s, v_i_p, -1/self.turn_ratio)
-        
-        # Stamps for the new state variables (current at the voltage source)
-        Y.stamp(v_r_1x, v_r_1s, 1)
-        Y.stamp(v_i_1x, v_i_1s, 1)
-        Y.stamp(v_r_2x, v_r_2s, 1)
-        Y.stamp(v_i_2x, v_i_2s, 1)
+            Y.stamp(v_i_2s, v_i_2x, 1)
+            Y.stamp(v_i_2s, v_i_p, -1/self.turn_ratio)
+            
+            # Stamps for the new state variables (current at the voltage source)
+            Y.stamp(v_r_1x, v_r_1s, 1)
+            Y.stamp(v_i_1x, v_i_1s, 1)
+            Y.stamp(v_r_2x, v_r_2s, 1)
+            Y.stamp(v_i_2x, v_i_2s, 1)
+        else:
+            self.reg_stamper.stamp_primal(Y, J, [self.turn_ratio, tx_factor], v_previous)
                 
         self.primary_impedance_stamper.stamp_primal(Y, J, [self.g0, self.b0, tx_factor], v_previous)
         self.L1_impedance_stamper.stamp_primal(Y, J, [self.g1, self.b1, tx_factor], v_previous)
         self.L2_impedance_stamper.stamp_primal(Y, J, [self.g2, self.b2, tx_factor], v_previous)
 
+    def stamp_dual(self, Y, J, v_previous, tx_factor, state):
+        raise Exception("Not implemented")
+
     def calculate_residuals(self, state, v):
-        return {}
+        if USE_SYMBOLIC:
+            reg_resid = self.reg_stamper.calc_residuals([self.turn_ratio, tx_factor], v)
+            pri_imp_resid = self.primary_impedance_stamper.calc_residuals([self.g0, self.b0, tx_factor], v)
+            L1_imp_resid = self.L1_impedance_stamper.calc_residuals([self.g1, self.b1, tx_factor], v)
+            L2_imp_resid = self.L2_impedance_stamper.calc_residuals([self.g2, self.b2, tx_factor], v)
+
+            return merge_residuals({}, reg_resid, pri_imp_resid, L1_imp_resid, L2_imp_resid)
+        else:
+            return {}
+
