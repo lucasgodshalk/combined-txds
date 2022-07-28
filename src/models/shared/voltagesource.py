@@ -69,3 +69,8 @@ class VoltageSource:
     
     def get_current(self, v):
         return (v[self.Ir_index], v[self.Ii_index])
+    
+#Glorified voltage source, just a better name for readability sometimes.
+class CurrentSensor(VoltageSource):
+    def __init__(self, from_bus: Bus, to_bus: Bus) -> None:
+        VoltageSource.__init__(self, from_bus, to_bus, 0, 0)

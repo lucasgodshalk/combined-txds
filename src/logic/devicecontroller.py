@@ -2,6 +2,7 @@ from logic.powerflowsettings import PowerFlowSettings
 from logic.homotopycontroller import HomotopyController
 from models.threephase.capacitor import CapSwitchState, Capacitor, CapacitorMode
 from models.threephase.fuse import Fuse, FuseStatus
+from models.threephase.regulator import RegControl, Regulator
 
 MAX_DEVICE_ITERATIONS = 10
 
@@ -34,6 +35,8 @@ class DeviceController:
             if self.try_switch_capacitors(v):
                 adjustment_made = True
             if self.try_blow_fuses(v):
+                adjustment_made = True
+            if self.try_set_regulator_taps(v):
                 adjustment_made = True
 
         return adjustment_made
@@ -78,4 +81,15 @@ class DeviceController:
             else:
                 raise Exception(f"{cap.mode} mode for capacitor not implemented")
 
+        return adjustment_made
+
+    def try_set_regulator_taps(self, v):
+        adjustment_made = False
+        reg: Regulator
+        for reg in self.network.regulators:
+            if reg.reg_control == RegControl.MANUAL:
+                continue
+            else:
+                raise Exception(f"{reg.reg_control} mode for regulator not implemented")
+    
         return adjustment_made

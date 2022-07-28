@@ -233,8 +233,11 @@ class ThreePhaseParser:
                     to_bus = simulation_state.bus_name_map[model.low_to + '_' + winding.phase]
 
                     tap_position = float(getattr(reg_config, '_tap_pos_' + winding.phase))
-                                      
-                    regulator = Regulator(from_bus, to_bus, winding.phase, tap_position, ar_step, reg_type, reg_control)
+
+
+                    current_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Reg", winding.phase)
+
+                    regulator = Regulator(from_bus, to_bus, current_bus, winding.phase, tap_position, ar_step, reg_type, reg_control)
                     regulator.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                     
                     simulation_state.regulators.append(regulator)

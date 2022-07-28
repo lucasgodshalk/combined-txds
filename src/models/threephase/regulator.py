@@ -1,8 +1,10 @@
 from enum import Enum
 import math
 from logic.matrixbuilder import MatrixBuilder
+from models.helpers import merge_residuals
 from models.shared.bus import GROUND, Bus
 from models.shared.transformer import Transformer
+from models.shared.voltagesource import CurrentSensor
 
 class RegControl(Enum):
     MANUAL = "MANUAL"
@@ -15,6 +17,7 @@ class Regulator():
     def __init__(self
                 , from_node: Bus 
                 , to_node: Bus
+                , current_node: Bus
                 , phase
                 , tap_position
                 , ar_step
@@ -23,6 +26,7 @@ class Regulator():
                 ):
         self.from_node = from_node
         self.to_node = to_node
+        self.current_node = current_node
         self.phase = phase
         self.ar_step = ar_step
         self.reg_type = reg_type
@@ -41,7 +45,7 @@ class Regulator():
         self.transformer = Transformer(
             self.from_node, 
             GROUND, 
-            self.to_node, 
+            self.current_node, 
             GROUND,
             r,
             x,
@@ -52,6 +56,9 @@ class Regulator():
             0,
             None
             )
+
+        #Some control modes require a current measurement on the output of the reg.
+        self.current_sensor = CurrentSensor(self.current_node, self.to_node)
 
         self.update_tap_position(tap_position)
 
@@ -69,12 +76,18 @@ class Regulator():
 
     def assign_nodes(self, node_index, optimization_enabled):
         self.transformer.assign_nodes(node_index, optimization_enabled)
+        self.current_sensor.assign_nodes(node_index, optimization_enabled)
 
     def stamp_primal(self, Y, J, v, tx_factor, state):
         self.transformer.stamp_primal(Y, J, v, tx_factor, state)
+        self.current_sensor.stamp_primal(Y, J, v, tx_factor, state)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
         self.transformer.stamp_dual(Y, J, v_previous, tx_factor, state)
+        self.current_sensor.stamp_dual(Y, J, v_previous, tx_factor, state)
 
     def calculate_residuals(self, network_model, v):
-        return self.transformer.calculate_residuals(network_model, v)
+        xfrmr_residuals = self.transformer.calculate_residuals(network_model, v)
+        sensor_residuas = self.current_sensor.calculate_residuals(network_model, v)
+
+        return merge_residuals({}, xfrmr_residuals, sensor_residuas)
