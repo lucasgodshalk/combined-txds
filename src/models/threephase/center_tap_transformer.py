@@ -6,22 +6,21 @@ from logic.lagrangestamper import SKIP, LagrangeStamper
 from models.shared.line import build_line_stamper_bus
 from models.helpers import merge_residuals
 
-constants = tr, tx_factor = symbols('tr tx_factor')
+constants = tr_orig, tx_factor = symbols('tr tx_factor')
 primals = [Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2] = symbols('Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2')
 duals = [Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2] = symbols('Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2')
 
-scaled_tr = tr + (1 - tr) * tx_factor 
+tr = tr_orig# + (1 - tr) * tx_factor 
 
 eqns = [
-    # Equations from Kersting
-    -1/(2 * scaled_tr) * (Ir_L1 - Ir_L2),
-    -1/(2 * scaled_tr) * (Ii_L1 - Ii_L2),
-    Vr_pri - 2 * scaled_tr * Vr_L1,
-    Vi_pri - 2 * scaled_tr * Vi_L1,
+    -1 / tr * (Ir_L1 + Ir_L2),
+    -1 / tr * (Ii_L1 + Ii_L2),
+    Vr_L1 - 1 / tr * Vr_pri,
+    Vi_L1 - 1 / tr * Vi_pri,
     Ir_L1,
     Ii_L1,
-    Vr_pri - 2 * scaled_tr * Vr_L2,
-    Vi_pri - 2 * scaled_tr * Vi_L2,
+    Vr_L2 - 1 / tr * Vr_pri,
+    Vi_L2 - 1 / tr * Vi_pri,
     Ir_L2,
     Ii_L2
 ]
