@@ -1,0 +1,3 @@
+[submodule "src/ditto"]
+	path = src/ditto
+	url = git@github.com:lucasgodshalk/ditto.git

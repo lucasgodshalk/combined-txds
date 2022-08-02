@@ -1,6 +1,6 @@
 
 import cmath
-from ditto.readers.gridlabd.read import compute_secondary_matrix
+from ditto.ditto.readers.gridlabd.read import compute_secondary_matrix
 
 class WireTest:
     def __init__(self, resistance, gmr, phase, diameter, insulation_thickness) -> None:
