@@ -22,8 +22,8 @@ from models.threephase.fuse import Fuse
 
 from models.threephase.resistive_load import ResistiveLoad
 from models.threephase.resistive_phase_load import ResistivePhaseLoad
+from models.threephase.switch import Switch, SwitchStatus
 from models.threephase.switch import Switch
-from models.threephase.switch_phase import SwitchPhase
 from models.threephase.regulator import RegControl, RegType, Regulator
 
 class ThreePhaseParser:
@@ -294,17 +294,18 @@ class ThreePhaseParser:
                         fuse.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
 
                         simulation_state.fuses.append(fuse)
-                    continue
                 # Check for switches, some are encoded as 1-length lines with no features
                 elif model.is_switch:
-                    switch = Switch("CLOSED")
                     for wire in model.wires:
                         from_bus = simulation_state.bus_name_map[model.from_element + "_" + wire.phase]
                         to_bus = simulation_state.bus_name_map[model.to_element + "_" + wire.phase]
-                        phase_switch = SwitchPhase(from_bus, to_bus, ("OPEN" if (hasattr(wire, "is_open") and wire.is_open) else "CLOSED"), wire.phase)#, real_voltage_idx, imag_voltage_idx)
-                        switch.phase_switches.append(phase_switch)
-                    simulation_state.switches.append(switch)
-                    continue
+
+                        status = SwitchStatus[("OPEN" if (hasattr(wire, "is_open") and wire.is_open) else "CLOSED")]
+
+                        switch = Switch(from_bus, to_bus, status, wire.phase)
+                        switch.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+                        
+                        simulation_state.switches.append(switch)
                 else:
                     impedances = np.array(model.impedance_matrix)
                     # if model.line_type == 'underground':
