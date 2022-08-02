@@ -10,9 +10,15 @@ constants = tr_orig, tx_factor = symbols('tr tx_factor')
 primals = [Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2] = symbols('Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2')
 duals = [Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2] = symbols('Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2')
 
-tr = tr_orig# + (1 - tr) * tx_factor 
+tr = tr_orig + (1 - tr_orig) * tx_factor 
 
-eqns = [
+#Kersting:
+#E_0 = 1/tr * Vt_1
+#E_0 = 1/tr * Vt_2
+#I_0 = 1/tr * (I_1 - I_2)
+#I_0 => Leaving primary (positive), I_1, I_2 => Entering secondary (negative). 
+
+eqns_orig = [
     -1 / tr * (Ir_L1 + Ir_L2),
     -1 / tr * (Ii_L1 + Ii_L2),
     Vr_L1 - 1 / tr * Vr_pri,
@@ -25,11 +31,35 @@ eqns = [
     Ii_L2
 ]
 
-lagrange = np.dot(duals, eqns)
+eqns_amrit = [
+    1 / tr * (Ir_L1 - Ir_L2),
+    1 / tr * (Ii_L1 - Ii_L2),
+    Vr_L1 - 1 / tr * Vr_pri,
+    Vi_L1 - 1 / tr * Vi_pri,
+    Ir_L1,
+    Ii_L1,
+    Vr_L2 + 1 / tr * Vr_pri,
+    Vi_L2 + 1 / tr * Vi_pri,
+    Ir_L2,
+    Ii_L2
+]
+
+eqns_lucas = [
+    1 / tr * (Ir_L1 - Ir_L2),
+    1 / tr * (Ii_L1 - Ii_L2),
+    Vi_pri - 1 / tr * Vr_L1,
+    Vi_pri - 1 / tr * Vr_L1,
+    Ir_L1,
+    Ii_L1,
+    Vi_pri - 1 / tr * Vr_L2,
+    Vi_pri - 1 / tr * Vr_L2,
+    Ir_L2,
+    Ii_L2
+]
+
+lagrange = np.dot(duals, eqns_orig)
 
 center_tap_xfmr_lh = LagrangeHandler(lagrange, constants, primals, duals)
-
-USE_SYMBOLIC = True
 
 class CenterTapTransformer():
     def __init__(self

@@ -94,7 +94,7 @@ class TransformerHandler:
         to2_bus = simulation_state.bus_name_map[model.to_element + '_2']
         transformer_coil_2.to_node = to2_bus
 
-        transformer = CenterTapTransformer(transformer_coil_0, transformer_coil_1, transformer_coil_2, phase, turn_ratio, model.power_ratings[0], g_shunt, b_shunt)
+        transformer = CenterTapTransformer(transformer_coil_0, transformer_coil_1, transformer_coil_2, phase, turn_ratio, winding0.rated_power, g_shunt, b_shunt)
         transformer.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
 
         simulation_state.transformers.append(transformer)
