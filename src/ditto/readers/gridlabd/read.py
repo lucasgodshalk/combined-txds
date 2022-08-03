@@ -639,6 +639,7 @@ class Reader(AbstractReader):
                         or obj_class == "tape.collector"
                         or obj_class == "tape.group_recorder"
                         or obj_class == "recorder"
+                        or obj_class == "voltdump"
                     ):
                         continue
                     curr_object = getattr(gridlabd, obj_class)()

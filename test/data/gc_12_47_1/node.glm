@@ -20,10 +20,10 @@ module powerflow{
 //     NR_matrix_output_references true;
 }; 
 
-// object voltdump {
-//     filename GC_12_voltage.csv;
-// 	mode RECT;
-// }
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}
 
 //********************************************* 
 object regulator:74 { 

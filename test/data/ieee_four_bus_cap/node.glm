@@ -22,7 +22,6 @@ module powerflow {
 };
 
 object voltdump {
-    name bogus;
     filename result.csv;
 	mode RECT;
 }

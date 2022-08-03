@@ -29,7 +29,7 @@ class Capacitor:
 
         #we expect this to be set as part of device control
         self.switch: CapSwitchState
-        self.switch = None
+        self.switch = CapSwitchState.CLOSED
     
     def assign_nodes(self, node_index, optimization_enabled):
         self.line_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)

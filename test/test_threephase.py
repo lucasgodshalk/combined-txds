@@ -39,21 +39,32 @@ def load_gridlabd_csv(casename):
         
         return lookup
 
+atol=1e-4
+rtol=1e-3
+
 def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
+    result = []
+    expected = []
+
     for busresult in results.bus_results:
+        result.append(busresult.V_r)
+        result.append(busresult.V_i)
+
         (vA, vB, vC) = gridlab_vdump[busresult.bus.NodeName]
 
         if busresult.bus.NodePhase == "A":
-            assert cmath.isclose(vA, complex(busresult.V_r, busresult.V_i))
+            bus_expected = vA
         elif busresult.bus.NodePhase == "B":
-            assert cmath.isclose(vB, complex(busresult.V_r, busresult.V_i))
+            bus_expected = vB
         elif busresult.bus.NodePhase == "C":
-            assert cmath.isclose(vC, complex(busresult.V_r, busresult.V_i))
+            bus_expected = vC
+        
+        expected.append(bus_expected.real)
+        expected.append(bus_expected.imag)
+
+    assert_v_tolerance(np.array(result), np.array(expected))
 
 def assert_v_tolerance(result, expected):
-    atol=1e-4
-    rtol=1e-3
-
     diff = np.abs(result - expected)
     tol = atol + rtol * np.abs(expected)
 
@@ -2076,206 +2087,13 @@ def test_powerflowrunner_gc_12_47_1_subset():
 
 def test_powerflowrunner_gc_12_47_1_no_cap():
     results = execute_glm_case("gc_12_47_1_no_cap")
-    
-    
-    
-    expected_v = np.array([
-        275.778761,
-        -0.554674,
-        -138.365776,
-        -238.509726,
-        -137.386905,
-        239.085353,
-        275.779153,
-        -0.554784,
-        -138.366073,
-        -238.510020,
-        -137.387012,
-        239.085752,
-        275.777148,
-        -0.563698,
-        -138.372912,
-        -238.503804,
-        -137.378248,
-        239.088491,
-        7199.975523,
-        0.015040,
-        -3599.974370,
-        -6234.985969,
-        -3600.000673,
-        6234.970997,
-        7193.137063,
-        -2.980998,
-        -3599.130990,
-        -6227.417950,
-        -3593.874631,
-        6230.502210,
-        7188.254639,
-        -5.120065,
-        -3598.528846,
-        -6222.014646,
-        -3589.500849,
-        6227.311652,
-        7185.436846,
-        -6.354585,
-        -3598.181331,
-        -6218.896238,
-        -3586.976608,
-        6225.470285,
-        7184.128335,
-        -7.316129,
-        -3598.370866,
-        -6217.255269,
-        -3585.472220,
-        6224.818132,
-        7178.444492,
-        -9.806310,
-        -3597.669884,
-        -6210.965048,
-        -3580.380509,
-        6221.103863,
-        7174.127937,
-        -11.697462,
-        -3597.137528,
-        -6206.187982,
-        -3576.513644,
-        6218.283087,
-        7165.029149,
-        -14.003436,
-        -3594.533668,
-        -6196.955622,
-        -3569.820791,
-        6211.489897,
-        7165.071010,
-        -13.768973,
-        -3594.348261,
-        -6197.109475,
-        -3570.045699,
-        6211.408345,
-        7165.081206,
-        -13.771832,
-        -3594.355978,
-        -6197.117111,
-        -3570.048477,
-        6211.418701,
-        7167.308098,
-        -14.648956,
-        -3596.264355,
-        -6198.658945,
-        -3570.436067,
-        6213.807996,
-        7167.308098,
-        -14.648956,
-        -3596.264355,
-        -6198.658945,
-        -3570.436067,
-        6213.807996,
-        7167.306525,
-        -14.642370,
-        -3596.257745,
-        -6198.660878,
-        -3570.441013,
-        6213.803274,
-        7167.362793,
-        -14.624994,
-        -3596.271102,
-        -6198.719474,
-        -3570.485062,
-        6213.843738,
-        7167.364365,
-        -14.631581,
-        -3596.277712,
-        -6198.717541,
-        -3570.480116,
-        6213.848460,
-        7167.669497,
-        -14.497906,
-        -3596.315351,
-        -6199.055221,
-        -3570.753453,
-        6214.047861,
-        7167.671070,
-        -14.504492,
-        -3596.321961,
-        -6199.053288,
-        -3570.748507,
-        6214.052582,
-        7167.669497,
-        -14.497906,
-        -3596.315351,
-        -6199.055221,
-        -3570.753453,
-        6214.047861,
-        7167.616841,
-        -14.520974,
-        -3596.308855,
-        -6198.996948,
-        -3570.706283,
-        6214.013451,
-        7167.618413,
-        -14.527560,
-        -3596.315466,
-        -6198.995015,
-        -3570.701337,
-        6214.018172,
-        7167.858844,
-        -14.422225,
-        -3596.345119,
-        -6199.261095,
-        -3570.916719,
-        6214.175289,
-        7167.863562,
-        -14.441983,
-        -3596.364950,
-        -6199.255296,
-        -3570.901881,
-        6214.189454,
-        7167.308098,
-        -14.648956,
-        -3596.264355,
-        -6198.658945,
-        -3570.436067,
-        6213.807996,
-        7167.308098,
-        -14.648956,
-        -3596.264355,
-        -6198.658945,
-        -3570.436067,
-        6213.807996,
-        7185.436846,
-        -6.354585,
-        -3598.181331,
-        -6218.896238,
-        -3586.976608,
-        6225.470285,
-        7167.308098,
-        -14.648956,
-        -3596.264355,
-        -6198.658945,
-        -3570.436067,
-        6213.807996,
-        7198.222507,
-        -0.752984,
-        -3599.758172,
-        -6233.045932,
-        -3598.430283,
-        6233.825438,
-        7200.000000,
-        0.000000,
-        -3600.000000,
-        -6235.000000,
-        -3600.000000,
-        6235.000000
-    ])
-    assert_v_tolerance(results.v_final[:186], expected_v[:186])
+    comparison = load_gridlabd_csv("gc_12_47_1_no_cap")
+    assert_busresults_gridlabdvoltdump(results, comparison)
 
 def test_powerflowrunner_gc_12_47_1():
     results = execute_glm_case("gc_12_47_1")
-    
-    expected_v_file_path = os.path.join("data", "gc_12_47_1", "gld_expected_output.txt")
-    expected_v_full_file_path = os.path.join(CURR_DIR, expected_v_file_path)
-    expected_v = np.loadtxt(expected_v_full_file_path)
-    assert_v_tolerance(results.v_final[:186], expected_v[:186])
+    comparison = load_gridlabd_csv("gc_12_47_1")
+    assert_busresults_gridlabdvoltdump(results, comparison)
 
 def test_powerflowrunner_center_tap_xfmr():
     results = execute_glm_case("center_tap_xfmr")

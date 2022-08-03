@@ -17,10 +17,10 @@ module powerflow{
      default_maximum_voltage_error 1e-6;
 }; 
 
-// object voltdump {
-//     filename voltage.csv;
-// 	mode RECT;
-// }
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}
 
 //********************************************* 
 object regulator:74 { 
