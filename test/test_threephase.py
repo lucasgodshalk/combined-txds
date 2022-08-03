@@ -73,7 +73,7 @@ def assert_v_tolerance(result, expected):
     max_variance = np.max(variance)
     max_idx = np.argmax(variance)
 
-    assert max_variance <= 0, f"Results outside tolerance. (result: {result[max_idx]:.5g}, expected: {expected[max_idx]:.5g}, tol: {tol[max_idx]:.5g}, pct of tol: {math.ceil(100*abs(variance[max_idx] / tol[max_idx]))}%, index: {max_idx})"
+    assert max_variance <= 0, f"Results outside tolerance. (result: {result[max_idx]:.5g}, expected: {expected[max_idx]:.5g}, tol: {tol[max_idx]:.5g}, pct of tol: {math.ceil(100*abs(variance[max_idx] / tol[max_idx])) + 100}%, index: {max_idx})"
 
 def test_powerflowrunner_ieee_four_bus():
     results = execute_glm_case("ieee_four_bus")
