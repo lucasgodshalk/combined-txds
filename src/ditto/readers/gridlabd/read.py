@@ -53,8 +53,8 @@ def compute_secondary_matrix(
     distances_mapped = False
     for w in wire_list:
         if w.diameter is not None and w.insulation_thickness is not None:
-            d12 = (w.diameter + 2 * w.insulation_thickness)
-            d1n = (w.diameter + w.insulation_thickness)
+            d12 = (w.diameter + 2 * w.insulation_thickness) / 12.0 #Convert from inches to feet
+            d1n = (w.diameter + w.insulation_thickness) / 12.0 #Convert from inches to feet
             distances_mapped = True
             break
 
@@ -108,15 +108,23 @@ def compute_secondary_matrix(
 
     return matrix
 
+resistance_of_dirt = 0.09530 #ohms/mile
+
 def calc_Zii(r_i, GMRi, resistivity = 100, freq = 60):
+    #Kersting 4.4.1 pg82-83
+
     # returns Zii in ohms/mile
-    Zii = complex(r_i + 0.00158836 * freq, 0.00202237 * freq * (np.math.log(1/GMRi) + 7.6786 + math.log(resistivity / freq)/2.0))
+    #Zii = complex(r_i + 0.00158836 * freq, 0.00202237 * freq * (np.math.log(1/GMRi) + 7.6786 + math.log(resistivity / freq)/2.0))
+    Zii = r_i + resistance_of_dirt + 1j * 0.12134 * (np.log(1 / GMRi) + 7.93402)
     # Zii = r_i + 0.09327 + 1j * 0.12134 * (np.math.log(GMRi ** -1) + 7.95153)
     return Zii
 
 def calc_Zij(Dij, resistivity = 100, freq = 60):
+    #Kersting 4.4.2 pg82-83
+
     # returns Zij in ohms/mile
-    Zij = complex(0.00158836 * freq, 0.00202237 * freq * (math.log(1 / Dij) + 7.6786 + math.log(resistivity / freq)/2.0))
+    #Zij = complex(0.00158836 * freq, 0.00202237 * freq * (math.log(1 / Dij) + 7.6786 + math.log(resistivity / freq)/2.0))
+    Zij = resistance_of_dirt + 1j * 0.12134 * (np.log(1 / Dij) + 7.93402)
     # Zij = 0.09327 + 1j * 0.12134 * (np.math.log(Dij ** -1) + 7.95153)
     return Zij
 
@@ -1939,7 +1947,7 @@ class Reader(AbstractReader):
                     pass
 
                 try:
-                    api_line.length = float(obj["length"]) * 0.3048
+                    api_line.length = float(obj["length"]) / 5280
                 except AttributeError:
                     pass
 
@@ -1988,13 +1996,13 @@ class Reader(AbstractReader):
 
                     try:
                         api_wire.insulation_thickness = (
-                            float(config["insulation_thickness"]) / 12 # convert to feet
+                            float(config["insulation_thickness"])
                         )
                     except AttributeError:
                         pass
 
                     try:
-                        api_wire.diameter = float(config["diameter"]) / 12 # convert to feet
+                        api_wire.diameter = float(config["diameter"])
                     except AttributeError:
                         pass
 
@@ -2037,10 +2045,11 @@ class Reader(AbstractReader):
                         list(conductors.keys())
                     )
 
-                    for i in range(len(impedance_matrix)):	
-                        for j in range(len(impedance_matrix[0])):	
-                            impedance_matrix[i][j] = impedance_matrix[i][j] / 1609.344
+                    # for i in range(len(impedance_matrix)):	
+                    #     for j in range(len(impedance_matrix[0])):	
+                    #         impedance_matrix[i][j] = impedance_matrix[i][j] / 1609.344
 
+                # Ohms/mile
                 api_line.impedance_matrix = impedance_matrix
                 for wire in conductors.keys():
                     api_line.wires.append(wire)
