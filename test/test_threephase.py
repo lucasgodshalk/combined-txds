@@ -45,19 +45,29 @@ rtol=1e-3
 def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
     result = []
     expected = []
+    node_idx = []
 
     for busresult in results.bus_results:
         result.append(busresult.V_r)
+        node_idx.append((f"{busresult.bus.NodeName}:{busresult.bus.NodePhase}:r", len(result)))
         result.append(busresult.V_i)
+        node_idx.append((f"{busresult.bus.NodeName}:{busresult.bus.NodePhase}:i", len(result)))
 
         (vA, vB, vC) = gridlab_vdump[busresult.bus.NodeName]
 
+        bus_expected = None
         if busresult.bus.NodePhase == "A":
             bus_expected = vA
         elif busresult.bus.NodePhase == "B":
             bus_expected = vB
         elif busresult.bus.NodePhase == "C":
             bus_expected = vC
+        elif busresult.bus.NodePhase == "1":
+            bus_expected = vA
+        elif busresult.bus.NodePhase == "2":
+            bus_expected = -vB
+        else:
+            raise Exception("Unknown phase")
         
         expected.append(bus_expected.real)
         expected.append(bus_expected.imag)
@@ -2249,11 +2259,13 @@ def test_powerflowrunner_basic_triplex_network():
 
 def test_powerflowrunner_r1_12_47_1():
     results = execute_glm_case("r1_12_47_1")
-    
-    expected_v_file_path = os.path.join("data", "r1_12_47_1", "gld_expected_output.txt")
-    expected_v_full_file_path = os.path.join(CURR_DIR, expected_v_file_path)
-    expected_v = np.loadtxt(expected_v_full_file_path)
-    assert_v_tolerance(results.v_final[:6800], expected_v[:6800])
+    comparison = load_gridlabd_csv("r1_12_47_1")
+    assert_busresults_gridlabdvoltdump(results, comparison)
+
+def test_powerflowrunner_r1_12_47_3():
+    results = execute_glm_case("r1_12_47_3")
+    comparison = load_gridlabd_csv("r1_12_47_3")
+    assert_busresults_gridlabdvoltdump(results, comparison)
 
 # Requires support for delta connected transformers (not yet supported)
 def test_powerflowrunner_ieee_four_bus_delta_delta_transformer():
