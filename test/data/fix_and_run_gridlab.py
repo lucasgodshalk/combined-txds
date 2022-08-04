@@ -4,7 +4,9 @@ import subprocess
 
 data_dir = os.path.dirname(__file__)
 
-regex = r"object\svoltdump\s\{[\n\r\s]+filename\s[a-zA-Z]+\.csv;[\n\r\s]+mode\sRECT;[\n\r\s]+\}"
+voltdump_regex = r"object\svoltdump\s\{[\n\r\s]+filename\s[a-zA-Z]+\.csv;[\n\r\s]+mode\sRECT;[\n\r\s]+\}"
+
+clock_regex = r"clock\s*{"
 
 dumpstr = """
 
@@ -12,6 +14,16 @@ dumpstr = """
 object voltdump {
      filename result.csv;
      mode RECT;
+}
+"""
+
+clockstr = """
+
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
 }
 """
 
@@ -31,8 +43,10 @@ for dirpath, dirnames, filenames in os.walk(data_dir):
         with open(casefile, 'r+') as file:
             filestr = file.read()
 
-            if re.search(regex, filestr) == None:
+            if re.search(voltdump_regex, filestr) == None:
                 file.write(dumpstr)
+            if re.search(clock_regex, filestr) == None:
+                file.write(clockstr)
         
         print(f"Executing case {casefile}")
         subprocess.run(["gridlabd.exe", "node.glm"], cwd=dirpath)
