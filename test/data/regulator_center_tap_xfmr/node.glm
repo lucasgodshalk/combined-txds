@@ -353,3 +353,17 @@ object triplex_node:1824 {
 //     property voltage_2;
 //     file triplex_voltage2s.csv;
 // }
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}
+
+
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}

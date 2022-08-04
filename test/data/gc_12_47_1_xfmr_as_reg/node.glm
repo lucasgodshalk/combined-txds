@@ -787,3 +787,9 @@ object underground_line_conductor:4 {
 //     interval 60; 
 //     limit 1440; 
 // }; 
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

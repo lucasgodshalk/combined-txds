@@ -226,3 +226,9 @@ object regulator {
 	 to n630;
 	 configuration regconfig6506321;
 }
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

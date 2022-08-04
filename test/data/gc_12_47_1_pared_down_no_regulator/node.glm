@@ -207,3 +207,10 @@ object underground_line_conductor:3 {
      // shield_gmr 0.00; 
      // shield_resistance 0.00; 
 }
+
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

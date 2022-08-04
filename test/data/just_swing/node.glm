@@ -34,3 +34,9 @@ object node {
 ///////////////////////////////
 // END
 ///////////////////////////////
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

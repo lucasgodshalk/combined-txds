@@ -39784,3 +39784,10 @@ object underground_line_conductor:8 {
 //     property voltage_2;
 //     file triplex_voltage2s.csv;
 // }
+
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

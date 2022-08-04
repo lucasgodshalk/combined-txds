@@ -1,0 +1,9 @@
+# file...... GC-12.47-1_capacitor1.csv
+# date...... Thu Aug 04 15:43:27 2022
+# user...... lucas
+# host...... (null)
+# target.... capacitor 3
+# trigger... (none)
+# interval.. 60
+# limit..... 1440
+# timestamp,switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag

@@ -1,0 +1,4 @@
+# result.csv run at 2000-01-01 03:00:00 EST on 8 powerflow objects (not all are nodes)
+node_name,voltA_real,voltA_imag,voltB_real,voltB_imag,voltC_real,voltC_imag
+node1,2400.000000,0.000000,-1200.000000,-2078.460969,-1200.000000,2078.460969
+load1,2167.809212,-129.459975,-1233.209355,-1873.096501,-973.394008,1981.430136

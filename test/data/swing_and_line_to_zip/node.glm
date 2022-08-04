@@ -86,3 +86,9 @@ object load {
     power_fraction_C 0.40;
     nominal_voltage 2400;
 }
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

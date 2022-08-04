@@ -735,3 +735,9 @@ object recorder {
     interval 60; 
     file "GC-12.47-1_reg1_output.csv"; 
 }; 
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

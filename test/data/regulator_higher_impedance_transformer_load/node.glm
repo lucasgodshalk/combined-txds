@@ -84,3 +84,17 @@ object load { //6321 {
      constant_power_C 78000+45333.3333j;
      nominal_voltage 7200;
 }
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}
+
+
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}

@@ -144,3 +144,9 @@ object load {
 ///////////////////////////////
 // END
 ///////////////////////////////
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

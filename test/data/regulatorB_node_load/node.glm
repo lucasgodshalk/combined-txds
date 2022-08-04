@@ -188,3 +188,9 @@ object load { //6321 {
      constant_power_C 78000+45333.3333j;
      nominal_voltage 2401.7771;
 }
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

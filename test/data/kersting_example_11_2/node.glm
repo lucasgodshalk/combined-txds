@@ -98,3 +98,9 @@ object triplex_node:12261 {
 ///////////////////////////////
 // END
 ///////////////////////////////
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

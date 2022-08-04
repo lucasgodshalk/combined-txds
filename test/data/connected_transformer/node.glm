@@ -68,3 +68,9 @@ object load {
     //     property measured_voltage_A, measured_voltage_B, measured_voltage_C;
     // };
 }
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

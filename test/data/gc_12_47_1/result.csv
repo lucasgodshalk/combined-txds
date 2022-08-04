@@ -1,4 +1,4 @@
-# GC_12_voltage.csv run at 2000-01-01 00:00:00 EST on 78 powerflow objects (not all are nodes)
+# result.csv run at 2000-01-01 00:00:00 EST on 78 powerflow objects (not all are nodes)
 node_name,voltA_real,voltA_imag,voltB_real,voltB_imag,voltC_real,voltC_imag
 GC-12-47-1_cap_1,7167.863585,-14.442103,-3596.365068,-6199.255253,-3570.901786,6214.189535
 GC-12-47-1_load_1,275.778580,-0.553918,-138.365018,-238.509948,-137.387472,239.084811

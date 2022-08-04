@@ -158,3 +158,17 @@ object load {
     nominal_voltage 2400;
     bustype PQ;
 }
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}
+
+
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}

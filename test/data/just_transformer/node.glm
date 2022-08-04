@@ -8,6 +8,7 @@ module tape;
 
 clock {
     timestamp '2000-01-01 0:00:00';
+    stoptime '2000-01-01 0:00:01';
     timezone EST+5EDT;
 }
 
@@ -35,11 +36,11 @@ object node {
     phases "ABCN";
     bustype SWING;
     nominal_voltage 7200;
-    // object recorder {
-    //     file node1_voltages.csv;
-    //     interval 60;
-    //     property voltage_A, voltage_B, voltage_C;
-    // };
+    object recorder {
+        file node1_voltages.csv;
+        interval 60;
+        property voltage_A, voltage_B, voltage_C;
+    };
 }
 
 object transformer:12 {
@@ -56,14 +57,20 @@ object node {
     voltage_B -1200.889-2080.000j;
     voltage_C -1200.889+2080.000j;
     nominal_voltage 2400;
-    // object recorder {
-    //     file node2_voltages.csv;
-    //     interval 60;
-    //     property voltage_A, voltage_B, voltage_C;
-    // };
+    object recorder {
+        file node2_voltages.csv;
+        interval 60;
+        property voltage_A, voltage_B, voltage_C;
+    };
 }
 
 
 ///////////////////////////////
 // END
 ///////////////////////////////
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}
