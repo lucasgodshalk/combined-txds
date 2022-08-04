@@ -14,7 +14,7 @@ tr = tr_orig + (1 - tr_orig) * tx_factor
 
 #Kersting:
 #E_0 = 1/tr * Vt_1
-#E_0 = 1/tr * Vt_2
+#E_0 = -1/tr * Vt_2
 #I_0 = 1/tr * (I_1 - I_2)
 #I_0 => Leaving primary (positive), I_1, I_2 => Entering secondary (negative). 
 
@@ -57,7 +57,7 @@ eqns_lucas = [
     Ii_L2
 ]
 
-lagrange = np.dot(duals, eqns_orig)
+lagrange = np.dot(duals, eqns_amrit)
 
 center_tap_xfmr_lh = LagrangeHandler(lagrange, constants, primals, duals)
 
