@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 
 data_dir = os.path.dirname(__file__)
 
@@ -22,9 +23,17 @@ for dirpath, dirnames, filenames in os.walk(data_dir):
 
         casefile = os.path.join(dirpath, filename)
 
+        if not casefile.endswith("node.glm"):
+            desiredcasefile = os.path.join(dirpath, "node.glm")
+            os.rename(casefile, desiredcasefile)
+            casefile = desiredcasefile
+
         with open(casefile, 'r+') as file:
             filestr = file.read()
 
             if re.search(regex, filestr) == None:
                 file.write(dumpstr)
+        
+        print(f"Executing case {casefile}")
+        subprocess.run(["gridlabd.exe", "node.glm"], cwd=dirpath)
 
