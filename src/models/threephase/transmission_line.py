@@ -8,6 +8,31 @@ from models.positiveseq.branch import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, 
 from models.threephase.transmission_line_phase import TransmissionLinePhase
 from models.threephase.edge import Edge
 
+def calcInverse(Zmatrix):
+    num_nnz = np.count_nonzero(Zmatrix)
+    if num_nnz == 1:
+        Zmatrix[Zmatrix == 0 + 0j] = np.inf  # Division in the next step will result in 0 + 0j in Y
+        Ymatrix = np.divide(np.ones(np.shape(Zmatrix), dtype=complex), Zmatrix)
+        return Ymatrix
+    # Convert Matrix to Ymatrix
+    # Find the rows of zero
+    _rowZeroIdx = np.all(Zmatrix == 0, axis=1)
+    Zmatrix_red = Zmatrix[~_rowZeroIdx]
+    # Find the cols of zero
+    _colZeroIdx = np.all(Zmatrix_red == 0, axis=0)
+    Zmatrix_red = Zmatrix_red[:, ~_colZeroIdx]
+    # Find the inverse of reduced matrix
+    Ymatrix_red = np.linalg.inv(Zmatrix_red)
+    # Remap to original format
+    if len(Ymatrix_red) == 2:
+        _rowIdx = list(_rowZeroIdx).index(True)
+        _colIdx = list(_colZeroIdx).index(True)
+        Ymatrix = np.insert(Ymatrix_red, _rowIdx, 0 + 1j * 0, axis=0)
+        Ymatrix = np.insert(Ymatrix, _colIdx, 0 + 1j * 0, axis=1)
+    else:
+        Ymatrix = Ymatrix_red
+    return Ymatrix
+
 class TransmissionLine():
     
     def __init__(self, simulation_state, optimization_enabled, impedances, shunt_admittances, from_element, to_element, length, phases="ABC"):
@@ -20,9 +45,13 @@ class TransmissionLine():
         # Convert the per-meter impedance values to absolute, based on line length (in meters)
         self.impedances *= length
         try:
-            self.admittances = np.linalg.inv(self.impedances)
+            print(self.impedances)
+            self.admittances = calcInverse(self.impedances)
         except Exception:
-            raise Exception("Transmission line was provided with a noninvertible matrix")
+            try:
+                self.admittances = np.linalg.inv(self.impedances)
+            except Exception:    
+                raise Exception("Transmission line was provided with a noninvertible matrix")
         if not np.allclose(np.dot(self.impedances, self.admittances), np.identity(len(phases))):
             raise Exception("np.linalg.inv was unable to find a good inverse to the impedance matrix")
         
