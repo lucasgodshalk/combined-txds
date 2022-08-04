@@ -14,15 +14,17 @@ object voltdump {
 }
 """
 
-for casefolder in os.walk(data_dir):
-    casefile = os.path.join(casefolder[0], "node.glm")
+for dirpath, dirnames, filenames in os.walk(data_dir):
+    
+    for filename in filenames:
+        if not filename.endswith(".glm"):
+            continue
 
-    if not os.path.isfile(casefile):
-        continue
+        casefile = os.path.join(dirpath, filename)
 
-    with open(casefile, 'r+') as file:
-        filestr = file.read()
+        with open(casefile, 'r+') as file:
+            filestr = file.read()
 
-        if re.match(regex, filestr) == None:
-            file.write(dumpstr)
+            if re.search(regex, filestr) == None:
+                file.write(dumpstr)
 
