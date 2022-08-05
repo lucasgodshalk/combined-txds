@@ -164,10 +164,10 @@ class Reader(AbstractReader):
                 try:
                     spacing[name] = remove_nonnum.sub('', spacing[name])
                     dist = float(spacing[name])
-                    # if dist == 0:
-                    #     # A distance of zero was given, which is not accepted. Silently switching to default
-                    #     # TODO proper error handling in this case
-                    #     dist = (outer_diameters[i % len(outer_diameters)] + outer_diameters[j % len(outer_diameters)]) / 2
+                    if dist == 0:
+                        # A distance of zero was given, which is not accepted. Silently switching to default
+                        # TODO proper error handling in this case
+                        dist = (outer_diameters[i % len(outer_diameters)] + outer_diameters[j % len(outer_diameters)]) / 2
                     distances[i][j] = dist
                     distances[j][i] = dist
                     distances[i][i] = 0
@@ -2205,12 +2205,6 @@ class Reader(AbstractReader):
                         DEPTH = 6
                         SPACE = 0.5
                         spacing = self.all_gld_objects[spacing_name]
-
-                        spacing_keys = ["distance_AB", "distance_BC", "distance_AC", "distance_AN", "distance_BN", "distance_CN"]
-
-                        for spacing_key in spacing_keys:
-                            if abs(float(spacing[spacing_key])) <= 1e-9:
-                                spacing[spacing_key] = str(SPACE)
 
                         lookup = ["A", "B", "C", "N"]
                         rev_lookup = {"A": 0, "B": 1, "C": 2, "N": 3, "E": 4}
