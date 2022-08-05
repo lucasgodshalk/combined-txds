@@ -146,7 +146,8 @@ class ThreePhaseParser:
                         resistive_load.phase_loads.append(ResistivePhaseLoad(v_r, v_i, phase_load.z, phase_load.phase, bus_id))
                     simulation_state.loads.append(resistive_load)
                 elif any(phaseload.model == 1 for phaseload in model.phase_loads): #model.bustype == "PQ":
-                    # Loop through each phase associated with this load
+                    load_details = []
+                    # Loop through each phase associated with this load and locate the corresponding bus.
                     for phase_load in model.phase_loads:
                         if (not hasattr(phase_load, "p") or not hasattr(phase_load, "q") or (phase_load.p == 0 and phase_load.q == 0)):
                             continue
@@ -180,10 +181,25 @@ class ThreePhaseParser:
 
                             bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase_load.phase)
 
-                        phase_load = PQLoad(bus, GROUND, phase_load.p, phase_load.q, 0, 0, 0, 0, None, None)
-                        phase_load.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
-                        simulation_state.loads.append(phase_load)
-                # TODO add cases for other types (ZIP, etc)
+                        load_details.append((phase_load.p, phase_load.q, bus))
+
+                    # TODO add cases for other types (ZIP, etc)
+
+                    for index in range(len(load_details)):
+                        if model.is_delta:
+                            if index == 0:
+                                (P, Q, from_bus) = load_details[-1]
+                                (_, _, to_bus) = load_details[index]
+                            else:
+                                (P, Q, from_bus) = load_details[index - 1]
+                                (_, _, to_bus) = load_details[index]
+                        else:
+                            (P, Q, from_bus) = load_details[index]
+                            to_bus = GROUND
+
+                        pq_load = PQLoad(from_bus, to_bus, P, Q, 0, 0, 0, 0, None, None)
+                        pq_load.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+                        simulation_state.loads.append(pq_load)
                 
     def create_capacitors(self, simulation_state: DxNetworkModel):
         for model in self.ditto_store.models:

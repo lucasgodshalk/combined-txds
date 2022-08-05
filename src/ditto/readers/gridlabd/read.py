@@ -1216,6 +1216,7 @@ class Reader(AbstractReader):
                 phaseloads = []
                 try:
                     phase_str = obj["phases"].strip('"')
+                    api_load.is_delta = False
                     if "S" in phase_str:
                         # Triplex load
                         api_load.triplex_phase = phase_str[:-1]
@@ -1223,6 +1224,8 @@ class Reader(AbstractReader):
                     for i in phase_str:
                         if i == "A" or i == "B" or i == "C" or i == "1" or i == "2":
                             phases.append(i)
+                        elif i == "D":
+                            api_load.is_delta = True
                     if not has_parent:
                         api_node.phases = list(map(lambda x: Unicode(x), phases))
                 except AttributeError:
