@@ -39,7 +39,7 @@ def load_gridlabd_csv(casename):
         
         return lookup
 
-atol=1e-4
+atol=1e-2
 rtol=1e-3
 
 def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
