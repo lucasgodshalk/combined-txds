@@ -43,47 +43,55 @@ atol=1e-4
 rtol=1e-3
 
 def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
-    result = []
-    expected = []
-    node_idx = []
+    variances = []
 
     for busresult in results.bus_results:
-        result.append(busresult.V_r)
-        node_idx.append((f"{busresult.bus.NodeName}:{busresult.bus.NodePhase}:r", len(result)))
-        result.append(busresult.V_i)
-        node_idx.append((f"{busresult.bus.NodeName}:{busresult.bus.NodePhase}:i", len(result)))
+        result = complex(busresult.V_r, busresult.V_i)
 
         (vA, vB, vC) = gridlab_vdump[busresult.bus.NodeName]
 
-        bus_expected = None
+        expected = None
         if busresult.bus.NodePhase == "A":
-            bus_expected = vA
+            expected = vA
         elif busresult.bus.NodePhase == "B":
-            bus_expected = vB
+            expected = vB
         elif busresult.bus.NodePhase == "C":
-            bus_expected = vC
+            expected = vC
         elif busresult.bus.NodePhase == "1":
-            bus_expected = vA
+            expected = vA
         elif busresult.bus.NodePhase == "2":
-            bus_expected = -vB
+            expected = -vB
         else:
             raise Exception("Unknown phase")
         
-        expected.append(bus_expected.real)
-        expected.append(bus_expected.imag)
+        result_mag, expected_mag = round(abs(result), 6), round(abs(expected), 6)
+        result_ang, expected_ang = round(cmath.phase(result) * 180 * math.pi, 6), round(cmath.phase(expected) * 180 * math.pi, 6)
 
-    assert_v_tolerance(np.array(result), np.array(expected))
+        diff_mag = abs(result_mag - expected_mag)
+        diff_ang = abs(result_ang - expected_ang)
 
-def assert_v_tolerance(result, expected):
-    diff = np.abs(result - expected)
-    tol = atol + rtol * np.abs(expected)
+        tol_mag = atol + rtol * np.abs(expected_mag)
+        tol_ang = atol + rtol * np.abs(expected_ang)
 
-    variance = diff - tol
+        variance_mag = diff_mag - tol_mag
+        variance_ang = diff_ang - tol_ang
 
-    max_variance = np.max(variance)
-    max_idx = np.argmax(variance)
+        variance_mag_pct = math.ceil(100*variance_mag / tol_mag)
+        variance_ang_pct = math.ceil(100*variance_ang / tol_ang)
 
-    assert max_variance <= 0, f"Results outside tolerance. (result: {result[max_idx]:.5g}, expected: {expected[max_idx]:.5g}, tol: {tol[max_idx]:.5g}, pct of tol: {math.ceil(100*abs(variance[max_idx] / tol[max_idx])) + 100}%, index: {max_idx})"
+        if variance_mag_pct >= variance_ang_pct:
+            largest_variance = variance_mag_pct
+        else:
+            largest_variance = variance_ang_pct
+
+        variances.append((largest_variance, busresult.bus, result_mag, expected_mag, result_ang, expected_ang, variance_mag_pct, variance_ang_pct))
+
+    variances = sorted(variances, key=lambda x: x[0], reverse=True)
+
+    largest = variances[0]
+
+    if largest[0] > 0:
+        assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" outside of tolerance by {largest[0] + 100}% (magnitude: {largest[2]:.5g}, {largest[3]:.5g}) (degrees: {largest[4]:.5g}, {largest[5]:.5g})"
 
 def assert_glm_case_gridlabd_results(casename):
     results = execute_glm_case(casename)
