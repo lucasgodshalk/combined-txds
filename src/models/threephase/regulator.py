@@ -105,8 +105,8 @@ class Regulator():
         self.transformer.stamp_dual(Y, J, v_previous, tx_factor, state)
         self.current_sensor.stamp_dual(Y, J, v_previous, tx_factor, state)
 
-    def calculate_residuals(self, network_model, v):
-        xfrmr_residuals = self.transformer.calculate_residuals(network_model, v)
-        sensor_residuals = self.current_sensor.calculate_residuals(network_model, v)
+    def calculate_residuals(self, network, v):
+        xfrmr_residuals = self.transformer.calculate_residuals(network, v)
+        sensor_residuals = self.current_sensor.calculate_residuals(network, v)
 
         return merge_residuals({}, xfrmr_residuals, sensor_residuals)

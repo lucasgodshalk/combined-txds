@@ -6,26 +6,26 @@ from logic.powerflowsettings import PowerFlowSettings
 
 class NRSolver:
 
-    def __init__(self, settings: PowerFlowSettings, network_model: NetworkModel, v_limiting):
+    def __init__(self, settings: PowerFlowSettings, network: NetworkModel, v_limiting):
         self.settings = settings
-        self.network_model = network_model
+        self.network = network
         self.v_limiting = v_limiting
 
     def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
-        for element in self.network_model.get_NR_invariant_elements():
-            element.stamp_primal(Y, J, None, tx_factor, self.network_model)
+        for element in self.network.get_NR_invariant_elements():
+            element.stamp_primal(Y, J, None, tx_factor, self.network)
 
         if self.settings.infeasibility_analysis:
-            for element in self.network_model.get_NR_invariant_elements():
-                element.stamp_dual(Y, J, None, tx_factor, self.network_model)
+            for element in self.network.get_NR_invariant_elements():
+                element.stamp_dual(Y, J, None, tx_factor, self.network)
 
     def stamp_nonlinear(self, Y: MatrixBuilder, J, v_previous, tx_factor):
-        for element in self.network_model.get_NR_variable_elements():
-            element.stamp_primal(Y, J, v_previous, tx_factor, self.network_model)
+        for element in self.network.get_NR_variable_elements():
+            element.stamp_primal(Y, J, v_previous, tx_factor, self.network)
 
         if self.settings.infeasibility_analysis:
-            for element in self.network_model.get_NR_variable_elements():
-                element.stamp_dual(Y, J, v_previous, tx_factor, self.network_model)
+            for element in self.network.get_NR_variable_elements():
+                element.stamp_dual(Y, J, v_previous, tx_factor, self.network)
 
     def run_powerflow(self, v_init, tx_factor):
         v_previous = np.copy(v_init)

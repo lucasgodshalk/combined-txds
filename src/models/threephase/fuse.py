@@ -46,19 +46,19 @@ class Fuse(Edge):
         
         return self.current_sensor.get_current(v)
 
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if self.status == FuseStatus.BLOWN:
             raise Exception("Blown fuses are not supported")
 
         self.line_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
-        self.current_sensor.stamp_primal(Y, J, v_previous, tx_factor, network_model)
+        self.current_sensor.stamp_primal(Y, J, v_previous, tx_factor, network)
     
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if self.status == FuseStatus.BLOWN:
             raise Exception("Blown fuses are not supported")
 
         self.line_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
-        self.current_sensor.stamp_dual(Y, J, v_previous, tx_factor, network_model)
+        self.current_sensor.stamp_dual(Y, J, v_previous, tx_factor, network)
 
     def calculate_residuals(self, state, v):
         if self.status == FuseStatus.BLOWN:

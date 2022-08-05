@@ -61,7 +61,7 @@ class VoltageSource:
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
         self.stamper.stamp_primal(Y, J, [self.Vr_set, self.Vi_set], v_previous)
 
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         self.stamper.stamp_dual(Y, J, [self.Vr_set, self.Vi_set], v_previous)
 
     def calculate_residuals(self, state, v):

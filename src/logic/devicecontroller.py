@@ -14,7 +14,7 @@ class DeviceController:
         self.settings = settings
         self.homotopy = solver
 
-        self.network = self.homotopy.nrsolver.network_model
+        self.network = self.homotopy.nrsolver.network
 
     def run_powerflow(self, v_init):
         #Preliminary adjustments based on initial conditions

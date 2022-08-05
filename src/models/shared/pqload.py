@@ -80,11 +80,11 @@ class PQLoad:
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         self.stamper.stamp_primal(Y, J, [self.P, self.Q], v_previous)
 
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         self.stamper.stamp_dual(Y, J, [self.P, self.Q], v_previous)
 
-    def calculate_residuals(self, network_model, v):
+    def calculate_residuals(self, network, v):
         return self.stamper.calc_residuals([self.P, self.Q], v)

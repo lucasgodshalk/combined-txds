@@ -22,11 +22,11 @@ class NetworkLoader:
     def __create_three_phase_network(self, network_file: str):
         parser = ThreePhaseParser(network_file, self.settings, self.optimization_enabled)
 
-        network_model = parser.parse()
+        network = parser.parse()
 
-        network_model.size_Y = next(network_model.next_var_idx)
+        network.size_Y = next(network.next_var_idx)
 
-        return network_model
+        return network
 
     def __create_positive_seq_network(self, network_file: str):
         node_index = count(0)
@@ -48,7 +48,7 @@ class NetworkLoader:
         branches = raw_data['branches']
         shunts = raw_data['shunts']
 
-        network_model = TxNetworkModel(
+        network = TxNetworkModel(
             buses=buses, 
             loads=loads, 
             slack=slack, 
@@ -59,9 +59,9 @@ class NetworkLoader:
             shunts=shunts
             )
 
-        for ele in network_model.get_all_elements():
+        for ele in network.get_all_elements():
             ele.assign_nodes(node_index, self.optimization_enabled)
 
-        network_model.size_Y = next(node_index)
+        network.size_Y = next(node_index)
 
-        return network_model
+        return network

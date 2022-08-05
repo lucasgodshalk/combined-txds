@@ -10,20 +10,20 @@ from logic.powerflowresults import PowerFlowResults
 from logic.v_limiting import PositiveSeqVoltageLimiting
 
 class PowerFlow:
-    def __init__(self, network_model: NetworkModel, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
-        self.network_model = network_model
+    def __init__(self, network: NetworkModel, settings: PowerFlowSettings = PowerFlowSettings()) -> None:
+        self.network = network
         self.settings = settings
 
     def execute(self) -> PowerFlowResults:
         start_time = time.perf_counter_ns()
 
-        v_init = self.network_model.generate_v_init(self.settings)
+        v_init = self.network.generate_v_init(self.settings)
 
         v_limiting = None
-        if not self.network_model.is_three_phase and self.settings.voltage_limiting:
-            v_limiting = PositiveSeqVoltageLimiting(self.network_model.buses, self.network_model.size_Y)
+        if not self.network.is_three_phase and self.settings.voltage_limiting:
+            v_limiting = PositiveSeqVoltageLimiting(self.network.buses, self.network.size_Y)
 
-        nrsolver = NRSolver(self.settings, self.network_model, v_limiting)
+        nrsolver = NRSolver(self.settings, self.network, v_limiting)
 
         homotopy_controller = HomotopyController(self.settings, nrsolver)
 
@@ -35,7 +35,7 @@ class PowerFlow:
 
         duration_seconds = (end_time * 1.0 - start_time * 1.0) / math.pow(10, 9)
 
-        return PowerFlowResults(is_success, iteration_num, duration_seconds, self.network_model, v_final, self.settings)
+        return PowerFlowResults(is_success, iteration_num, duration_seconds, self.network, v_final, self.settings)
     
 class FilePowerFlow(PowerFlow):
     def __init__(self, networkfile: str, settings: PowerFlowSettings = PowerFlowSettings()):

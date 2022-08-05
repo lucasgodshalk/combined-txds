@@ -143,7 +143,7 @@ class Transformer:
     def get_connections(self):
         return [(self.from_bus_pos, self.from_bus_neg, self.to_bus_pos, self.to_bus_neg)]
 
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if not self.status:
             return
 
@@ -157,14 +157,14 @@ class Transformer:
         self.xfrmr_stamper.stamp_primal_symbols(Y, J)
         self.losses_stamper.stamp_primal_symbols(Y, J)
 
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if not self.status:
             return
 
         self.xfrmr_stamper.stamp_dual(Y, J, [self.tr, self.ang_rad, tx_factor], v_previous)
         self.losses_stamper.stamp_dual(Y, J, [self.G_loss, self.B_loss, tx_factor], v_previous)
 
-    def calculate_residuals(self, network_model, v):
+    def calculate_residuals(self, network, v):
         residuals = defaultdict(lambda: 0)
 
         for (index, value) in self.xfrmr_stamper.calc_residuals([self.tr, self.ang_rad, 0], v).items():

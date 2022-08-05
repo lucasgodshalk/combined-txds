@@ -120,8 +120,8 @@ class TransmissionLine():
             line_stamper.stamp_primal_symbols(Y, J)
             shunt_stamper.stamp_primal_symbols(Y, J)    
 
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
-        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(network_model):
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
+        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(network):
             line_stamper.stamp_dual(Y, J, [g, b, tx_factor], v_previous)
             shunt_stamper.stamp_dual(Y, J, [B/2, tx_factor], v_previous)
 

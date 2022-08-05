@@ -78,21 +78,21 @@ class Branch:
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
 
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if not self.status:
             return
 
         self.line_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
         self.shunt_stamper.stamp_primal(Y, J, [self.B_line, tx_factor], v_previous)
     
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if not self.status:
             return
         
         self.line_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
         self.shunt_stamper.stamp_dual(Y, J, [self.B_line, tx_factor], v_previous)
     
-    def calculate_residuals(self, network_model, v):
+    def calculate_residuals(self, network, v):
         residuals = defaultdict(lambda: 0)
 
         for (key, value) in self.line_stamper.calc_residuals([self.G, self.B, 0], v).items():

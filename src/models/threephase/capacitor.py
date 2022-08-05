@@ -34,19 +34,19 @@ class Capacitor:
     def assign_nodes(self, node_index, optimization_enabled):
         self.line_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
 
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if self.switch == CapSwitchState.OPEN:
             return
 
         self.line_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
     
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network_model):
+    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if self.switch == CapSwitchState.OPEN:
             return
     
         self.line_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
     
-    def calculate_residuals(self, network_model, v):
+    def calculate_residuals(self, network, v):
         if self.switch == CapSwitchState.OPEN:
             return {}
 
