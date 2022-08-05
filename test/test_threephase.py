@@ -91,7 +91,7 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
     largest = variances[0]
 
     if largest[0] > 0:
-        assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" outside of tolerance by {largest[0] + 100}% (magnitude: {largest[2]:.5g}, {largest[3]:.5g}) (degrees: {largest[4]:.5g}, {largest[5]:.5g})"
+        assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" is at {largest[0] + 100}% of tolerance. (magnitude: {largest[2]:.5g}, {largest[3]:.5g}) (degrees: {largest[4]:.5g}, {largest[5]:.5g})"
 
 def assert_glm_case_gridlabd_results(casename):
     results = execute_glm_case(casename)
