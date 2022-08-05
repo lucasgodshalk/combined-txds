@@ -1,7 +1,6 @@
 from __future__ import division
 from itertools import count
 import numpy as np
-
 from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
@@ -9,20 +8,22 @@ from logic.matrixbuilder import MatrixBuilder
 from models.shared.bus import Bus
 
 constants = P, Q = symbols('P Q')
-primals = Vr_from, Vi_from, Vr_to, Vi_to = symbols('Vr_from Vi_from Vr_to Vi_to')
-duals = Lr_from, Li_from, Lr_to, Li_to = symbols('Lr_from Li_from Lr_to Li_to')
+primals = Vr_from, Vi_from, Ir, Ii, Vr_to, Vi_to = symbols('Vr_from, Vi_from, Ir, Ii, Vr_to, Vi_to')
+duals = Lr_from, Li_from, Lir, Lii, Lr_to, Li_to = symbols('Lr_from, Li_from, Lir, Lii, Lr_to, Li_to')
 
 Vr = Vr_from - Vr_to
 Vi = Vi_from - Vi_to
 
-F_Ir = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
-F_Ii = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
+Fir_pq = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
+Fii_pq = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
 
 eqns = [
-    F_Ir,
-    F_Ii,
-    -F_Ir,
-    -F_Ii
+    Ir,
+    Ii,
+    Ir - Fir_pq,
+    Ii - Fii_pq,
+    -Ir,
+    -Ii
 ]
 
 lagrange = np.dot(duals, eqns)
@@ -74,6 +75,8 @@ class PQLoad:
         index_map[Vi_to] = self.to_bus.node_Vi
         index_map[Lr_to] = self.to_bus.node_lambda_Vr
         index_map[Li_to] = self.to_bus.node_lambda_Vi
+        index_map[Ir] = next(node_index)
+        index_map[Ii] = next(node_index)
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
