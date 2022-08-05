@@ -1,5 +1,6 @@
 from __future__ import division
 from itertools import count
+import numpy as np
 
 from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
@@ -8,13 +9,23 @@ from logic.matrixbuilder import MatrixBuilder
 from models.shared.bus import Bus
 
 constants = P, Q = symbols('P Q')
-primals = Vr, Vi = symbols('V_r V_i')
-duals = Lr, Li = symbols('lambda_r lambda_i')
+primals = Vr_from, Vi_from, Vr_to, Vi_to = symbols('Vr_from Vi_from Vr_to Vi_to')
+duals = Lr_from, Li_from, Lr_to, Li_to = symbols('Lr_from Li_from Lr_to Li_to')
+
+Vr = Vr_from - Vr_to
+Vi = Vi_from - Vi_to
 
 F_Ir = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
 F_Ii = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
 
-lagrange = Lr * F_Ir + Li * F_Ii
+eqns = [
+    F_Ir,
+    F_Ii,
+    -F_Ir,
+    -F_Ii
+]
+
+lagrange = np.dot(duals, eqns)
 
 lh = LagrangeHandler(lagrange, constants, primals, duals)
 
@@ -23,7 +34,8 @@ class PQLoad:
     _ids = count(0)
 
     def __init__(self,
-                 bus: Bus,
+                 from_bus: Bus,
+                 to_bus: Bus,
                  P,
                  Q,
                  IP,
@@ -47,16 +59,21 @@ class PQLoad:
         """
         self.id = PQLoad._ids.__next__()
 
-        self.bus = bus
+        self.from_bus = from_bus
+        self.to_bus = to_bus
         self.P = P
         self.Q = Q
 
     def assign_nodes(self, node_index, optimization_enabled):
         index_map = {}
-        index_map[Vr] = self.bus.node_Vr
-        index_map[Vi] = self.bus.node_Vi
-        index_map[Lr] = self.bus.node_lambda_Vr
-        index_map[Li] = self.bus.node_lambda_Vi
+        index_map[Vr_from] = self.from_bus.node_Vr
+        index_map[Vi_from] = self.from_bus.node_Vi
+        index_map[Lr_from] = self.from_bus.node_lambda_Vr
+        index_map[Li_from] = self.from_bus.node_lambda_Vi
+        index_map[Vr_to] = self.to_bus.node_Vr
+        index_map[Vi_to] = self.to_bus.node_Vi
+        index_map[Lr_to] = self.to_bus.node_lambda_Vr
+        index_map[Li_to] = self.to_bus.node_lambda_Vi
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 

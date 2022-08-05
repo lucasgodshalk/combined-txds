@@ -5,10 +5,8 @@ from logic.powerflow import FilePowerFlow, PowerFlow
 from logic.powerflowresults import PowerFlowResults
 from scipy.io import loadmat
 from logic.powerflowsettings import PowerFlowSettings
-from models.positiveseq.branch import Branch
 
 from models.shared.bus import GROUND, Bus
-from models.shared.pqload import PQLoad
 from models.shared.transformer import Transformer
 from models.shared.slack import Slack
 from models.shared.voltagesource import VoltageSource

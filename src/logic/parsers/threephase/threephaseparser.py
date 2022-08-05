@@ -180,7 +180,7 @@ class ThreePhaseParser:
 
                             bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase_load.phase)
 
-                        phase_load = PQLoad(bus, phase_load.p, phase_load.q, 0, 0, 0, 0, None, None)
+                        phase_load = PQLoad(bus, GROUND, phase_load.p, phase_load.q, 0, 0, 0, 0, None, None)
                         phase_load.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                         simulation_state.loads.append(phase_load)
                 # TODO add cases for other types (ZIP, etc)

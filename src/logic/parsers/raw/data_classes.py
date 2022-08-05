@@ -16,7 +16,7 @@ import math
 from logic.global_vars import global_vars
 
 from models.positiveseq.branch import Branch
-from models.shared.bus import Bus
+from models.shared.bus import GROUND, Bus
 from models.positiveseq.generator import Generator
 from models.shared.pqload import PQLoad
 from models.shared.slack import Slack
@@ -91,7 +91,7 @@ class Load_data:
         self.scale = scale
 
     def integrate(self, all_bus_key: typing.Dict[int, Bus]):
-        new_load = PQLoad(all_bus_key[self.i], self.pl / 100, self.ql / 100, self.ip, self.iq,
+        new_load = PQLoad(all_bus_key[self.i], GROUND, self.pl / 100, self.ql / 100, self.ip, self.iq,
                          self.yp, self.yq, self.area, self.status)
         return (new_load)
 
@@ -229,7 +229,7 @@ class Generator_data:
         else:
             area = -1
             status = 1
-            new_obj = PQLoad(all_bus_key[self.i], -self.pg / 100, -self.qg / 100, 0.0, 0.0, 0.0, 0.0, area, status)
+            new_obj = PQLoad(all_bus_key[self.i], GROUND, -self.pg / 100, -self.qg / 100, 0.0, 0.0, 0.0, 0.0, area, status)
 
         return new_obj
 
