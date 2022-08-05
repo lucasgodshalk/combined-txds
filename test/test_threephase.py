@@ -25,7 +25,7 @@ def execute_glm_case(casename, glm_file_name = "node.glm", debug = False):
 
 def load_gridlabd_csv(casename):
     filepath = get_gridlabd_csv_voltdump(casename)
-    with open(filepath, newline='\r\n') as csvfile:
+    with open(filepath, newline=None) as csvfile:
         spamreader = csv.DictReader(filter(lambda row: row[0]!='#', csvfile), delimiter=',', quotechar='|')
         lookup = {}
         for row in spamreader:
