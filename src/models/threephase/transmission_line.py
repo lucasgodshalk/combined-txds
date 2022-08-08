@@ -45,7 +45,6 @@ class TransmissionLine():
         # Convert the per-meter impedance values to absolute, based on line length (in meters)
         self.impedances *= length
         try:
-            print(self.impedances)
             self.admittances = calcInverse(self.impedances)
         except Exception:
             try:
