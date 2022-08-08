@@ -21,7 +21,6 @@ from models.threephase.fuse import Fuse, FuseStatus
 from models.threephase.fuse import Fuse
 
 from models.threephase.resistive_load import ResistiveLoad
-from models.threephase.resistive_phase_load import ResistivePhaseLoad
 from models.threephase.switch import Switch, SwitchStatus
 from models.threephase.switch import Switch
 from models.threephase.regulator import RegControl, RegType, Regulator
@@ -121,14 +120,14 @@ class ThreePhaseParser:
             if isinstance(model, ditto.models.load.Load):
                 if any(phaseload.model == 2 for phaseload in model.phase_loads):
                     # Model a simple Resistive load
-                    resistive_load = ResistiveLoad()
                     # Loop through each phase associated with this load
                     for phase_load in model.phase_loads:
                         if (not hasattr(phase_load, "z") or phase_load.z == 0):
                             continue
 
                         # Get the existing bus id for each phase load of this PQ load
-                        bus_id = simulation_state.bus_name_map[model.connecting_element + "_" + phase_load.phase]
+                        from_bus = simulation_state.bus_name_map[model.connecting_element + "_" + phase_load.phase]
+                        to_bus = GROUND
 
                         # Get the initial voltage values for this 
                         try:
@@ -140,11 +139,14 @@ class ThreePhaseParser:
                             v_angle = self._phase_to_angle[phase_load.phase]
                             v_r = nominal_v * math.cos(v_angle)
                             v_i = nominal_v * math.sin(v_angle)
-                            v_complex = complex(v_r,v_i)
                         
+                        from_bus.Vr_init = v_r
+                        from_bus.Vi_init = v_i
+
                         # Get relevant attributes, create and save an object
-                        resistive_load.phase_loads.append(ResistivePhaseLoad(v_r, v_i, phase_load.z, phase_load.phase, bus_id))
-                    simulation_state.loads.append(resistive_load)
+                        resistive_load = ResistiveLoad(from_bus, to_bus, phase_load.z)
+                        resistive_load.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+                        simulation_state.loads.append(resistive_load)
                 elif any(phaseload.model == 1 for phaseload in model.phase_loads): #model.bustype == "PQ":
                     load_details = []
                     # Loop through each phase associated with this load and locate the corresponding bus.
@@ -154,9 +156,9 @@ class ThreePhaseParser:
 
                         # Get the existing bus id for each phase load of this PQ load
                         if hasattr(model, "connecting_element"):
-                            bus = simulation_state.bus_name_map[model.connecting_element + "_" + phase_load.phase]
+                            from_bus = simulation_state.bus_name_map[model.connecting_element + "_" + phase_load.phase]
                         elif hasattr(model, "_parent"):
-                            bus = simulation_state.bus_name_map[model._parent + "_" + phase_load.phase]
+                            from_bus = simulation_state.bus_name_map[model._parent + "_" + phase_load.phase]
                         else:
                             # Get relevant attributes, create and save an object
                             # Get the initial voltage values for this 
@@ -179,9 +181,9 @@ class ThreePhaseParser:
                             v_mag = abs(v_complex)
                             v_ang = cmath.phase(v_complex)
 
-                            bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase_load.phase)
+                            from_bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase_load.phase)
 
-                        load_details.append((phase_load.p, phase_load.q, bus))
+                        load_details.append((phase_load.p, phase_load.q, from_bus))
 
                     # TODO add cases for other types (ZIP, etc)
 
