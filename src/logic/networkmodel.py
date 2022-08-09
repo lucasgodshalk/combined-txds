@@ -35,6 +35,18 @@ class NetworkModel():
         self.infeasibility_currents: List[L2InfeasibilityCurrent]
         self.infeasibility_currents = []
         self.size_Y = None
+        self.matrix_version = -1
+
+    def assign_matrix(self, optimization_enabled):
+        node_index = count(0)
+
+        for ele in self.get_all_elements():
+            ele.assign_nodes(node_index, optimization_enabled)
+
+        self.size_Y = next(node_index)
+
+        self.matrix_version += 1
+
 
 class TxNetworkModel(NetworkModel):
     def __init__(
@@ -108,8 +120,6 @@ class DxNetworkModel(NetworkModel):
     def __init__(self):
         NetworkModel.__init__(self, is_three_phase=True)
 
-        # The next index of J to use
-        self.next_var_idx = count(0)
         # The map from each bus id to the location of its (real, imaginary) state variables in J
         self.bus_map = {}
         # The map from a bus name to its bus id
@@ -134,10 +144,13 @@ class DxNetworkModel(NetworkModel):
         self.reference_i = None
     
     def get_NR_invariant_elements(self):
-        return self.branches + self.slack + self.transformers + self.regulators + self.switches + self.infeasibility_currents + self.fuses + self.capacitors
+        return self.slack + self.branches + self.transformers + self.regulators + self.switches + self.infeasibility_currents + self.fuses + self.capacitors
 
     def get_NR_variable_elements(self):
         return self.loads
+
+    def get_all_elements(self):
+        return self.buses + self.get_NR_invariant_elements() + self.get_NR_variable_elements()
 
     def generate_v_init(self, settings: PowerFlowSettings):
         v_init = np.zeros(self.size_Y)

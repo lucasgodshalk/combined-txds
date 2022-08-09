@@ -15,8 +15,7 @@ CONNECTION_TYPE_DELTA = "D"
 CONNECTION_TYPE_GWYE = None
 
 class TransformerHandler:
-    def __init__(self, optimization_enabled: bool, parser) -> None:
-        self.optimization_enabled = optimization_enabled
+    def __init__(self, parser) -> None:
         self.parser = parser
 
     def create_transformers(self, ditto_store, simulation_state: DxNetworkModel):
@@ -58,44 +57,29 @@ class TransformerHandler:
         transformer_coil_0.from_node = from_bus
 
         # Create a new bus on the primary coil, for KCL
-        primary_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_primary", phase)
+        primary_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_primary", phase, True)
         
         transformer_coil_0.primary_node = primary_bus
 
         # Create a new bus on the first triplex coil, for KCL
-        secondary1_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_sending_1", phase)
+        secondary1_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_sending_1", phase, True)
         
         transformer_coil_1.sending_node = secondary1_bus
-        
-        # Create a new variable for the voltage equations on the first triplex coil (not an actual node)
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        
-        transformer_coil_1.real_voltage_idx = real_voltage_idx
-        transformer_coil_1.imag_voltage_idx = imag_voltage_idx
         
         # Add the transformer's first from node to the first triplex coil
         to1_bus = simulation_state.bus_name_map[model.to_element + '_1']
         transformer_coil_1.to_node = to1_bus
 
         # Create a new bus on the second triplex coil, for KCL
-        secondary2_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_sending_2", phase)
+        secondary2_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_sending_2", phase, True)
         
         transformer_coil_2.sending_node = secondary2_bus
-        
-        # Create a new variable for the voltage equations on the second triplex coil (not an actual node)
-        real_voltage_idx = simulation_state.next_var_idx.__next__()
-        imag_voltage_idx = simulation_state.next_var_idx.__next__()
-        
-        transformer_coil_2.real_voltage_idx = real_voltage_idx
-        transformer_coil_2.imag_voltage_idx = imag_voltage_idx
         
         # Add the transformer's second from node to the second triplex coil
         to2_bus = simulation_state.bus_name_map[model.to_element + '_2']
         transformer_coil_2.to_node = to2_bus
 
         transformer = CenterTapTransformer(transformer_coil_0, transformer_coil_1, transformer_coil_2, phase, turn_ratio, winding0.rated_power, g_shunt, b_shunt)
-        transformer.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
 
         simulation_state.transformers.append(transformer)
 
@@ -163,8 +147,6 @@ class TransformerHandler:
                 None
                 )
             
-            xfmr.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
-
             simulation_state.transformers.append(xfmr)
 
 def get_phase_list(primary_coil, secondary_coil, phases):

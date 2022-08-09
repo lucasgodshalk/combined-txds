@@ -34,10 +34,9 @@ class ThreePhaseParser:
 
     _phase_to_angle = _phase_to_radians
 
-    def __init__(self, input_file, settings: PowerFlowSettings, optimization_enabled: bool):
+    def __init__(self, input_file, settings: PowerFlowSettings):
         self.input_file_path = os.path.abspath(input_file)
         self.settings = settings
-        self.optimization_enabled = optimization_enabled
 
     def parse(self):
         self._bus_index = count(0)
@@ -55,7 +54,7 @@ class ThreePhaseParser:
         self.create_buses(simulation_state)
 
         self.create_loads(simulation_state)
-        transformerhandler = TransformerHandler(self.optimization_enabled, self)
+        transformerhandler = TransformerHandler(self)
         transformerhandler.create_transformers(self.ditto_store, simulation_state)
         self.create_capacitors(simulation_state)
         self.create_regulators(simulation_state)
@@ -95,23 +94,18 @@ class ThreePhaseParser:
                                 v_mag = model.nominal_voltage
                                 v_ang = self._phase_to_angle[phase.default_value]
 
-                            bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase.default_value)
-                            simulation_state.buses.append(bus)
+                            bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase.default_value, False)
 
                         if isSlack:
                             # Create this phase of the slack bus
                             slack = Slack(bus, v_mag, v_ang, 0, 0)
                             simulation_state.slack.append(slack)
-        
-        #Match index assignment for the old anoeds codebase.
-        for slack in simulation_state.slack:
-            slack.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
 
-    def create_bus(self, simulation_state, v_mag, v_ang, node_name, node_phase):
+    def create_bus(self, simulation_state, v_mag, v_ang, node_name, node_phase, is_virtual):
         bus_id = next(self._bus_index)
-        bus = Bus(bus_id, 1, v_mag, v_ang, None, node_name, node_phase)
-        bus.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
+        bus = Bus(bus_id, 1, v_mag, v_ang, None, node_name, node_phase, is_virtual)
         simulation_state.bus_name_map[node_name + "_" + node_phase] = bus
+        simulation_state.buses.append(bus)
         return bus            
 
     def create_loads(self, simulation_state: DxNetworkModel):
@@ -145,7 +139,6 @@ class ThreePhaseParser:
 
                         # Get relevant attributes, create and save an object
                         resistive_load = ResistiveLoad(from_bus, to_bus, phase_load.z)
-                        resistive_load.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                         simulation_state.loads.append(resistive_load)
                 elif any(phaseload.model == 1 for phaseload in model.phase_loads): #model.bustype == "PQ":
                     load_details = []
@@ -181,7 +174,7 @@ class ThreePhaseParser:
                             v_mag = abs(v_complex)
                             v_ang = cmath.phase(v_complex)
 
-                            from_bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase_load.phase)
+                            from_bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase_load.phase, False)
 
                         load_details.append((phase_load.p, phase_load.q, from_bus))
 
@@ -200,7 +193,6 @@ class ThreePhaseParser:
                             to_bus = GROUND
 
                         pq_load = PQLoad(from_bus, to_bus, P, Q, 0, 0, 0, 0, None, None)
-                        pq_load.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                         simulation_state.loads.append(pq_load)
                 
     def create_capacitors(self, simulation_state: DxNetworkModel):
@@ -226,7 +218,6 @@ class ThreePhaseParser:
                         elif phase_capacitor.phase == "C":
                             capacitor.switch = CapSwitchState[gld_cap._switchC]
                     
-                    capacitor.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                     simulation_state.capacitors.append(capacitor)
 
     def create_regulators(self, simulation_state: DxNetworkModel):
@@ -265,7 +256,7 @@ class ThreePhaseParser:
 
                     tap_position = int(getattr(reg_config, '_tap_pos_' + winding.phase))
 
-                    current_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Reg", winding.phase)
+                    current_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Reg", winding.phase, True)
 
                     regulator = Regulator(
                         from_bus, 
@@ -281,8 +272,6 @@ class ThreePhaseParser:
                         lower_taps
                         )
 
-                    regulator.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
-                    
                     v_mag = abs(complex(to_bus.Vr_init, to_bus.Vi_init))
 
                     tap_guess = math.ceil((band_center - v_mag)/v_tap_change)
@@ -306,10 +295,9 @@ class ThreePhaseParser:
                         if hasattr(model, "phase_" + wire.phase + "_status"):
                            fuse_status = FuseStatus[getattr(model, "phase_" + wire.phase + "_status")]
 
-                        fuse_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Fuse", wire.phase)
+                        fuse_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Fuse", wire.phase, True)
 
                         fuse = Fuse(from_bus, to_bus, fuse_bus, current_limit, fuse_status, wire.phase)
-                        fuse.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
 
                         simulation_state.fuses.append(fuse)
                 # Check for switches, some are encoded as 1-length lines with no features
@@ -321,7 +309,6 @@ class ThreePhaseParser:
                         status = SwitchStatus[("OPEN" if (hasattr(wire, "is_open") and wire.is_open) else "CLOSED")]
 
                         switch = Switch(from_bus, to_bus, status, wire.phase)
-                        switch.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                         
                         simulation_state.switches.append(switch)
                 else:
@@ -348,14 +335,12 @@ class ThreePhaseParser:
                     phases = [wire.phase for wire in model.wires if wire.phase != 'N']
                     
                     transmission_line = TransmissionLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
-                    transmission_line.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
                     simulation_state.branches.append(transmission_line)
 
 
     def setup_infeasibility(self, simulation_state: DxNetworkModel):
         for bus in simulation_state.buses:
             current = L2InfeasibilityCurrent(bus)
-            current.assign_nodes(simulation_state.next_var_idx, self.optimization_enabled)
             simulation_state.infeasibility_currents.append(current)
 
 

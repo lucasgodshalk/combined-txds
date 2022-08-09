@@ -9,7 +9,6 @@ from models.shared.L2infeasibility import L2InfeasibilityCurrent
 class NetworkLoader:
     def __init__(self, settings: PowerFlowSettings):
         self.settings = settings
-        self.optimization_enabled = self.settings.infeasibility_analysis
         
     def from_file(self, network_file: str) -> NetworkModel:
         if ".glm" in network_file:
@@ -20,17 +19,13 @@ class NetworkLoader:
             raise Exception("Invalid netlist file format")
 
     def __create_three_phase_network(self, network_file: str):
-        parser = ThreePhaseParser(network_file, self.settings, self.optimization_enabled)
+        parser = ThreePhaseParser(network_file, self.settings)
 
         network = parser.parse()
-
-        network.size_Y = next(network.next_var_idx)
 
         return network
 
     def __create_positive_seq_network(self, network_file: str):
-        node_index = count(0)
-
         raw_data = parse_raw(network_file)
 
         buses = raw_data['buses']
@@ -58,10 +53,5 @@ class NetworkLoader:
             branches=branches,
             shunts=shunts
             )
-
-        for ele in network.get_all_elements():
-            ele.assign_nodes(node_index, self.optimization_enabled)
-
-        network.size_Y = next(node_index)
 
         return network

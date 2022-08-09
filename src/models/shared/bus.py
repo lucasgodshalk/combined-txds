@@ -11,7 +11,8 @@ class Bus:
                  Va_init,
                  Area,
                  NodeName = None,
-                 NodePhase = None):
+                 NodePhase = None,
+                 IsVirtual = False):
         """
         Args:
             Bus (int): The bus number.
@@ -25,6 +26,7 @@ class Bus:
         self.Type = Type
         self.NodeName = NodeName
         self.NodePhase = NodePhase
+        self.IsVirtual = IsVirtual
 
         # initialize all nodes
         self.node_Vr: int # real voltage node at a bus

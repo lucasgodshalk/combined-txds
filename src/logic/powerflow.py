@@ -17,11 +17,9 @@ class PowerFlow:
     def execute(self) -> PowerFlowResults:
         start_time = time.perf_counter_ns()
 
-        v_init = self.network.generate_v_init(self.settings)
-
         v_limiting = None
         if not self.network.is_three_phase and self.settings.voltage_limiting:
-            v_limiting = PositiveSeqVoltageLimiting(self.network.buses, self.network.size_Y)
+            v_limiting = PositiveSeqVoltageLimiting(self.network)
 
         nrsolver = NRSolver(self.settings, self.network, v_limiting)
 
@@ -29,7 +27,7 @@ class PowerFlow:
 
         device_controller = DeviceController(self.settings, homotopy_controller)
 
-        is_success, v_final, iteration_num, tx_factor = device_controller.run_powerflow(v_init)
+        is_success, v_final, iteration_num, tx_factor = device_controller.run_powerflow()
 
         end_time = time.perf_counter_ns()
 

@@ -104,10 +104,10 @@ class CenterTapTransformer():
         index_map = {}
         index_map[Vr_pri] = self.coils[0].primary_node.node_Vr
         index_map[Vi_pri] = self.coils[0].primary_node.node_Vi
-        index_map[Ir_L1] = self.coils[1].real_voltage_idx
-        index_map[Ii_L1] = self.coils[1].imag_voltage_idx
-        index_map[Ir_L2] = self.coils[2].real_voltage_idx
-        index_map[Ii_L2] = self.coils[2].imag_voltage_idx
+        index_map[Ir_L1] = next(node_index)
+        index_map[Ii_L1] = next(node_index)
+        index_map[Ir_L2] = next(node_index)
+        index_map[Ii_L2] = next(node_index)
         index_map[Vr_L1] = self.coils[1].sending_node.node_Vr
         index_map[Vi_L1] = self.coils[1].sending_node.node_Vi
         index_map[Vr_L2] = self.coils[2].sending_node.node_Vr

@@ -46,6 +46,9 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
     variances = []
 
     for busresult in results.bus_results:
+        if busresult.bus.IsVirtual:
+            continue
+
         result = complex(busresult.V_r, busresult.V_i)
 
         (vA, vB, vC) = gridlab_vdump[busresult.bus.NodeName]
