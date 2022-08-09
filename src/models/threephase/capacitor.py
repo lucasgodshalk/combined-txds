@@ -34,6 +34,9 @@ class Capacitor:
     def assign_nodes(self, node_index, optimization_enabled):
         self.line_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
 
+    def get_connections(self):
+        return [(self.from_bus, self.to_bus)]
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if self.switch == CapSwitchState.OPEN:
             return

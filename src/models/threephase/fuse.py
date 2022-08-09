@@ -40,6 +40,12 @@ class Fuse(Edge):
         self.current_sensor = CurrentSensor(self.interior_node, self.to_node)
         self.current_sensor.assign_nodes(node_index, optimization_enabled)
 
+    def get_connections(self):
+        if self.status == FuseStatus.BLOWN:
+            return []
+
+        return [(self.from_node, self.to_node)]
+
     def get_current(self, v):
         if self.status == FuseStatus.BLOWN:
             raise Exception("No current available for blown fuse")

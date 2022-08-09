@@ -28,6 +28,12 @@ class Switch(Edge):
     def assign_nodes(self, node_index, optimization_enabled):
         self.stamper = build_line_stamper_bus(self.from_node, self.to_node, optimization_enabled)
 
+    def get_connections(self):
+        if self.status == SwitchStatus.OPEN:
+            return []
+
+        return [(self.from_node, self.to_node)]
+
     def stamp_primal(self, Y, J, v_previous, tx_factor, state):
         # Don't stamp values if the switch is open
         if self.status == SwitchStatus.OPEN:

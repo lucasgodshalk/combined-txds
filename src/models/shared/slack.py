@@ -75,6 +75,9 @@ class Slack:
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
+    def get_connections(self):
+        return []
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         self.stamper.stamp_primal(Y, J, [self.Vr_set, self.Vi_set], v_previous)
 

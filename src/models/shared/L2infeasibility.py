@@ -31,6 +31,9 @@ class L2InfeasibilityCurrent:
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled=True)
 
+    def get_connections(self):
+        return []
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         self.stamper.stamp_primal(Y, J, [], v_previous)
 

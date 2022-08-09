@@ -71,6 +71,9 @@ class Generator:
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
+    def get_connections(self):
+        return []
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         self.stamper.stamp_primal(Y, J, [self.P, self.Vset], v_previous)
 

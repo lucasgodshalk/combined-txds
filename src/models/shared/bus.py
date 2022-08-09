@@ -98,6 +98,9 @@ class Bus:
             self.node_lambda_Vi = SKIP
             self.node_lambda_Q = SKIP
 
+    def get_connections(self):
+        return []
+
 GROUND = Bus(SKIP, "Gnd", 0, 0, None, "Gnd", "Gnd")
 GROUND.node_Vr = SKIP
 GROUND.node_Vi = SKIP

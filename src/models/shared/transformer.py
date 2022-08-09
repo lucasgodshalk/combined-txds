@@ -141,7 +141,7 @@ class Transformer:
             )
 
     def get_connections(self):
-        return [(self.from_bus_pos, self.from_bus_neg, self.to_bus_pos, self.to_bus_neg)]
+        return [(self.from_bus_pos, self.to_bus_pos)]
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if not self.status:

@@ -3,6 +3,7 @@ import numpy as np
 from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
+from models.shared.bus import GROUND
 from models.shared.line import build_line_stamper_bus
 from models.helpers import merge_residuals
 
@@ -126,7 +127,10 @@ class CenterTapTransformer():
         self.center_tap_xfmr_stamper = LagrangeStamper(center_tap_xfmr_lh, index_map, optimization_enabled)
 
     def get_connections(self):
-        return []
+        return [
+            (self.coils[0].primary_node, self.coils[1].sending_node), 
+            (self.coils[0].primary_node, self.coils[2].sending_node)
+        ]
 
     def stamp_primal(self, Y, J, v_previous, tx_factor, state):
         self.center_tap_xfmr_stamper.stamp_primal(Y, J, [self.turn_ratio, tx_factor], v_previous)

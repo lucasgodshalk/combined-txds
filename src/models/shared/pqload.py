@@ -86,6 +86,9 @@ class PQLoad:
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
+    def get_connections(self):
+        return [(self.from_bus, self.to_bus)]
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         self.stamper.stamp_primal(Y, J, [self.P, self.Q], v_previous)
 

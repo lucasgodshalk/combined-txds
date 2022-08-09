@@ -97,6 +97,9 @@ class Regulator():
         self.transformer.assign_nodes(node_index, optimization_enabled)
         self.current_sensor.assign_nodes(node_index, optimization_enabled)
 
+    def get_connections(self):
+        return [(self.from_node, self.to_node)]
+
     def stamp_primal(self, Y, J, v, tx_factor, state):
         self.transformer.stamp_primal(Y, J, v, tx_factor, state)
         self.current_sensor.stamp_primal(Y, J, v, tx_factor, state)
