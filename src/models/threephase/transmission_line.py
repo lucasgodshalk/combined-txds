@@ -35,7 +35,7 @@ def calcInverse(Zmatrix):
 
 class TransmissionLine():
     
-    def __init__(self, simulation_state, optimization_enabled, impedances, shunt_admittances, from_element, to_element, length, phases="ABC"):
+    def __init__(self, simulation_state, impedances, shunt_admittances, from_element, to_element, length, phases="ABC"):
         self.lines: typing.List[TransmissionLinePhase]
         self.lines = []
 
@@ -65,18 +65,19 @@ class TransmissionLine():
         for phase in phases:
             self.lines.append(TransmissionLinePhase(self.from_element, self.to_element, phase))
 
+    def assign_nodes(self, node_index, optimization_enabled):
         self.stampers = {}
 
         # Go through all phases and build lagrange stamper for each line combination.
         for i in range(len(self.lines)):
             # Get the line
             line1 = self.lines[i]
-            line1_from, line1_to = line1.get_nodes(simulation_state)
+            line1_from, line1_to = line1.get_nodes(self.simulation_state)
 
             # Go through all lines
             for j in range(len(self.lines)):
                 line2 = self.lines[j]
-                line2_from, line2_to = line2.get_nodes(simulation_state)
+                line2_from, line2_to = line2.get_nodes(self.simulation_state)
 
                 var_map = {}
                 var_map[Vr_from] = line2_from.node_Vr

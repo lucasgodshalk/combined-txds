@@ -3,7 +3,7 @@ from itertools import count
 import numpy as np
 from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
-from logic.lagrangestamper import LagrangeStamper
+from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.shared.bus import Bus
 
@@ -77,6 +77,12 @@ class PQLoad:
         index_map[Li_to] = self.to_bus.node_lambda_Vi
         index_map[Ir] = next(node_index)
         index_map[Ii] = next(node_index)
+        if optimization_enabled:
+            index_map[Lir] = next(node_index)
+            index_map[Lii] = next(node_index)
+        else:
+            index_map[Lir] = SKIP
+            index_map[Lii] = SKIP
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
