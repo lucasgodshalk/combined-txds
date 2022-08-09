@@ -4,6 +4,35 @@ from logic.powerflow import FilePowerFlow
 from logic.powerflowsettings import PowerFlowSettings
 from test_threephase import get_glm_case_file
 
+def test_ieee_four_bus_4_wire():
+    glmpath = get_glm_case_file("ieee_four_bus")
+    powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
+
+    branch = powerflow.network.branches[0]
+
+    Z_expected = np.array([
+        [0.4576+1.0780j, 0.1559+0.5017j, 0.1535+0.3849j],
+        [0.1559+0.5017j, 0.4666+1.0482j, 0.1580+0.4236j],
+        [0.1535+0.3849j, 0.1580+0.4236j, 0.4615+1.0651j]
+    ])
+
+    #need to convert impedances to ohm/mile
+    assert np.allclose(np.abs(branch.impedances / .3787879), np.abs(Z_expected), atol=1e-3)
+
+def test_ieee_four_bus_3_wire():
+    glmpath = get_glm_case_file("ieee_four_bus_delta_delta_transformer")
+    powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
+
+    branch = powerflow.network.branches[0]
+
+    Z_expected = np.array([
+        [0.4013+1.4133j, 0.0953+0.8515j, 0.0953+0.7266j],
+        [0.0953+0.8515j, 0.4013+1.4133j, 0.0953+0.7802j],
+        [0.0953+0.7266j, 0.0953+0.7802j, 0.4013+1.4133j]
+    ])
+
+    #need to convert impedances to ohm/mile
+    assert np.allclose(np.abs(branch.impedances / .3787879), np.abs(Z_expected), atol=1e-3)
 
 def test_underground_Z_GC_12_47_1_ul_1():
     glmpath = get_glm_case_file("gc_12_47_1")
