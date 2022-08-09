@@ -102,18 +102,27 @@ class LagrangeHandler:
         self.constants = constant_symbols
         self.primals = primal_symbols
         self.duals = dual_symbols
+        self.lagrange = lagrange
 
         self.variables = self.primals + self.duals
 
-        self.derivatives: typing.Dict[Symbol, DerivativeEntry]
-        self.derivatives = {}
+        self._derivatives: typing.Dict[Symbol, DerivativeEntry]
+        self._derivatives = None
+
+    def get_derivatives(self):
+        if self._derivatives != None:
+            return self._derivatives
+
+        self._derivatives = {}
 
         lambda_inputs = self.constants + self.variables
 
         for first_order in self.variables:
-            derivative = diff(lagrange, first_order)
+            derivative = diff(self.lagrange, first_order)
 
             constant_expr, variable_exprs = split_expr(derivative, self.variables)
 
-            self.derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, lambda_inputs)
-    
+            self._derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, lambda_inputs)
+
+        return self._derivatives
+

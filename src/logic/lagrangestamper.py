@@ -39,7 +39,7 @@ class LagrangeStamper:
             if row_index == SKIP:
                 continue
 
-            entry = self.handler.derivatives[variable]
+            entry = self.handler.get_derivatives()[variable]
 
             for (yth_variable, eval, expr) in entry.get_evals():
 
@@ -78,7 +78,7 @@ class LagrangeStamper:
         args = constant_vals + primal_vals + dual_vals
 
         for dual in self.handler.duals:
-            derivative = self.handler.derivatives[dual]
+            derivative = self.handler.get_derivatives()[dual]
             row_idx = self.get_variable_row_index(dual)
             if row_idx == SKIP:
                 continue
@@ -86,7 +86,7 @@ class LagrangeStamper:
 
         if self.optimization_enabled:
             for primal in self.handler.primals:
-                derivative = self.handler.derivatives[primal]
+                derivative = self.handler.get_derivatives()[primal]
                 row_idx = self.get_variable_row_index(primal)
                 if row_idx == SKIP:
                     continue
