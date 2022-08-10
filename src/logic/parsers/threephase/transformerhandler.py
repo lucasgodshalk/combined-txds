@@ -1,3 +1,4 @@
+import math
 import typing
 from logic.networkmodel import DxNetworkModel
 from models.shared.bus import Bus, GROUND
@@ -89,7 +90,16 @@ class TransformerHandler:
         winding2 = model.windings[1]
         secondary_coil = SecondaryTransformerCoil(winding2.nominal_voltage, winding2.rated_power, winding2.connection_type, winding2.voltage_limit, winding2.resistance * 2, sum(model.reactances))
 
-        turn_ratio = winding1.nominal_voltage / winding2.nominal_voltage
+        if primary_coil.connection_type == "D":
+            nominal_voltage_primary = primary_coil.nominal_voltage * math.sqrt(3)
+        else:
+            nominal_voltage_primary = primary_coil.nominal_voltage
+        if secondary_coil.connection_type == "D": 
+            nominal_voltage_secondary = secondary_coil.nominal_voltage * math.sqrt(3)
+        else:
+            nominal_voltage_secondary = secondary_coil.nominal_voltage
+
+        turn_ratio = nominal_voltage_primary / nominal_voltage_secondary
 
         # Assume the same set of phases on primary and secondary windings
         phases = []
@@ -104,7 +114,7 @@ class TransformerHandler:
 
         phase_shift = 0 if model.phase_shift is None else model.phase_shift # TODO is this in degrees or radians
         if hasattr(model, "shunt_impedance") and model.shunt_impedance != 0:
-            shunt_impedance = (model.shunt_impedance * (secondary_coil.nominal_voltage ** 2))  / (secondary_coil.rated_power)
+            shunt_impedance = (model.shunt_impedance * (nominal_voltage_secondary ** 2))  / (secondary_coil.rated_power)
             r_shunt, x_shunt = shunt_impedance.real, shunt_impedance.imag
             g_shunt = r_shunt / (r_shunt ** 2 + x_shunt ** 2)
             b_shunt = -x_shunt / (r_shunt ** 2 + x_shunt ** 2)
@@ -129,8 +139,8 @@ class TransformerHandler:
                 to_bus_neg = secondary_coil.phase_connections[neg_phase_2]
 
             # Values for the secondary coil stamps, converted out of per-unit
-            r = secondary_coil.resistance * secondary_coil.nominal_voltage ** 2  / secondary_coil.rated_power
-            x = secondary_coil.reactance * secondary_coil.nominal_voltage ** 2  / secondary_coil.rated_power
+            r = secondary_coil.resistance * nominal_voltage_secondary ** 2  / secondary_coil.rated_power
+            x = secondary_coil.reactance * nominal_voltage_secondary ** 2  / secondary_coil.rated_power
 
             xfmr = Transformer(
                 from_bus_pos, 
