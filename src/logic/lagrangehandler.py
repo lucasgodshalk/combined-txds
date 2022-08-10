@@ -1,6 +1,7 @@
 from collections import defaultdict
 import typing
 from sympy import Add, diff, lambdify, expand, Pow, Symbol
+from logic.lagrangepickler import LagrangePickler
 
 def is_constant(expr, vars):
     for symbol in expr.free_symbols:
@@ -47,7 +48,7 @@ def split_expr(eqn, vars):
     eqn = expand(eqn)
 
     constant_expr = 0
-    variable_expr_dict = defaultdict(lambda:0)
+    variable_expr_dict = {}
 
     if isinstance(eqn, Add):
         expressions = eqn.args
@@ -59,12 +60,16 @@ def split_expr(eqn, vars):
             constant_expr += -expr
         elif is_linear(expr, vars):
             term = get_linear_term(expr, vars)
+            if not term in variable_expr_dict:
+                variable_expr_dict[term] = 0
             variable_expr_dict[term] += diff(expr, term)
         else:
             (J_expr, Y_expr_dict) =  linearize_expr(expr, vars)
 
             constant_expr += J_expr
             for key, value in Y_expr_dict.items():
+                if not key in variable_expr_dict:
+                    variable_expr_dict[key] = 0
                 variable_expr_dict[key] += value
     
     return (constant_expr, variable_expr_dict)
@@ -72,19 +77,19 @@ def split_expr(eqn, vars):
 class DerivativeEntry:
     def __init__(self, variable, expr, constant_expr, variable_exprs, lambda_inputs) -> None:
         self.variable = variable
-
         self.expr = expr
-        self.eqn_eval = lambdify(lambda_inputs, expr)
         
         self.constant_expr = constant_expr
-        self.constant_eval = lambdify(lambda_inputs, constant_expr)
-
         self.variable_exprs = variable_exprs
+        self.lambda_inputs = lambda_inputs
+
+        #separate step so that we can pickle this object beforehand.
+        self.eqn_eval = lambdify(self.lambda_inputs, self.expr)
+        self.constant_eval = lambdify(self.lambda_inputs, self.constant_expr)
         self.variable_evals = {}
-        for var, variable_eqn in variable_exprs.items():
-            self.variable_exprs[var] = variable_eqn
+        for var, variable_eqn in self.variable_exprs.items():
             if variable_eqn != 0:
-                self.variable_evals[var] = lambdify(lambda_inputs, variable_eqn)
+                self.variable_evals[var] = lambdify(self.lambda_inputs, variable_eqn)
 
     def get_evals(self):
         if self.constant_expr != 0:
@@ -97,22 +102,37 @@ class DerivativeEntry:
         return f"Entry {self.variable}: {self.expr}"
 
 class LagrangeHandler:
+    VERSION = 1 #Increment if changes have been made to bust the derivative cache.
+    _pickler = LagrangePickler()
+
     def __init__(self, lagrange, constant_symbols, primal_symbols, dual_symbols) -> None:
         self.lagrange = lagrange
         self.constants = constant_symbols
         self.primals = primal_symbols
         self.duals = dual_symbols
         self.lagrange = lagrange
+        self.lagrange_key = f"{LagrangeHandler.VERSION},{lagrange},{constant_symbols},{primal_symbols},{dual_symbols}"
 
         self.variables = self.primals + self.duals
 
-        self._derivatives: typing.Dict[Symbol, DerivativeEntry]
         self._derivatives = None
+        self._derivatives: typing.Dict[Symbol, DerivativeEntry]
 
     def get_derivatives(self):
         if self._derivatives != None:
             return self._derivatives
 
+        if LagrangeHandler._pickler.has_pickle(self.lagrange_key):
+            try:
+                self._derivatives = LagrangeHandler._pickler.try_unpickle(self.lagrange_key)
+            except:
+                self._generated_derivatives()
+        else:
+            self._generated_derivatives()
+
+        return self._derivatives
+    
+    def _generated_derivatives(self):
         self._derivatives = {}
 
         lambda_inputs = self.constants + self.variables
@@ -124,5 +144,5 @@ class LagrangeHandler:
 
             self._derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, lambda_inputs)
 
-        return self._derivatives
+        LagrangeHandler._pickler.try_pickle(self.lagrange_key, self._derivatives)
 
