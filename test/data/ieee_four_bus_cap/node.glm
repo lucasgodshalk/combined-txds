@@ -117,9 +117,9 @@ object capacitor:72 {
      switchA CLOSED;
      switchB CLOSED;
      switchC CLOSED;
-     capacitor_A 0.6 MVAr; 
-     capacitor_B 0.6 MVAr; 
-     capacitor_C 0.6 MVAr; 
+     capacitor_A 60 MVAr; 
+     capacitor_B 60 MVAr; 
+     capacitor_C 60 MVAr; 
      control_level INDIVIDUAL; 
      time_delay 30.0; 
      dwell_time 30.0; 
