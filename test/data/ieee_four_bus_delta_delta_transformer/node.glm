@@ -14,21 +14,20 @@ clock {
     timezone EST+5EDT;
 }
 
-module powerflow;
-
-// object voltdump {
-//     filename voltage.csv;
-//     mode RECT;
-// }
+module powerflow {
+    solver_method NR;
+};
 
 object overhead_line_conductor:100 {
     geometric_mean_radius 0.0244;
     resistance 0.306;
+    diameter 0.721;
 }
 
 object overhead_line_conductor:101 {
     geometric_mean_radius 0.00814;
     resistance 0.592;
+    diameter 0.563;
 }
 
 object line_spacing:200 {
@@ -44,7 +43,6 @@ object line_configuration:300 {
     conductor_A overhead_line_conductor:100;
     conductor_B overhead_line_conductor:100;
     conductor_C overhead_line_conductor:100;
-    conductor_N overhead_line_conductor:101;
     spacing line_spacing:200;
 }
 
@@ -62,7 +60,7 @@ object transformer_configuration:400 {
 
 object node {
     name node1;
-    phases "ABCN";
+    phases "ABC";
     voltage_A +7199.558+0.000j;
     voltage_B -3599.779-6235.000j;
     voltage_C -3599.779+6235.000j;
@@ -76,7 +74,7 @@ object node {
 }
 
 object overhead_line:12 {
-    phases "ABCN";
+    phases "ABC";
     from node1;
     to node2;
     length 2000;
@@ -85,7 +83,7 @@ object overhead_line:12 {
 
 object node {
     name node2;
-    phases "ABCN";
+    phases "ABC";
     voltage_A +7199.558+0.000j;
     voltage_B -3599.779-6235.000j;
     voltage_C -3599.779+6235.000j;
@@ -98,7 +96,7 @@ object node {
 }
 
 object transformer:23 {
-    phases "ABCN";
+    phases "ABC";
     from node2;
     to node3;
     configuration transformer_configuration:400;
@@ -106,7 +104,7 @@ object transformer:23 {
 
 object node {
     name node3;
-    phases "ABCN";
+    phases "ABC";
     voltage_A +2401.777+0.000j;
     voltage_B -1200.889-2080.000j;
     voltage_C -1200.889+2080.000j;
@@ -119,7 +117,7 @@ object node {
 }
 
 object overhead_line:34 {
-    phases "ABCN";
+    phases "ABC";
     from node3;
     to load4;
     length 2500;
@@ -128,7 +126,7 @@ object overhead_line:34 {
 
 object load {
     name load4;
-    phases "ABCN";
+    phases "ABC";
     constant_power_A +1800000.000+871779.789j;
     constant_power_B +1800000.000+871779.789j;
     constant_power_C +1800000.000+871779.789j;
