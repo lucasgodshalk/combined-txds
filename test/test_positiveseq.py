@@ -30,7 +30,7 @@ def assert_mat_comparison(mat, results: PowerFlowResults):
         V_ang = mat['sol']['bus'][0][0][idx][8]
 
         simulator_V_mag = results.bus_results[idx].V_mag
-        simulator_V_ang = results.bus_results[idx].V_ang
+        simulator_V_ang = results.bus_results[idx].V_deg
         
         mag_diff = abs(V_mag - simulator_V_mag)
         ang_diff = abs(V_ang - simulator_V_ang)

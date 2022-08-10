@@ -1,3 +1,4 @@
+import cmath
 import math
 from typing import List
 import numpy as np
@@ -25,27 +26,34 @@ class GeneratorResult:
 class BusResult:
     def __init__(self, bus: Bus, V_r, V_i, lambda_r, lambda_i):
         self.bus = bus
+
         self.V_r = V_r
         self.V_i = V_i
+        self.V = complex(V_r, V_i)
+
         self.lambda_r = lambda_r
         self.lambda_i = lambda_i
-        self.V_mag = math.sqrt(V_r ** 2 + V_i ** 2)
+
+        self.V_mag = round(abs(self.V), 6)
         if self.V_mag < 1e-8:
-            self.V_ang = 0
+            self.V_deg = 0
         else:
-            self.V_ang = math.atan2(V_i, V_r)  * 180 / math.pi
+            #Voltage angle in radians
+            self.V_ang = cmath.phase(self.V)
+            #Voltage angle in degrees
+            self.V_deg = round(self.V_ang * 180 / math.pi, 6)
     
     def get_infeasible(self):
         return (self.I_inf_r, self.I_inf_i)
 
     def __str__(self) -> str:
         v_mag_str = "{:.3f}".format(self.V_mag)
-        v_ang_str = "{:.3f}".format(self.V_ang)
+        v_ang_str = "{:.3f}".format(self.V_deg)
         return f'Bus {self.bus.Bus} ({self.bus.NodeName}:{self.bus.NodePhase}) V mag: {v_mag_str}, V ang (deg): {v_ang_str}'
 
     def __repr__(self):
         v_mag_str = "{:.3f}".format(self.V_mag)
-        v_ang_str = "{:.3f}".format(self.V_ang)
+        v_ang_str = "{:.3f}".format(self.V_deg)
         return f'Bus {self.bus.Bus} ({self.bus.NodeName}:{self.bus.NodePhase}) V mag: {v_mag_str}, V ang (deg): {v_ang_str}'
 
 class PowerFlowResults:

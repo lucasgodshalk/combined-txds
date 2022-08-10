@@ -49,8 +49,6 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
         if busresult.bus.IsVirtual:
             continue
 
-        result = complex(busresult.V_r, busresult.V_i)
-
         (vA, vB, vC) = gridlab_vdump[busresult.bus.NodeName]
 
         expected = None
@@ -67,8 +65,8 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
         else:
             raise Exception("Unknown phase")
         
-        result_mag, expected_mag = round(abs(result), 6), round(abs(expected), 6)
-        result_ang, expected_ang = abs(round(cmath.phase(result) * 180 / math.pi, 6)), abs(round(cmath.phase(expected) * 180 / math.pi, 6))
+        result_mag, expected_mag = busresult.V_mag, round(abs(expected), 6)
+        result_ang, expected_ang = busresult.V_deg, round(cmath.phase(expected) * 180 / math.pi, 6)
 
         diff_mag = abs(result_mag - expected_mag)
         diff_ang = abs(result_ang - expected_ang)
