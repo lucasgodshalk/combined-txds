@@ -99,6 +99,9 @@ def assert_glm_case_gridlabd_results(casename):
     comparison = load_gridlabd_csv(casename)
     assert_busresults_gridlabdvoltdump(results, comparison)
 
+def test_balanced_stepdown_D_D():
+    assert_glm_case_gridlabd_results("balanced_stepdown_D-D")
+
 def test_powerflowrunner_ieee_four_bus():
     assert_glm_case_gridlabd_results("ieee_four_bus")
 

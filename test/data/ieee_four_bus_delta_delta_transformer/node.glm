@@ -126,7 +126,7 @@ object overhead_line:34 {
 
 object load {
     name load4;
-    phases "ABC";
+    phases "ABCD";
     constant_power_A +1800000.000+871779.789j;
     constant_power_B +1800000.000+871779.789j;
     constant_power_C +1800000.000+871779.789j;
