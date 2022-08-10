@@ -102,27 +102,44 @@ class CenterTapTransformer():
         self.b2 = -x2 / (r2**2 + x2**2) if not (r2 == 0 and x2 == 0) else 0
         self.L2_impedance_stamper = build_line_stamper_bus(self.coils[2].sending_node, self.coils[2].to_node, optimization_enabled)
 
+        from_bus = self.coils[0].primary_node
+        L1_bus = self.coils[1].sending_node
+        L2_bus = self.coils[2].sending_node
+
         index_map = {}
-        index_map[Vr_pri] = self.coils[0].primary_node.node_Vr
-        index_map[Vi_pri] = self.coils[0].primary_node.node_Vi
+        index_map[Vr_pri] = from_bus.node_Vr
+        index_map[Vi_pri] = from_bus.node_Vi
         index_map[Ir_L1] = next(node_index)
         index_map[Ii_L1] = next(node_index)
         index_map[Ir_L2] = next(node_index)
         index_map[Ii_L2] = next(node_index)
-        index_map[Vr_L1] = self.coils[1].sending_node.node_Vr
-        index_map[Vi_L1] = self.coils[1].sending_node.node_Vi
-        index_map[Vr_L2] = self.coils[2].sending_node.node_Vr
-        index_map[Vi_L2] = self.coils[2].sending_node.node_Vi
-        index_map[Lr_pri] = SKIP
-        index_map[Li_pri] = SKIP
-        index_map[Lir_L1] = SKIP
-        index_map[Lii_L1] = SKIP
-        index_map[Lir_L2] = SKIP
-        index_map[Lii_L2] = SKIP
-        index_map[Lr_L1] = SKIP
-        index_map[Li_L1] = SKIP
-        index_map[Lr_L2] = SKIP
-        index_map[Li_L2] = SKIP
+        index_map[Vr_L1] = L1_bus.node_Vr
+        index_map[Vi_L1] = L1_bus.node_Vi
+        index_map[Vr_L2] = L2_bus.node_Vr
+        index_map[Vi_L2] = L2_bus.node_Vi
+
+        if optimization_enabled:
+            index_map[Lr_pri] = from_bus.node_lambda_Vr
+            index_map[Li_pri] = from_bus.node_lambda_Vi
+            index_map[Lir_L1] = next(node_index)
+            index_map[Lii_L1] = next(node_index)
+            index_map[Lir_L2] = next(node_index)
+            index_map[Lii_L2] = next(node_index)
+            index_map[Lr_L1] = L1_bus.node_lambda_Vr
+            index_map[Li_L1] = L1_bus.node_lambda_Vi
+            index_map[Lr_L2] = L2_bus.node_lambda_Vr
+            index_map[Li_L2] = L2_bus.node_lambda_Vi
+        else:
+            index_map[Lr_pri] = SKIP
+            index_map[Li_pri] = SKIP
+            index_map[Lir_L1] = SKIP
+            index_map[Lii_L1] = SKIP
+            index_map[Lir_L2] = SKIP
+            index_map[Lii_L2] = SKIP
+            index_map[Lr_L1] = SKIP
+            index_map[Li_L1] = SKIP
+            index_map[Lr_L2] = SKIP
+            index_map[Li_L2] = SKIP
 
         self.center_tap_xfmr_stamper = LagrangeStamper(center_tap_xfmr_lh, index_map, optimization_enabled)
 
