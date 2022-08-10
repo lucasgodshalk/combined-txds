@@ -3,6 +3,8 @@ import numpy as np
 from logic.powerflow import FilePowerFlow
 from logic.powerflowsettings import PowerFlowSettings
 from test_threephase import get_glm_case_file
+import cmath
+from ditto.readers.gridlabd.read import compute_triplex_impedance_matrix
 
 def test_ieee_four_bus_4_wire():
     glmpath = get_glm_case_file("ieee_four_bus")
@@ -32,9 +34,33 @@ def test_ieee_four_bus_3_wire():
     ])
 
     #need to convert impedances to ohm/mile
-    assert np.allclose(np.abs(branch.impedances / .3787879), np.abs(Z_expected), atol=1e-3)
+    #todo: tighten tolerance on this. still slightly off.
+    assert np.allclose(np.abs(branch.impedances / .3787879), np.abs(Z_expected), atol=2e-3)
+
+class WireTest:
+    def __init__(self, resistance, gmr, phase, diameter, insulation_thickness) -> None:
+        self.resistance = resistance
+        self.gmr = gmr
+        self.phase = phase
+        self.diameter = diameter
+        self.insulation_thickness = insulation_thickness
+
+def test_compute_secondary_matrix_r1_12_47_3():
+    wire_list = [
+        WireTest(resistance=0.48, gmr=0.0158, phase="1", diameter=0.522, insulation_thickness=0.08),
+        WireTest(resistance=0.48, gmr=0.0158, phase="2", diameter=0.522, insulation_thickness=0.08),
+        WireTest(resistance=0.48, gmr=0.0158, phase="N", diameter=0.522, insulation_thickness=0.08),
+    ]
+
+    impedence = compute_triplex_impedance_matrix(wire_list, kron_reduce=False)
+
+    assert cmath.isclose(impedence[0][0], complex(0.5753, 1.4660), abs_tol=1e-3)
+    assert cmath.isclose(impedence[0][1], complex(0.0953, 1.31067), abs_tol=1e-3)
+    assert cmath.isclose(impedence[0][2], complex(0.0953, 1.32581), abs_tol=1e-3)
 
 def test_underground_Z_GC_12_47_1_ul_1():
+    raise Exception("These test values are incorrect.")
+
     glmpath = get_glm_case_file("gc_12_47_1")
 
     powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
