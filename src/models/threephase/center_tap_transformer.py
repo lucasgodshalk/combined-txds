@@ -19,20 +19,7 @@ tr = tr_orig + (1 - tr_orig) * tx_factor
 #I_0 = 1/tr * (I_1 - I_2)
 #I_0 => Leaving primary (positive), I_1, I_2 => Entering secondary (negative). 
 
-eqns_orig = [
-    -1 / tr * (Ir_L1 + Ir_L2),
-    -1 / tr * (Ii_L1 + Ii_L2),
-    Vr_L1 - 1 / tr * Vr_pri,
-    Vi_L1 - 1 / tr * Vi_pri,
-    Ir_L1,
-    Ii_L1,
-    Vr_L2 - 1 / tr * Vr_pri,
-    Vi_L2 - 1 / tr * Vi_pri,
-    Ir_L2,
-    Ii_L2
-]
-
-eqns_amrit = [
+eqns = [
     1 / tr * (Ir_L1 - Ir_L2),
     1 / tr * (Ii_L1 - Ii_L2),
     Vr_L1 - 1 / tr * Vr_pri,
@@ -45,20 +32,7 @@ eqns_amrit = [
     Ii_L2
 ]
 
-eqns_lucas = [
-    1 / tr * (Ir_L1 - Ir_L2),
-    1 / tr * (Ii_L1 - Ii_L2),
-    Vi_pri - 1 / tr * Vr_L1,
-    Vi_pri - 1 / tr * Vr_L1,
-    Ir_L1,
-    Ii_L1,
-    Vi_pri - 1 / tr * Vr_L2,
-    Vi_pri - 1 / tr * Vr_L2,
-    Ir_L2,
-    Ii_L2
-]
-
-lagrange = np.dot(duals, eqns_amrit)
+lagrange = np.dot(duals, eqns)
 
 center_tap_xfmr_lh = LagrangeHandler(lagrange, constants, primals, duals)
 
