@@ -87,9 +87,9 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
 
         variances.append((largest_variance, busresult.bus, result_mag, expected_mag, result_ang, expected_ang, variance_mag_pct, variance_ang_pct))
 
-    variances = sorted(variances, key=lambda x: x[0], reverse=True)
+    sorted_variances = sorted(variances, key=lambda x: x[0], reverse=True)
 
-    largest = variances[0]
+    largest = sorted_variances[0]
 
     if largest[0] > 0:
         assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" is at {largest[0] + 100}% of tolerance. (magnitude: {largest[2]:.5g}, {largest[3]:.5g}) (degrees: {largest[4]:.5g}, {largest[5]:.5g})"
@@ -101,6 +101,9 @@ def assert_glm_case_gridlabd_results(casename):
 
 def test_balanced_stepdown_D_D():
     assert_glm_case_gridlabd_results("balanced_stepdown_D-D")
+
+def test_balanced_stepdown_D_D_cap():
+    assert_glm_case_gridlabd_results("balanced_stepdown_D-D_cap")
 
 def test_powerflowrunner_ieee_four_bus():
     assert_glm_case_gridlabd_results("ieee_four_bus")
