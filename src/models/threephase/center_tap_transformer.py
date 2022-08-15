@@ -54,26 +54,29 @@ class CenterTapTransformer():
         self.g_shunt = g_shunt
         self.b_shunt = b_shunt
 
-    def assign_nodes(self, node_index, optimization_enabled):
         # Values for the primary coil impedance stamps, converted out of per-unit
         r0 = self.coils[0].resistance * self.coils[0].nominal_voltage ** 2  / self.power_rating
         x0 = self.coils[0].reactance * self.coils[0].nominal_voltage ** 2  / self.power_rating
         self.g0 = r0 / (r0**2 + x0**2) if not (r0 == 0 and x0 == 0) else 0
         self.b0 = -x0 / (r0**2 + x0**2) if not (r0 == 0 and x0 == 0) else 0
-        self.primary_impedance_stamper = build_line_stamper_bus(self.coils[0].from_node, self.coils[0].primary_node, optimization_enabled)
-                
+
         # Values for the first triplex coil impedance stamps, converted out of per-unit
         r1 = self.coils[1].resistance * self.coils[1].nominal_voltage ** 2  / self.power_rating
         x1 = self.coils[1].reactance * self.coils[1].nominal_voltage ** 2  / self.power_rating
         self.g1 = r1 / (r1**2 + x1**2) if not (r1 == 0 and x1 == 0) else 0
         self.b1 = -x1 / (r1**2 + x1**2) if not (r1 == 0 and x1 == 0) else 0
-        self.L1_impedance_stamper = build_line_stamper_bus(self.coils[1].sending_node, self.coils[1].to_node, optimization_enabled)
-                
+
         # Values for the second triplex coil impedance stamps, converted out of per-unit
         r2 = self.coils[2].resistance * self.coils[2].nominal_voltage ** 2  / self.power_rating
         x2 = self.coils[2].reactance * self.coils[2].nominal_voltage ** 2  / self.power_rating
         self.g2 = r2 / (r2**2 + x2**2) if not (r2 == 0 and x2 == 0) else 0
         self.b2 = -x2 / (r2**2 + x2**2) if not (r2 == 0 and x2 == 0) else 0
+
+    def assign_nodes(self, node_index, optimization_enabled):
+        self.primary_impedance_stamper = build_line_stamper_bus(self.coils[0].from_node, self.coils[0].primary_node, optimization_enabled)
+        
+        self.L1_impedance_stamper = build_line_stamper_bus(self.coils[1].sending_node, self.coils[1].to_node, optimization_enabled)
+
         self.L2_impedance_stamper = build_line_stamper_bus(self.coils[2].sending_node, self.coils[2].to_node, optimization_enabled)
 
         from_bus = self.coils[0].primary_node
