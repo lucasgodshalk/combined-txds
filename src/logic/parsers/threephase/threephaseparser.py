@@ -141,60 +141,53 @@ class ThreePhaseParser:
                         resistive_load = ResistiveLoad(from_bus, to_bus, phase_load.z)
                         simulation_state.loads.append(resistive_load)
                 elif any(phaseload.model == 1 for phaseload in model.phase_loads): #model.bustype == "PQ":
-                    load_details = []
                     # Loop through each phase associated with this load and locate the corresponding bus.
                     for phase_load in model.phase_loads:
-                        if (not hasattr(phase_load, "p") or not hasattr(phase_load, "q") or (phase_load.p == 0 and phase_load.q == 0)):
+                        if phase_load.p == 0 and phase_load.q == 0:
                             continue
 
-                        # Get the existing bus id for each phase load of this PQ load
-                        if hasattr(model, "connecting_element"):
-                            from_bus = simulation_state.bus_name_map[model.connecting_element + "_" + phase_load.phase]
-                        elif hasattr(model, "_parent"):
-                            from_bus = simulation_state.bus_name_map[model._parent + "_" + phase_load.phase]
-                        else:
-                            # Get relevant attributes, create and save an object
-                            # Get the initial voltage values for this 
-                            try:
-                                v_complex = complex(getattr(self.all_gld_objects[model.name],'_voltage_' + phase_load.phase))
-                            except Exception:
-                                try:
-                                    v_complex = complex(getattr(self.all_gld_objects[model.name],'_nominal_voltage'))
-                                except Exception:
-                                    try:
-                                        v_complex = complex(getattr(self.all_gld_objects[model.connecting_element],'_voltage_' + phase_load.phase))
-                                    except Exception:
-                                        nominal_v = float(getattr(self.all_gld_objects[model.connecting_element],'_nominal_voltage'))
-                                        v_angle = self._phase_to_angle[phase_load.phase]
-                                        v_r = nominal_v * math.cos(v_angle)
-                                        v_i = nominal_v * math.sin(v_angle)
-                                        v_complex = complex(v_r,v_i)
+                        from_bus = self.get_load_connection(model, simulation_state, phase_load.phase[0])
 
-                            
-                            v_mag = abs(v_complex)
-                            v_ang = cmath.phase(v_complex)
-
-                            from_bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase_load.phase, False)
-
-                        load_details.append((phase_load.p, phase_load.q, from_bus))
-
-                    # TODO add cases for other types (ZIP, etc)
-
-                    for index in range(len(load_details)):
-                        if model.is_delta:
-                            if index == 0:
-                                (P, Q, from_bus) = load_details[-1]
-                                (_, _, to_bus) = load_details[index]
-                            else:
-                                (P, Q, from_bus) = load_details[index - 1]
-                                (_, _, to_bus) = load_details[index]
-                        else:
-                            (P, Q, from_bus) = load_details[index]
+                        if len(phase_load.phase) == 1:
                             to_bus = GROUND
+                        else:
+                            to_bus = self.get_load_connection(model, simulation_state, phase_load.phase[1])
 
-                        pq_load = PQLoad(from_bus, to_bus, P, Q, 0, 0, 0, 0, None, None)
+                        pq_load = PQLoad(from_bus, to_bus, phase_load.p, phase_load.q, 0, 0, 0, 0, None, None)
                         simulation_state.loads.append(pq_load)
-                
+
+
+    def get_load_connection(self, model, simulation_state, phase):
+        # Get the existing bus id for each phase load of this PQ load
+        if hasattr(model, "connecting_element"):
+            bus = simulation_state.bus_name_map[model.connecting_element + "_" + phase]
+        elif hasattr(model, "_parent"):
+            bus = simulation_state.bus_name_map[model._parent + "_" + phase]
+        else:
+            # Get relevant attributes, create and save an object
+            # Get the initial voltage values for this 
+            try:
+                v_complex = complex(getattr(self.all_gld_objects[model.name],'_voltage_' + phase))
+            except Exception:
+                try:
+                    v_complex = complex(getattr(self.all_gld_objects[model.name],'_nominal_voltage'))
+                except Exception:
+                    try:
+                        v_complex = complex(getattr(self.all_gld_objects[model.connecting_element],'_voltage_' + phase))
+                    except Exception:
+                        nominal_v = float(getattr(self.all_gld_objects[model.connecting_element],'_nominal_voltage'))
+                        v_angle = self._phase_to_angle[phase]
+                        v_r = nominal_v * math.cos(v_angle)
+                        v_i = nominal_v * math.sin(v_angle)
+                        v_complex = complex(v_r,v_i)
+        
+                        v_mag = abs(v_complex)
+                        v_ang = cmath.phase(v_complex)
+
+                        bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase, False)
+
+        return bus
+
     def create_capacitors(self, simulation_state: DxNetworkModel):
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.capacitor.Capacitor):
@@ -334,6 +327,9 @@ class ThreePhaseParser:
 
                     phases = [wire.phase for wire in model.wires if wire.phase != 'N']
                     
+                    print(model.name)
+                    print(np.array(impedances) * model.length)
+
                     transmission_line = TransmissionLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
                     simulation_state.branches.append(transmission_line)
 

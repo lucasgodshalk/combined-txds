@@ -39,6 +39,7 @@ from ditto.formats.gridlabd import gridlabd
 from ditto.formats.gridlabd import base
 from ditto.models.base import Unicode
 from ditto.readers.gridlabd.line_impedance import compute_overhead_impedance_matrix, compute_underground_impedance_matrix, compute_triplex_impedance_matrix
+from ditto.readers.gridlabd.load_parser import LoadParser
 
 from ..abstract_reader import AbstractReader
 
@@ -853,6 +854,7 @@ class Reader(AbstractReader):
                                     pass
                                 api_transformer.power_ratings = power_ratings
 
+                            power_rating_found = False
                             try:
                                 if config["power_rating"].find('kVA') != -1:
                                     config["power_rating"] = remove_nonnum.sub(
@@ -870,60 +872,65 @@ class Reader(AbstractReader):
                                     winding3.rated_power = power_rating / 2.0
                                 else:
                                     winding2.rated_power = power_rating
-                            except AttributeError:
-                                pass
-                            try:
-                                if config["powerA_rating"].find('kVA') != -1:
-                                    config["powerA_rating"] = remove_nonnum.sub(
-                                        '', config["powerA_rating"])
-                                    power_rating = float(
-                                        config["powerA_rating"]) * 1000
-                                else:
-                                    power_rating = float(
-                                        config["powerA_rating"]) * 1000
-                                winding1.rated_power = power_rating
-                                if num_windings == 3:
-                                    winding2.rated_power = power_rating / 2.0
-                                    winding3.rated_power = power_rating / 2.0
-                                else:
-                                    winding2.rated_power = power_rating
+                                
+                                power_rating_found = True
                             except AttributeError:
                                 pass
 
-                            try:
-                                if config["powerB_rating"].find('kVA') != -1:
-                                    config["powerB_rating"] = remove_nonnum.sub(
-                                        '', config["powerB_rating"])
-                                    power_rating += float(
-                                        config["powerB_rating"]) * 1000
-                                else:
-                                    power_rating += float(
-                                        config["powerB_rating"]) * 1000
-                                winding1.rated_power = power_rating
-                                if num_windings == 3:
-                                    winding2.rated_power = power_rating / 2.0
-                                    winding3.rated_power = power_rating / 2.0
-                                else:
-                                    winding2.rated_power = power_rating
-                            except AttributeError:
-                                pass
-                            try:
-                                if config["powerC_rating"].find('kVA') != -1:
-                                    config["powerC_rating"] = remove_nonnum.sub(
-                                        '', config["powerC_rating"])
-                                    power_rating += float(
-                                        config["powerC_rating"]) * 1000
-                                else:
-                                    power_rating += float(
-                                        config["powerC_rating"]) * 1000
-                                winding1.rated_power = power_rating
-                                if num_windings == 3:
-                                    winding2.rated_power = power_rating / 2.0
-                                    winding3.rated_power = power_rating / 2.0
-                                else:
-                                    winding2.rated_power = power_rating
-                            except AttributeError:
-                                pass
+                            if not power_rating_found:
+                                #Todo: why do we add up all the powers for A, B, and C?
+                                try:
+                                    if config["powerA_rating"].find('kVA') != -1:
+                                        config["powerA_rating"] = remove_nonnum.sub(
+                                            '', config["powerA_rating"])
+                                        power_rating = float(
+                                            config["powerA_rating"]) * 1000
+                                    else:
+                                        power_rating = float(
+                                            config["powerA_rating"]) * 1000
+                                    winding1.rated_power = power_rating
+                                    if num_windings == 3:
+                                        winding2.rated_power = power_rating / 2.0
+                                        winding3.rated_power = power_rating / 2.0
+                                    else:
+                                        winding2.rated_power = power_rating
+                                except AttributeError:
+                                    pass
+
+                                try:
+                                    if config["powerB_rating"].find('kVA') != -1:
+                                        config["powerB_rating"] = remove_nonnum.sub(
+                                            '', config["powerB_rating"])
+                                        power_rating += float(
+                                            config["powerB_rating"]) * 1000
+                                    else:
+                                        power_rating += float(
+                                            config["powerB_rating"]) * 1000
+                                    winding1.rated_power = power_rating
+                                    if num_windings == 3:
+                                        winding2.rated_power = power_rating / 2.0
+                                        winding3.rated_power = power_rating / 2.0
+                                    else:
+                                        winding2.rated_power = power_rating
+                                except AttributeError:
+                                    pass
+                                try:
+                                    if config["powerC_rating"].find('kVA') != -1:
+                                        config["powerC_rating"] = remove_nonnum.sub(
+                                            '', config["powerC_rating"])
+                                        power_rating += float(
+                                            config["powerC_rating"]) * 1000
+                                    else:
+                                        power_rating += float(
+                                            config["powerC_rating"]) * 1000
+                                    winding1.rated_power = power_rating
+                                    if num_windings == 3:
+                                        winding2.rated_power = power_rating / 2.0
+                                        winding3.rated_power = power_rating / 2.0
+                                    else:
+                                        winding2.rated_power = power_rating
+                                except AttributeError:
+                                    pass
 
                 except AttributeError:
                     pass
@@ -935,427 +942,8 @@ class Reader(AbstractReader):
 
             if obj_type == "load" or obj_type == "triplex_load":
 
-                api_load = Load(model)
-                api_node = None
-                has_parent = None
-                try:
-                    api_load.connecting_element = obj["parent"]
-                    has_parent = True
-                except AttributeError:
-                    has_parent = False
-                    api_node = Node(model)
-                try:
-                    if has_parent:
-                        api_load.name = obj["name"]
-                    else:
-                        api_load.name = "load_" + obj["name"]
-                        api_load.connecting_element = obj["name"]
-                        api_node.name = obj["name"]
-                except AttributeError:
-                    pass
-
-                try:
-                    api_load.nominal_voltage = float(obj["nominal_voltage"])
-                    if not has_parent:
-                        api_node.nominal_voltage = float(obj["nominal_voltage"])
-
-                except AttributeError:
-                    pass
-
-                try:	
-                    api_load.voltage_1 = complex(obj["voltage_1"])	
-                except AttributeError:	
-                    pass
-                try:
-                    api_load.voltage_2 = complex(obj["voltage_2"])	
-                except AttributeError:	
-                    pass
-
-                phases = []
-                phaseloads = []
-                try:
-                    phase_str = obj["phases"].strip('"')
-                    api_load.is_delta = False
-                    if "S" in phase_str:
-                        # Triplex load
-                        api_load.triplex_phase = phase_str[:-1]
-                        phase_str = "12"
-                    for i in phase_str:
-                        if i == "A" or i == "B" or i == "C" or i == "1" or i == "2":
-                            phases.append(i)
-                        elif i == "D":
-                            api_load.is_delta = True
-                    if not has_parent:
-                        api_node.phases = list(map(lambda x: Unicode(x), phases))
-                except AttributeError:
-                    pass
-                num_phases = 0
-
-                # The use_zip parameter is used to determine whether the load is zip or not.
-                for phase in phases:
-                    if phase == "A":
-                        num_phases = num_phases + 1
-                        phaseload = PhaseLoad(model)
-                        phaseload.phase = phase
-                        phaseload.p = 0  # Default value
-                        phaseload.q = 0
-                        try:
-                            # Firstly check if it's using a non-zip model.
-                            complex_power = complex(obj["constant_power_A"])
-                            p = complex_power.real
-                            q = complex_power.imag
-                            if (
-                                p != 0
-                            ):  # Assume that unless ZIP is specifically specified only one of constant_power, constant_current and constant_impedance is used. A real part of 0 means that I or Z is being used instead.
-                                phaseload.p = p
-                                phaseload.q = q
-                                phaseload.model = (
-                                    1
-                                )  # The opendss model number (specifying constant power)
-                                phaseload.use_zip = 0
-                                phaseloads.append(phaseload)
-                                continue
-                        except AttributeError:
-                            pass
-
-                        try:
-                            # Firstly check if it's using a non-zip model.
-                            complex_impedance = complex(
-                                obj["constant_impedance_A"])
-                            phaseload.z = complex_impedance
-                            phaseload.model = 2  # The opendss model number (specifying constant impedance)
-                        except AttributeError:
-                            pass
-
-                        try:
-                            # Firstly check if it's using a non-zip model.
-                            complex_current = complex(obj["constant_current_A"])
-                            complex_voltage = complex(
-                                obj["voltage_A"]
-                            )  # Needed to compute the power
-                            p = (complex_voltage * complex_current.conjugate()).real
-                            q = (complex_voltage * complex_current.conjugate()).imag
-                            if (
-                                complex_current.real != 0
-                            ):  # Assume that unless ZIP is specifically specified only one of constant_power, constant_current and constant_impedance is used. A real part of 0 means that Z or P is being used instead.
-
-                                phaseload.p = p
-                                phaseload.q = q
-                                phaseload.use_zip = 0
-                                phaseload.model = (
-                                    5
-                                )  # The opendss model number (specifying constant current)
-                                phaseloads.append(phaseload)
-                                continue
-                        except AttributeError:
-                            pass
-
-                        try:
-                            base_power = float(obj["base_power_A"])
-                            p = base_power
-                            phaseload.p = p
-                        except AttributeError:
-                            pass
-
-                        except ValueError:
-                            data = obj["base_power_A"].split("*")
-
-                            if data[0] in all_schedules:
-                                phaseload.p = float(all_schedules[data[0]]) * float(
-                                    data[1]
-                                )
-                            if data[1] in all_schedules:
-                                phaseload.p = float(all_schedules[data[1]]) * float(
-                                    data[0]
-                                )
-
-                        try:
-                            # Require all six elements to compute the ZIP load model
-                            current_fraction = float(obj["current_fraction_A"])
-                            current_pf = float(obj["current_pf_A"])
-                            power_fraction = float(obj["power_fraction_A"])
-                            power_pf = float(obj["power_pf_A"])
-                            impedance_fraction = float(obj["impedance_fraction_A"])
-                            impedance_pf = float(obj["impedance_pf_A"])
-
-                            phaseload.ppercentcurrent = current_fraction * current_pf
-                            phaseload.qpercentcurrent = current_fraction * (
-                                1 - current_pf
-                            )
-                            phaseload.ppercentpower = power_fraction * power_pf
-                            phaseload.qpercentpower = power_fraction * (1 - power_pf)
-                            phaseload.ppercentimpedance = (
-                                impedance_fraction * impedance_pf
-                            )
-                            phaseload.qpercentimpedance = impedance_fraction * (
-                                1 - impedance_pf
-                            )
-                            phaseload.use_zip = 1
-                        except AttributeError:
-                            pass
-
-                        phaseloads.append(phaseload)
-
-                    elif phase == "B":
-                        num_phases = num_phases + 1
-                        phaseload = PhaseLoad(model)
-                        phaseload.phase = phase
-                        phaseload.p = 0  # Default value
-                        phaseload.q = 0
-                        try:
-                            complex_power = complex(obj["constant_power_B"])
-                            p = complex_power.real
-                            q = complex_power.imag
-                            if (
-                                p != 0
-                            ):  # Assume that unless ZIP is specifically specified only one of constant_power, constant_current and constant_impedance is used. A real part of 0 means that I or Z is being used instead.
-                                phaseload.p = p
-                                phaseload.q = q
-                                phaseload.model = (
-                                    1
-                                )  # The opendss model number (specifying constant power)
-                                phaseload.use_zip = 0
-                                phaseloads.append(phaseload)
-                                continue
-                        except AttributeError:
-                            pass
-
-                        try:
-                            # Firstly check if it's using a non-zip model.
-                            complex_impedance = complex(
-                                obj["constant_impedance_B"])
-                            phaseload.z = complex_impedance
-                            phaseload.model = 2  # The opendss model number (specifying constant impedance)
-                        except AttributeError:
-                            pass
-
-                        try:
-                            # Firstly check if it's using a non-zip model.
-                            complex_current = complex(obj["constant_current_B"])
-                            complex_voltage = complex(
-                                obj["voltage_B"]
-                            )  # Needed to compute the power
-                            p = (complex_voltage * complex_current.conjugate()).real
-                            q = (complex_voltage * complex_current.conjugate()).imag
-                            if (
-                                complex_current.real != 0
-                            ):  # Assume that unless ZIP is specifically specified only one of constant_power, constant_current and constant_impedance is used. A real part of 0 means that Z or P is being used instead.
-                                phaseload.p = p
-                                phaseload.q = q
-                                phaseload.use_zip = 0
-                                phaseload.model = (
-                                    5
-                                )  # The opendss model number (specifying constant current)
-                                phaseloads.append(phaseload)
-                                continue
-                        except AttributeError:
-                            pass
-
-                        try:
-                            base_power = float(obj["base_power_B"])
-                            p = base_power
-                            phaseload.p = p
-                        except AttributeError:
-                            pass
-                        except ValueError:
-                            data = obj["base_power_B"].split("*")
-                            if data[0] in all_schedules:
-                                phaseload.p = float(all_schedules[data[0]]) * float(
-                                    data[1]
-                                )
-                            if data[1] in all_schedules:
-                                phaseload.p = float(all_schedules[data[1]]) * float(
-                                    data[0]
-                                )
-
-                        try:
-                            # Require all six elements to compute the ZIP load model
-                            current_fraction = float(obj["current_fraction_B"])
-                            current_pf = float(obj["current_pf_B"])
-                            power_fraction = float(obj["power_fraction_B"])
-                            power_pf = float(obj["power_pf_B"])
-                            impedance_fraction = float(obj["impedance_fraction_B"])
-                            impedance_pf = float(obj["impedance_pf_B"])
-
-                            phaseload.ppercentcurrent = current_fraction * current_pf
-                            phaseload.qpercentcurrent = current_fraction * (
-                                1 - current_pf
-                            )
-                            phaseload.ppercentpower = power_fraction * power_pf
-                            phaseload.qpercentpower = power_fraction * (1 - power_pf)
-                            phaseload.ppercentimpedance = (
-                                impedance_fraction * impedance_pf
-                            )
-                            phaseload.qpercentimpedance = impedance_fraction * (
-                                1 - impedance_pf
-                            )
-                            phaseload.use_zip = 1
-                        except AttributeError:
-                            pass
-
-                        phaseloads.append(phaseload)
-
-                    elif phase == "C":
-                        num_phases = num_phases + 1
-                        phaseload = PhaseLoad(model)
-                        phaseload.phase = phase
-                        phaseload.p = 0  # Default value
-                        phaseload.q = 0
-                        try:
-                            complex_power = complex(obj["constant_power_C"])
-                            p = complex_power.real
-                            q = complex_power.imag
-                            if (
-                                p != 0
-                            ):  # Assume that unless ZIP is specifically specified only one of constant_power, constant_current and constant_impedance is used. A real part of 0 means that I or Z is being used instead.
-                                phaseload.p = p
-                                phaseload.q = q
-                                phaseload.model = (
-                                    1
-                                )  # The opendss model number (specifying constant power)
-                                phaseload.use_zip = 0
-                                phaseloads.append(phaseload)
-                                continue
-                        except AttributeError:
-                            pass
-
-                        try:
-                            # Firstly check if it's using a non-zip model.
-                            complex_impedance = complex(
-                                obj["constant_impedance_C"])
-                            phaseload.z = complex_impedance
-                            phaseload.model = 2  # The opendss model number (specifying constant impedance)
-                        except AttributeError:
-                            pass
-
-                        try:
-                            # Firstly check if it's using a non-zip model.
-                            complex_current = complex(obj["constant_current_C"])
-                            complex_voltage = complex(
-                                obj["voltage_C"]
-                            )  # Needed to compute the power
-                            p = (complex_voltage * complex_current.conjugate()).real
-                            q = (complex_voltage * complex_current.conjugate()).imag
-                            if (
-                                complex_current.real != 0
-                            ):  # Assume that unless ZIP is specifically specified only one of constant_power, constant_current and constant_impedance is used. A real part of 0 means that Z or P is being used instead.
-                                phaseload.p = p
-                                phaseload.q = q
-                                phaseload.use_zip = 0
-                                phaseload.model = (
-                                    5
-                                )  # The opendss model number (specifying constant current)
-                                phaseloads.append(phaseload)
-                                continue
-                        except AttributeError:
-                            pass
-
-                        try:
-                            base_power = float(obj["base_power_C"])
-                            p = base_power
-                            phaseload.p = p
-                        except AttributeError:
-                            pass
-                        except ValueError:
-                            data = obj["base_power_C"].split("*")
-                            if data[0] in all_schedules:
-                                phaseload.p = float(all_schedules[data[0]]) * float(
-                                    data[1]
-                                )
-                            if data[1] in all_schedules:
-                                phaseload.p = float(all_schedules[data[1]]) * float(
-                                    data[0]
-                                )
-
-                        try:
-                            # Require all six elements to compute the ZIP load model
-                            current_fraction = float(obj["current_fraction_C"])
-                            current_pf = float(obj["current_pf_C"])
-                            power_fraction = float(obj["power_fraction_C"])
-                            power_pf = float(obj["power_pf_C"])
-                            impedance_fraction = float(obj["impedance_fraction_C"])
-                            impedance_pf = float(obj["impedance_pf_C"])
-
-                            phaseload.ppercentcurrent = current_fraction * current_pf
-                            phaseload.qpercentcurrent = current_fraction * (
-                                1 - current_pf
-                            )
-                            phaseload.ppercentpower = power_fraction * power_pf
-                            phaseload.qpercentpower = power_fraction * (1 - power_pf)
-                            phaseload.ppercentimpedance = (
-                                impedance_fraction * impedance_pf
-                            )
-                            phaseload.qpercentimpedance = impedance_fraction * (
-                                1 - impedance_pf
-                            )
-                            phaseload.use_zip = 1
-                        except AttributeError:
-                            pass
-
-                        phaseloads.append(phaseload)
-
-                    elif phase == "1":
-                        num_phases = num_phases + 1
-                        phaseload = PhaseLoad(model)
-                        phaseload.phase = phase
-                        phaseload.p = 0  # Default value
-                        phaseload.q = 0
-                        
-                        if hasattr(obj, "_power_1") or hasattr(obj, "_constant_power_1"):
-                            try:
-                                complex_power = complex(obj["power_1"])
-                            except AttributeError:
-                                pass
-                            try:
-                                complex_power = complex(obj["constant_power_1"])
-                            except AttributeError:
-                                pass
-                            p = complex_power.real
-                            q = complex_power.imag
-                            if (
-                                p != 0
-                            ):  # Assume that unless ZIP is specifically specified only one of constant_power, constant_current and constant_impedance is used. A real part of 0 means that I or Z is being used instead.
-                                phaseload.p = p
-                                phaseload.q = q
-                                phaseload.model = (
-                                    1
-                                )  # The opendss model number (specifying constant power)
-                                phaseload.use_zip = 0
-                        phaseloads.append(phaseload)
-                        continue
-                    
-                    elif phase == "2":
-                        num_phases = num_phases + 1
-                        phaseload = PhaseLoad(model)
-                        phaseload.phase = phase
-                        phaseload.p = 0  # Default value
-                        phaseload.q = 0
-                        
-                        if hasattr(obj, "_power_2") or hasattr(obj, "_constant_power_2"):
-                            try:
-                                complex_power = complex(obj["power_2"])
-                            except AttributeError:
-                                pass
-                            try:
-                                complex_power = complex(obj["constant_power_2"])
-                            except AttributeError:
-                                pass
-                            p = complex_power.real
-                            q = complex_power.imag
-                            if (
-                                p != 0
-                            ):  # Assume that unless ZIP is specifically specified only one of constant_power, constant_current and constant_impedance is used. A real part of 0 means that I or Z is being used instead.
-                                phaseload.p = p
-                                phaseload.q = q
-                                phaseload.model = (
-                                    1
-                                )  # The opendss model number (specifying constant power)
-                                phaseload.use_zip = 0
-                        phaseloads.append(phaseload)
-                        continue
-
-                if num_phases > 0:
-                    api_load.phase_loads = phaseloads
+                load_parser = LoadParser()
+                load_parser.parse(all_schedules, model, obj)
 
             if obj_type == "fuse":
                 api_line = Line(model)

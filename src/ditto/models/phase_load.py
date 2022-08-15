@@ -12,6 +12,7 @@ from .base import (
     List,
     observe,
     Instance,
+    Complex
 )
 
 from .position import Position
@@ -27,6 +28,10 @@ class PhaseLoad(DiTToHasTraits):
     )
     q = Float(
         help="""The reactive power of the load which is fixed. Positive values represent flow out of the node.""",
+        default_value=None,
+    )
+    z = Complex(
+        help="""The fixed impedence of the load.""",
         default_value=None,
     )
 
