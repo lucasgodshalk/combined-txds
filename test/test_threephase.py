@@ -65,11 +65,13 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
         else:
             raise Exception("Unknown phase")
         
-        result_mag, expected_mag = busresult.V_mag, round(abs(expected), 6)
-        result_ang, expected_ang = busresult.V_deg, round(cmath.phase(expected) * 180 / math.pi, 6)
+        result_mag, expected_mag = busresult.V_mag, abs(expected)
+        result_ang, expected_ang = busresult.V_deg, math.degrees(cmath.phase(expected))
 
         diff_mag = abs(result_mag - expected_mag)
         diff_ang = abs(result_ang - expected_ang)
+        if diff_ang > 180:
+            diff_ang = abs(diff_ang - 360)
 
         tol_mag = atol + rtol * np.abs(expected_mag)
         tol_ang = atol + rtol * np.abs(expected_ang)

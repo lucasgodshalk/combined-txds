@@ -34,14 +34,14 @@ class BusResult:
         self.lambda_r = lambda_r
         self.lambda_i = lambda_i
 
-        self.V_mag = round(abs(self.V), 6)
+        self.V_mag = abs(self.V)
         if self.V_mag < 1e-8:
             self.V_deg = 0
         else:
             #Voltage angle in radians
             self.V_ang = cmath.phase(self.V)
             #Voltage angle in degrees
-            self.V_deg = round(self.V_ang * 180 / math.pi, 6)
+            self.V_deg = math.degrees(self.V_ang)
     
     def get_infeasible(self):
         return (self.I_inf_r, self.I_inf_i)
