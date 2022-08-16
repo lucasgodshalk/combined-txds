@@ -563,13 +563,9 @@ class Reader(AbstractReader):
                         pass
 
                     try:
-                        phases = []
-                        cnt = 0
-                        for i in obj["phases"].strip('"'):
-                            # This should ideally be replaced, since having "ABS" makes zero sense. So it should just be "12" always
-                            cnt = cnt + 1
-                            phases.append(Unicode(str(cnt)))
-                        api_node.triplex_phase = obj["phases"].strip('"')[0]
+                        phases_str = obj["phases"].strip('"')
+                        phases = [Unicode("1"), Unicode("2")]
+                        api_node.triplex_phase = Unicode(phases_str[0])
                         api_node.phases = phases
                     except AttributeError:
                         pass
