@@ -231,12 +231,12 @@ object line_configuration:33 {
 } 
 
 object line_spacing:9 { 
-     distance_AB 0.0 in; 
-     distance_BC 0.0 in; 
-     distance_AC 0.0 in; 
-     distance_AN 0.0 in; 
-     distance_BN 0.0 in; 
-     distance_CN 0.0 in; 
+     distance_AB 48.0 in; 
+     distance_BC 48.0 in; 
+     distance_AC 48.0 in; 
+     distance_AN 48.0 in; 
+     distance_BN 48.0 in; 
+     distance_CN 48.0 in; 
 } 
 
 object line_spacing:10 { 
@@ -263,13 +263,13 @@ object line_spacing:13 {
 } 
 
 object line_spacing:14 { 
-     distance_BC 0.0 in; 
-     distance_BN 0.0 in; 
-     distance_CN 0.0 in; 
+     distance_BC 48.0 in; 
+     distance_BN 48.0 in; 
+     distance_CN 48.0 in; 
 } 
 
 object line_spacing:15 { 
-     distance_BN 0.0 in; 
+     distance_BN 48.0 in; 
 } 
 
 object line_spacing:16 { 
@@ -1637,7 +1637,7 @@ object transformer_configuration:132 {
      powerB_rating 450.0; 
      resistance 0.00033; 
      reactance 0.00022; 
-      shunt_impedance 1226.160+1358.242j;
+     shunt_impedance 1226.160+1358.242j;
 } 
 
 object transformer_configuration:134 { 
