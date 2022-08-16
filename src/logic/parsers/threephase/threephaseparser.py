@@ -8,7 +8,7 @@ from logic.networkmodel import DxNetworkModel
 from ditto.readers.gridlabd.read import Reader
 from ditto.store import Store
 import ditto.models.load
-from logic.parsers.threephase.transformerhandler import TransformerHandler
+from logic.parsers.threephase.transformerparser import TransformerParser
 from logic.powerflowsettings import PowerFlowSettings
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
 from models.threephase.capacitor import Capacitor, CapacitorMode, CapSwitchState
@@ -51,7 +51,7 @@ class ThreePhaseParser:
         self.create_buses(simulation_state)
 
         self.create_loads(simulation_state)
-        transformerhandler = TransformerHandler(self)
+        transformerhandler = TransformerParser(self)
         transformerhandler.create_transformers(self.ditto_store, simulation_state)
         self.create_capacitors(simulation_state)
         self.create_regulators(simulation_state)

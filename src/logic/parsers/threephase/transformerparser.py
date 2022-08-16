@@ -15,7 +15,7 @@ CONNECTION_TYPE_WYE = "Y"
 CONNECTION_TYPE_DELTA = "D"
 CONNECTION_TYPE_GWYE = None
 
-class TransformerHandler:
+class TransformerParser:
     def __init__(self, parser) -> None:
         self.parser = parser
 
