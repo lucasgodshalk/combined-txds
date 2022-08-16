@@ -28,6 +28,9 @@ class NRSolver:
                 element.stamp_dual(Y, J, v_previous, tx_factor, self.network)
 
     def run_powerflow(self, v_init, tx_factor):
+        Y_history = []
+        J_history = []
+
         v_previous = np.copy(v_init)
 
         Y = MatrixBuilder(self.settings)
@@ -44,7 +47,13 @@ class NRSolver:
 
             Y.assert_valid(check_zeros=True)
 
-            v_next = spsolve(Y.to_matrix(), np.asarray(J, dtype=np.float64))
+            Y_matrix = Y.to_matrix()
+
+            if self.settings.debug:
+                Y_history.append(Y_matrix)
+                J_history.append(J)
+
+            v_next = spsolve(Y_matrix, np.asarray(J, dtype=np.float64))
 
             if np.isnan(v_next).any():
                 raise Exception("Error solving linear system")
