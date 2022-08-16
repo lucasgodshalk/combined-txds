@@ -1,8 +1,10 @@
+import os
 import numpy as np
 from scipy.sparse.linalg import spsolve
 from logic.matrixbuilder import MatrixBuilder
 from logic.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
+from pathlib import Path
 
 class NRSolver:
 
@@ -28,9 +30,6 @@ class NRSolver:
                 element.stamp_dual(Y, J, v_previous, tx_factor, self.network)
 
     def run_powerflow(self, v_init, tx_factor):
-        Y_history = []
-        J_history = []
-
         v_previous = np.copy(v_init)
 
         Y = MatrixBuilder(self.settings)
@@ -49,9 +48,9 @@ class NRSolver:
 
             Y_matrix = Y.to_matrix()
 
-            if self.settings.debug:
-                Y_history.append(Y_matrix)
-                J_history.append(J)
+            if self.settings.dump_matrix:
+                dump_Y(Y_matrix, iteration_num)
+                dump_J(J, iteration_num)
 
             v_next = spsolve(Y_matrix, np.asarray(J, dtype=np.float64))
 
@@ -74,9 +73,33 @@ class NRSolver:
 
         return (False, v_next, iteration_num)
 
+def dump_J(J, iteration):
+    Path("./dumps").mkdir(parents=True, exist_ok=True)
 
-def dump_Y(Y):
-    with open('Y_output.txt', 'a') as outputfile:
+    filename = f'./dumps/J{iteration + 1}_output.txt'
+
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
+    with open(filename, 'a') as outputfile:
+        for i in range(len(J)):
+            if J[i] != 0:
+                outputfile.write(f"{i}: {J[i]:.5g}\r")
+
+def dump_Y(Y, iteration):
+    Path("./dumps").mkdir(parents=True, exist_ok=True)
+
+    filename = f'./dumps/Y{iteration + 1}_output.txt'
+
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
+    with open(filename, 'a') as outputfile:
         for i in range(Y.shape[0]):
             for j in range(Y.shape[0]):
-                outputfile.write(f"{i}, {j}: {Y[i, j]:.5g}\r")
+                if Y[i, j] != 0:
+                    outputfile.write(f"{i}, {j}: {Y[i, j]:.5g}\r")

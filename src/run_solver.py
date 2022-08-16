@@ -13,12 +13,21 @@ from logic.powerflow import FilePowerFlow
 #casename = 'test/data/positiveseq/IEEE-14_stressed_2_fixed.RAW'
 #casename = 'test/data/gc_12_47_1/node.glm'
 #casename = 'test/data/ieee_four_bus/node.glm'
-casename = 'test/data/r1_12_47_3/node.glm'
+#casename = 'test/data/r1_12_47_3/node.glm'
+casename = 'test/data/center_tap_xfmr_and_single_line_to_load/node.glm'
 
 print("Running power flow solver...")
 print(f'Testcase: {casename}')
 
-settings = PowerFlowSettings(debug=False, max_iters=50, flat_start=False, infeasibility_analysis=False, tx_stepping=False, voltage_limiting=False)
+settings = PowerFlowSettings(
+    debug=True, 
+    max_iters=50, 
+    flat_start=False, 
+    infeasibility_analysis=False, 
+    tx_stepping=False, 
+    voltage_limiting=False,
+    dump_matrix=True
+    )
 
 powerflow = FilePowerFlow(casename, settings)
 
