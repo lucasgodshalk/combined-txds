@@ -83,13 +83,18 @@ class CenterTapTransformer():
         L1_bus = self.coils[1].sending_node
         L2_bus = self.coils[2].sending_node
 
+        self.node_L1_Ir = next(node_index)
+        self.node_L1_Ii = next(node_index)
+        self.node_L2_Ir = next(node_index)
+        self.node_L2_Ii = next(node_index)
+
         index_map = {}
         index_map[Vr_pri] = from_bus.node_Vr
         index_map[Vi_pri] = from_bus.node_Vi
-        index_map[Ir_L1] = next(node_index)
-        index_map[Ii_L1] = next(node_index)
-        index_map[Ir_L2] = next(node_index)
-        index_map[Ii_L2] = next(node_index)
+        index_map[Ir_L1] = self.node_L1_Ir
+        index_map[Ii_L1] = self.node_L1_Ii
+        index_map[Ir_L2] = self.node_L2_Ir
+        index_map[Ii_L2] = self.node_L2_Ii
         index_map[Vr_L1] = L1_bus.node_Vr
         index_map[Vi_L1] = L1_bus.node_Vi
         index_map[Vr_L2] = L2_bus.node_Vr

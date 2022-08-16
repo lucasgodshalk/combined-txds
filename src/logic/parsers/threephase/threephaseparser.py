@@ -26,13 +26,11 @@ from models.threephase.switch import Switch
 from models.threephase.regulator import RegControl, RegType, Regulator
 
 class ThreePhaseParser:
-    # Angles in degrees associated with different phases
-    _phase_to_degrees = {'A': 0, 'B': 240, 'C': 120, '1': 0, '2': 90}
+    def rad(degrees):
+        return math.radians(degrees)
 
     # Angles in radians associated with different phases
-    _phase_to_radians = {'A': 0, 'B': 4*math.pi/3, 'C': 2*math.pi/3, '1': 0, '2': math.pi}
-
-    _phase_to_angle = _phase_to_radians
+    _phase_to_angle = {'A': rad(0), 'B': rad(240), 'C': rad(120), '1': rad(0), '2': rad(180)}
 
     def __init__(self, input_file, settings: PowerFlowSettings):
         self.input_file_path = os.path.abspath(input_file)

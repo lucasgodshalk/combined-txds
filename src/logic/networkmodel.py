@@ -10,6 +10,7 @@ from models.shared.bus import Bus
 from models.shared.pqload import PQLoad
 from models.shared.slack import Slack
 from models.shared.transformer import Transformer
+from models.threephase.center_tap_transformer import CenterTapTransformer
 
 BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0
@@ -44,6 +45,28 @@ class NetworkModel():
             ele.assign_nodes(node_index, optimization_enabled)
 
         self.size_Y = next(node_index)
+
+        self.matrix_lookup = {}
+        for bus in self.buses:
+            self.matrix_lookup[f"bus:{bus.NodeName}:{bus.NodePhase}:Vr"] = bus.node_Vr
+            self.matrix_lookup[f"bus:{bus.NodeName}:{bus.NodePhase}:Vi"] = bus.node_Vi
+
+        for slack in self.slack:
+            self.matrix_lookup[f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ir"] = slack.slack_Ir
+            self.matrix_lookup[f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ii"] = slack.slack_Ii
+
+        for xfmr in self.transformers:
+            if isinstance(xfmr, CenterTapTransformer):
+                continue #todo
+            else:
+                self.matrix_lookup[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ir-pri"] = xfmr.node_primary_Ir
+                self.matrix_lookup[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ii-pri"] = xfmr.node_primary_Ii
+                self.matrix_lookup[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vr-sec"] = xfmr.node_secondary_Vr
+                self.matrix_lookup[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vi-sec"] = xfmr.node_secondary_Vi
+
+        for load in self.loads:
+            self.matrix_lookup[f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ir"] = load.node_Ir
+            self.matrix_lookup[f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ii"] = load.node_Ii
 
         self.matrix_version += 1
 
@@ -159,4 +182,18 @@ class DxNetworkModel(NetworkModel):
         for bus in self.buses:
             bus.set_initial_voltages(v_init)
         
+        # for xfmr in self.transformers:
+        #     Vr = xfmr.node_secondary_Vr
+        #     Vi = xfmr.node_secondary_Vi
+
+        #     if xfmr.from_bus_pos.NodePhase == "A":
+        #         v_init[Vr] = 2400
+        #         v_init[Vi] = 0
+        #     elif xfmr.from_bus_pos.NodePhase == "B":
+        #         v_init[Vr] = -1200
+        #         v_init[Vi] = -2078
+        #     elif xfmr.from_bus_pos.NodePhase == "C":
+        #         v_init[Vr] = -1200
+        #         v_init[Vi] = 2078
+
         return v_init

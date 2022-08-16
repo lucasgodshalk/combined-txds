@@ -66,6 +66,9 @@ class PQLoad:
         self.Q = Q
 
     def assign_nodes(self, node_index, optimization_enabled):
+        self.node_Ir = next(node_index)
+        self.node_Ii = next(node_index)
+
         index_map = {}
         index_map[Vr_from] = self.from_bus.node_Vr
         index_map[Vi_from] = self.from_bus.node_Vi
@@ -75,8 +78,8 @@ class PQLoad:
         index_map[Vi_to] = self.to_bus.node_Vi
         index_map[Lr_to] = self.to_bus.node_lambda_Vr
         index_map[Li_to] = self.to_bus.node_lambda_Vi
-        index_map[Ir] = next(node_index)
-        index_map[Ii] = next(node_index)
+        index_map[Ir] = self.node_Ir
+        index_map[Ii] = self.node_Ii
         if optimization_enabled:
             index_map[Lir] = next(node_index)
             index_map[Lii] = next(node_index)
