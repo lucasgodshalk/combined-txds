@@ -29,18 +29,18 @@ module tape;
 //     file triplex_voltage2s.csv;
 // }
 
-object triplex_line_conductor: { 
-     name triplex_4/0 AA; 
-     resistance 0.48; 
-     geometric_mean_radius 0.0158; 
-} 
-
 object triplex_line_configuration:1 { 
      conductor_1 triplex_4/0 AA; 
      conductor_2 triplex_4/0 AA; 
      conductor_N triplex_4/0 AA; 
      insulation_thickness 0.08; 
      diameter 0.522; 
+} 
+
+object triplex_line_conductor: { 
+     name triplex_4/0 AA; 
+     resistance 0.48; 
+     geometric_mean_radius 0.0158; 
 } 
 
 object node {
