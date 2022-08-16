@@ -182,18 +182,4 @@ class DxNetworkModel(NetworkModel):
         for bus in self.buses:
             bus.set_initial_voltages(v_init)
         
-        # for xfmr in self.transformers:
-        #     Vr = xfmr.node_secondary_Vr
-        #     Vi = xfmr.node_secondary_Vi
-
-        #     if xfmr.from_bus_pos.NodePhase == "A":
-        #         v_init[Vr] = 2400
-        #         v_init[Vi] = 0
-        #     elif xfmr.from_bus_pos.NodePhase == "B":
-        #         v_init[Vr] = -1200
-        #         v_init[Vi] = -2078
-        #     elif xfmr.from_bus_pos.NodePhase == "C":
-        #         v_init[Vr] = -1200
-        #         v_init[Vi] = 2078
-
         return v_init
