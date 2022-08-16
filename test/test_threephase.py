@@ -107,251 +107,251 @@ def test_balanced_stepdown_D_D():
 def test_balanced_stepdown_D_D_cap():
     assert_glm_case_gridlabd_results("balanced_stepdown_D-D_cap")
 
-def test_powerflowrunner_ieee_four_bus():
+def test_ieee_four_bus():
     assert_glm_case_gridlabd_results("ieee_four_bus")
 
-def test_powerflowrunner_just_swing():
+def test_just_swing():
     assert_glm_case_gridlabd_results("just_swing")
 
-def test_powerflowrunner_swing_and_line_to_pq():
+def test_swing_and_line_to_pq():
     assert_glm_case_gridlabd_results("swing_and_line_to_pq")
 
-def test_powerflowrunner_swing_and_long_line_to_pq():
+def test_swing_and_long_line_to_pq():
     assert_glm_case_gridlabd_results("swing_and_long_line_to_pq")
 
-def test_powerflowrunner_swing_and_long_ul_to_pq():
+def test_swing_and_long_ul_to_pq():
     assert_glm_case_gridlabd_results("swing_and_long_ul_to_pq")
     
-def test_powerflowrunner_swing_and_underground_lines_to_pq():
+def test_swing_and_underground_lines_to_pq():
     assert_glm_case_gridlabd_results("swing_and_underground_lines_to_pq")
 
-def test_powerflowrunner_swing_2lines_load():
+def test_swing_2lines_load():
     assert_glm_case_gridlabd_results("swing_2lines_load")
 
-def test_powerflowrunner_ieee_four_bus_resistive():
+def test_ieee_four_bus_resistive():
     assert_glm_case_gridlabd_results("ieee_four_bus_resistive")
     
-def test_powerflowrunner_balanced_stepdown_grY_grY():
+def test_balanced_stepdown_grY_grY():
     assert_glm_case_gridlabd_results("balanced_stepdown_grY_grY")
     
-def test_powerflowrunner_ieee_four_bus_higher_transformer_impedance():
+def test_ieee_four_bus_higher_transformer_impedance():
     assert_glm_case_gridlabd_results("ieee_four_bus_higher_transformer_impedance")
     
-def test_powerflowrunner_ieee_four_bus_transformer_shunt_impedance():
+def test_ieee_four_bus_transformer_shunt_impedance():
     assert_glm_case_gridlabd_results("ieee_four_bus_transformer_shunt_impedance")
 
 # This is known to not be as close as desired, but it is in agreement with Amrit's code.
-def test_powerflowrunner_ieee_four_bus_long_lines():
+def test_ieee_four_bus_long_lines():
     assert_glm_case_gridlabd_results("ieee_four_bus_long_lines")
 
-def test_powerflowrunner_connected_transformer():
+def test_connected_transformer():
     assert_glm_case_gridlabd_results("connected_transformer")
 
-def test_powerflowrunner_just_two_transformers():
+def test_just_two_transformers():
     assert_glm_case_gridlabd_results("just_two_transformers")
 
-def test_powerflowrunner_two_transformers():
+def test_two_transformers():
     assert_glm_case_gridlabd_results("two_transformers")
 
-def test_powerflowrunner_three_transformers_with_lines():
+def test_three_transformers_with_lines():
     assert_glm_case_gridlabd_results("three_transformers_with_lines")
 
-def test_powerflowrunner_three_transformers():
+def test_three_transformers():
     assert_glm_case_gridlabd_results("three_transformers")
     
-def test_powerflowrunner_kersting_example_4_1():
+def test_kersting_example_4_1():
     assert_glm_case_gridlabd_results("kersting_example_4_1")
 
-def test_powerflowrunner_kersting_example_4_2():
+def test_kersting_example_4_2():
     assert_glm_case_gridlabd_results("kersting_example_4_2")
 
-def test_powerflowrunner_underground_lines_and_transformers():
+def test_underground_lines_and_transformers():
     assert_glm_case_gridlabd_results("underground_lines_and_transformers")
 
-def test_powerflowrunner_ieee_four_bus_underground_spaced():
+def test_ieee_four_bus_underground_spaced():
     assert_glm_case_gridlabd_results("ieee_four_bus_underground_spaced")
 
-def test_powerflowrunner_ieee_four_bus_underground():
+def test_ieee_four_bus_underground():
     assert_glm_case_gridlabd_results("ieee_four_bus_underground")
     
-def test_powerflowrunner_ieee_four_bus_underground_step_up():
+def test_ieee_four_bus_underground_step_up():
     assert_glm_case_gridlabd_results("ieee_four_bus_underground_step_up")
 
-def test_powerflowrunner_ieee_four_bus_underground_long_lines():
+def test_ieee_four_bus_underground_long_lines():
     assert_glm_case_gridlabd_results("ieee_four_bus_underground_long_lines")
 
-def test_powerflowrunner_ieee_four_bus_switch():
+def test_ieee_four_bus_switch():
     assert_glm_case_gridlabd_results("ieee_four_bus_switch")
 
-def test_powerflowrunner_ieee_four_bus_fuse():
+def test_ieee_four_bus_fuse():
     assert_glm_case_gridlabd_results("ieee_four_bus_fuse")
 
-def test_powerflowrunner_ieee_four_bus_cap():
+def test_ieee_four_bus_cap():
     assert_glm_case_gridlabd_results("ieee_four_bus_cap")
 
-def test_powerflowrunner_ieee_four_bus_unbalanced_pq_load():
+def test_ieee_four_bus_unbalanced_pq_load():
     assert_glm_case_gridlabd_results("ieee_four_bus_unbalanced_pq_load")
 
-def test_powerflowrunner_load_within_meter():
+def test_load_within_meter():
     assert_glm_case_gridlabd_results("load_within_meter")
 
-def test_powerflowrunner_transformer_to_meter():
+def test_transformer_to_meter():
     assert_glm_case_gridlabd_results("transformer_to_meter")
 
-def test_powerflowrunner_regulator_node_load():
+def test_regulator_node_load():
     assert_glm_case_gridlabd_results("regulator_node_load")
 
-def test_powerflowrunner_regulatorB_node_load():
+def test_regulatorB_node_load():
     assert_glm_case_gridlabd_results("regulatorB_node_load")
 
-def test_powerflowrunner_ieee_thirteen_bus_pq_top_right():
+def test_ieee_thirteen_bus_pq_top_right():
     assert_glm_case_gridlabd_results("ieee_thirteen_bus_pq_top_right")
 
-def test_powerflowrunner_two_regulators():
+def test_two_regulators():
     assert_glm_case_gridlabd_results("two_regulators")
 
-def test_powerflowrunner_regulator_lower_impedance_transformer_load():
+def test_regulator_lower_impedance_transformer_load():
     assert_glm_case_gridlabd_results("regulator_lower_impedance_transformer_load")
 
-def test_powerflowrunner_regulator_higher_impedance_transformer_load():
+def test_regulator_higher_impedance_transformer_load():
     assert_glm_case_gridlabd_results("regulator_higher_impedance_transformer_load")
 
-def test_powerflowrunner_regulator_ol():
+def test_regulator_ol():
     assert_glm_case_gridlabd_results("regulator_ol")
 
-def test_powerflowrunner_regulator_overhead_line_transformer_load():
+def test_regulator_overhead_line_transformer_load():
     assert_glm_case_gridlabd_results("regulator_overhead_line_transformer_load")
     
-def test_powerflowrunner_regulator_overhead_lines():
+def test_regulator_overhead_lines():
     assert_glm_case_gridlabd_results("regulator_overhead_lines")
     
-def test_powerflowrunner_gc_12_47_1_only_overhead_lines():
+def test_gc_12_47_1_only_overhead_lines():
     assert_glm_case_gridlabd_results("gc_12_47_1_only_overhead_lines")
 
-def test_powerflowrunner_regulator_overhead_line_underground_line():
+def test_regulator_overhead_line_underground_line():
     assert_glm_case_gridlabd_results("regulator_overhead_line_underground_line")
 
-def test_powerflowrunner_regulator_ul():
+def test_regulator_ul():
     assert_glm_case_gridlabd_results("regulator_ul")
 
-def test_powerflowrunner_regulator_ul_xfmr():
+def test_regulator_ul_xfmr():
     assert_glm_case_gridlabd_results("regulator_ul_xfmr")
 
-def test_powerflowrunner_regulator_ul_xfmr_ul():
+def test_regulator_ul_xfmr_ul():
     assert_glm_case_gridlabd_results("regulator_ul_xfmr_ul")
 
-def test_powerflowrunner_gc_12_47_1_pared_down_no_regulator():
+def test_gc_12_47_1_pared_down_no_regulator():
     assert_glm_case_gridlabd_results("gc_12_47_1_pared_down_no_regulator")
 
-def test_powerflowrunner_gc_12_47_1_somewhat_pared_down_no_regulator():
+def test_gc_12_47_1_somewhat_pared_down_no_regulator():
     assert_glm_case_gridlabd_results("gc_12_47_1_somewhat_pared_down_no_regulator")
 
-def test_powerflowrunner_gc_12_47_1_no_reg():
+def test_gc_12_47_1_no_reg():
     assert_glm_case_gridlabd_results("gc_12_47_1_no_reg")
     
-def test_powerflowrunner_gc_12_47_1_xfmr_as_reg():
+def test_gc_12_47_1_xfmr_as_reg():
     assert_glm_case_gridlabd_results("gc_12_47_1_xfmr_as_reg")
 
-def test_powerflowrunner_gc_12_47_1_further_simplified():
+def test_gc_12_47_1_further_simplified():
     assert_glm_case_gridlabd_results("gc_12_47_1_further_simplified")
 
-def test_powerflowrunner_gc_12_47_1_simplified():
+def test_gc_12_47_1_simplified():
     assert_glm_case_gridlabd_results("gc_12_47_1_simplified")
 
-def test_powerflowrunner_gc_12_47_1_subset():
+def test_gc_12_47_1_subset():
     assert_glm_case_gridlabd_results("gc_12_47_1_subset")
 
-def test_powerflowrunner_gc_12_47_1_no_cap():
+def test_gc_12_47_1_no_cap():
     assert_glm_case_gridlabd_results("gc_12_47_1_no_cap")
 
-def test_powerflowrunner_gc_12_47_1():
+def test_gc_12_47_1():
     assert_glm_case_gridlabd_results("gc_12_47_1")
 
-def test_powerflowrunner_center_tap_xfmr():
+def test_center_tap_xfmr():
     assert_glm_case_gridlabd_results("center_tap_xfmr")
 
-def test_powerflowrunner_regulator_center_tap_xfmr():
+def test_regulator_center_tap_xfmr():
     assert_glm_case_gridlabd_results("regulator_center_tap_xfmr")
     
-def test_powerflowrunner_triplex_load_class():
+def test_triplex_load_class():
     assert_glm_case_gridlabd_results("triplex_load_class")
 
-def test_powerflowrunner_basic_triplex_network():
+def test_basic_triplex_network():
     assert_glm_case_gridlabd_results("basic_triplex_network")
 
-def test_powerflowrunner_r1_12_47_1():
+def test_r1_12_47_1():
     assert_glm_case_gridlabd_results("r1_12_47_1")
 
-def test_powerflowrunner_r1_12_47_3():
+def test_r1_12_47_3():
     assert_glm_case_gridlabd_results("r1_12_47_3")
 
 # Requires support for delta connected transformers (not yet supported)
-def test_powerflowrunner_ieee_four_bus_delta_delta_transformer():
+def test_ieee_four_bus_delta_delta_transformer():
     assert_glm_case_gridlabd_results("ieee_four_bus_delta_delta_transformer")
 
-def test_powerflowrunner_ieee_thirteen_bus_Y_Y_pq_loads_top_half():
+def test_ieee_thirteen_bus_Y_Y_pq_loads_top_half():
     assert_glm_case_gridlabd_results("ieee_thirteen_bus_Y_Y_pq_loads_top_half")
 
 # Requires support for delta-connected loads, (not yet supported)
-def test_powerflowrunner_ieee_thirteen_bus_core():
+def test_ieee_thirteen_bus_core():
     assert_glm_case_gridlabd_results("ieee_13_core")
 
 # Requires support for delta loads (not yet supported)
-def test_powerflowrunner_ieee_thirteen_bus_pq_loads_top_half():
+def test_ieee_thirteen_bus_pq_loads_top_half():
     assert_glm_case_gridlabd_results("ieee_thirteen_bus_pq_loads_top_half")
 
 # Requires support for delta loads (not yet supported)
-def test_powerflowrunner_ieee_thirteen_bus_pq():
+def test_ieee_thirteen_bus_pq():
     assert_glm_case_gridlabd_results("ieee_13_pq_loads")
 
-def test_powerflowrunner_ieee_thirteen_bus_overhead():
+def test_ieee_thirteen_bus_overhead():
     assert_glm_case_gridlabd_results("ieee_13_node_overhead_nr")
 
 # Requires resistive loads, current loads, and IP loads
-def test_powerflowrunner_ieee_thirteen_bus():
+def test_ieee_thirteen_bus():
     assert_glm_case_gridlabd_results("ieee_13_node_nr")
 
-def test_powerflowrunner_kersting_example_11_1():
+def test_kersting_example_11_1():
     assert_glm_case_gridlabd_results("kersting_example_11_1")
 
-def test_powerflowrunner_kersting_example_11_1_altered():
+def test_kersting_example_11_1_altered():
     assert_glm_case_gridlabd_results("kersting_example_11_1_altered")
 
-def test_powerflowrunner_kersting_example_11_1_altered_more():
+def test_kersting_example_11_1_altered_more():
     assert_glm_case_gridlabd_results("kersting_example_11_1_altered_more")
 
-def test_powerflowrunner_kersting_example_11_2():
+def test_kersting_example_11_2():
     assert_glm_case_gridlabd_results("kersting_example_11_2")
 
-def test_powerflowrunner_kersting_example_11_2_altered():
+def test_kersting_example_11_2_altered():
     assert_glm_case_gridlabd_results("kersting_example_11_2_altered")
 
-def test_powerflowrunner_kersting_example_11_2_altered_more():
+def test_kersting_example_11_2_altered_more():
     assert_glm_case_gridlabd_results("kersting_example_11_2_altered_more")
 
-def test_powerflowrunner_3phasesource_CT_line_load():
+def test_3phasesource_CT_line_load():
     assert_glm_case_gridlabd_results("3phasesource_CT_line_load")
 
-def test_powerflowrunner_center_tap_xfmr_and_triplex_line():
+def test_center_tap_xfmr_and_triplex_line():
     assert_glm_case_gridlabd_results("center_tap_xfmr_and_triplex_line")
 
-def test_powerflowrunner_regulator_center_tap_xfmr_and_triplex_line():
+def test_regulator_center_tap_xfmr_and_triplex_line():
     assert_glm_case_gridlabd_results("regulator_center_tap_xfmr_and_triplex_line")
 
-def test_powerflowrunner_center_tap_xfmr_and_triplex_load():
+def test_center_tap_xfmr_and_triplex_load():
     assert_glm_case_gridlabd_results("center_tap_xfmr_and_triplex_load")
 
-def test_powerflowrunner_center_tap_xfmr_and_single_line_to_load():
+def test_center_tap_xfmr_and_single_line_to_load():
     assert_glm_case_gridlabd_results("center_tap_xfmr_and_single_line_to_load")
 
-def test_powerflowrunner_center_tap_xfmr_and_line_to_load():
+def test_center_tap_xfmr_and_line_to_load():
     assert_glm_case_gridlabd_results("center_tap_xfmr_and_line_to_load")
 
-def test_powerflowrunner_regulator_center_tap_xfmr_and_line_to_load():
+def test_regulator_center_tap_xfmr_and_line_to_load():
     assert_glm_case_gridlabd_results("regulator_center_tap_xfmr_and_line_to_load")
     
-def test_powerflowrunner_triplex_load_class():
+def test_triplex_load_class():
     assert_glm_case_gridlabd_results("triplex_load_class")
 
-def test_powerflowrunner_unbalanced_triplex_load():
+def test_unbalanced_triplex_load():
     assert_glm_case_gridlabd_results("unbalanced_triplex_load")
