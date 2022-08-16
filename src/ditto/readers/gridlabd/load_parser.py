@@ -128,6 +128,15 @@ class LoadParser:
 
         try:
             phaseload = self.__create_phaseload(model, phase, is_delta)
+            complex_impedance = complex(obj[f"impedance_{phase}"])
+            phaseload.z = complex_impedance
+            phaseload.model = 2  # The opendss model number (specifying constant impedance)
+            yield phaseload
+        except AttributeError:
+            pass
+
+        try:
+            phaseload = self.__create_phaseload(model, phase, is_delta)
             complex_impedance = complex(obj[f"constant_impedance_{phase}"])
             phaseload.z = complex_impedance
             phaseload.model = 2  # The opendss model number (specifying constant impedance)
