@@ -46,27 +46,27 @@ class NetworkModel():
 
         self.size_Y = next(node_index)
 
-        self.matrix_lookup = {}
+        self.matrix_map = {}
         for bus in self.buses:
-            self.matrix_lookup[f"bus:{bus.NodeName}:{bus.NodePhase}:Vr"] = bus.node_Vr
-            self.matrix_lookup[f"bus:{bus.NodeName}:{bus.NodePhase}:Vi"] = bus.node_Vi
+            self.matrix_map[f"bus:{bus.NodeName}:{bus.NodePhase}:Vr"] = bus.node_Vr
+            self.matrix_map[f"bus:{bus.NodeName}:{bus.NodePhase}:Vi"] = bus.node_Vi
 
         for slack in self.slack:
-            self.matrix_lookup[f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ir"] = slack.slack_Ir
-            self.matrix_lookup[f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ii"] = slack.slack_Ii
+            self.matrix_map[f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ir"] = slack.slack_Ir
+            self.matrix_map[f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ii"] = slack.slack_Ii
 
         for xfmr in self.transformers:
             if isinstance(xfmr, CenterTapTransformer):
                 continue #todo
             else:
-                self.matrix_lookup[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ir-pri"] = xfmr.node_primary_Ir
-                self.matrix_lookup[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ii-pri"] = xfmr.node_primary_Ii
-                self.matrix_lookup[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vr-sec"] = xfmr.node_secondary_Vr
-                self.matrix_lookup[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vi-sec"] = xfmr.node_secondary_Vi
+                self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ir-pri"] = xfmr.node_primary_Ir
+                self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ii-pri"] = xfmr.node_primary_Ii
+                self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vr-sec"] = xfmr.node_secondary_Vr
+                self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vi-sec"] = xfmr.node_secondary_Vi
 
         for load in self.loads:
-            self.matrix_lookup[f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ir"] = load.node_Ir
-            self.matrix_lookup[f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ii"] = load.node_Ii
+            self.matrix_map[f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ir"] = load.node_Ir
+            self.matrix_map[f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ii"] = load.node_Ii
 
         self.matrix_version += 1
 

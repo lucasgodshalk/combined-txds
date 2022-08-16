@@ -30,6 +30,9 @@ class NRSolver:
                 element.stamp_dual(Y, J, v_previous, tx_factor, self.network)
 
     def run_powerflow(self, v_init, tx_factor):
+        if self.settings.dump_matrix:
+            dump_matrix_map(self.network.matrix_map)
+
         v_previous = np.copy(v_init)
 
         Y = MatrixBuilder(self.settings)
@@ -72,6 +75,20 @@ class NRSolver:
             Y.clear(retain_idx=linear_index)
 
         return (False, v_next, iteration_num)
+
+def dump_matrix_map(map):
+    Path("./dumps").mkdir(parents=True, exist_ok=True)
+
+    filename = f'./dumps/lookup.txt'
+
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
+    with open(filename, 'a') as outputfile:
+        for key in map.keys():
+            outputfile.write(f"{key}: {map[key]}\r")
 
 def dump_J(J, iteration):
     Path("./dumps").mkdir(parents=True, exist_ok=True)
