@@ -2,7 +2,7 @@ from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflow import FilePowerFlow
 
 # path to the grid network RAW file
-casename = 'test/data/positiveseq/GS-4_prior_solution.RAW'
+#casename = 'test/data/positiveseq/GS-4_prior_solution.RAW'
 #casename = 'test/data/positiveseq/IEEE-14_prior_solution.RAW'
 #casename = 'test/data/positiveseq/IEEE-118_prior_solution.RAW'
 #casename = 'test/data/positiveseq/ACTIVSg500_prior_solution_fixed.RAW'
@@ -13,6 +13,7 @@ casename = 'test/data/positiveseq/GS-4_prior_solution.RAW'
 #casename = 'test/data/positiveseq/IEEE-14_stressed_2_fixed.RAW'
 #casename = 'test/data/gc_12_47_1/node.glm'
 #casename = 'test/data/ieee_four_bus/node.glm'
+casename = 'test/data/r1_12_47_3/node.glm'
 
 print("Running power flow solver...")
 print(f'Testcase: {casename}')

@@ -14,13 +14,12 @@ from models.shared.L2infeasibility import L2InfeasibilityCurrent
 from models.threephase.capacitor import Capacitor, CapacitorMode, CapSwitchState
 from models.shared.slack import Slack
 
-from models.shared.pqload import PQLoad
+from models.shared.load import Load
 from models.shared.bus import GROUND, Bus
 from models.threephase.transmission_line import TransmissionLine
 from models.threephase.fuse import Fuse, FuseStatus
 from models.threephase.fuse import Fuse
 
-from models.threephase.resistive_load import ResistiveLoad
 from models.threephase.switch import Switch, SwitchStatus
 from models.threephase.switch import Switch
 from models.threephase.regulator import RegControl, RegType, Regulator
@@ -110,50 +109,21 @@ class ThreePhaseParser:
         # Go through the ditto store for each load object
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.load.Load):
-                if any(phaseload.model == 2 for phaseload in model.phase_loads):
-                    # Model a simple Resistive load
-                    # Loop through each phase associated with this load
-                    for phase_load in model.phase_loads:
-                        if (not hasattr(phase_load, "z") or phase_load.z == 0):
-                            continue
+                for phase_load in model.phase_loads:
+                    from_bus = self.get_load_connection(model, simulation_state, phase_load.phase[0])
 
-                        # Get the existing bus id for each phase load of this PQ load
-                        from_bus = simulation_state.bus_name_map[model.connecting_element + "_" + phase_load.phase]
+                    if len(phase_load.phase) == 1:
                         to_bus = GROUND
+                    else:
+                        to_bus = self.get_load_connection(model, simulation_state, phase_load.phase[1])
 
-                        # Get the initial voltage values for this 
-                        try:
-                            v_complex = complex(getattr(self.all_gld_objects[model.connecting_element],'_voltage_' + phase_load.phase))
-                            v_r = v_complex.real
-                            v_i = v_complex.imag
-                        except Exception:
-                            nominal_v = float(getattr(self.all_gld_objects[model.connecting_element],'_nominal_voltage'))
-                            v_angle = self._phase_to_angle[phase_load.phase]
-                            v_r = nominal_v * math.cos(v_angle)
-                            v_i = nominal_v * math.sin(v_angle)
-                        
-                        from_bus.Vr_init = v_r
-                        from_bus.Vi_init = v_i
+                    if phase_load.model == 1 and phase_load.p == 0 and phase_load.q == 0:
+                        continue
+                    elif phase_load.model == 2 and phase_load.z == 0:
+                        continue
 
-                        # Get relevant attributes, create and save an object
-                        resistive_load = ResistiveLoad(from_bus, to_bus, phase_load.z)
-                        simulation_state.loads.append(resistive_load)
-                elif any(phaseload.model == 1 for phaseload in model.phase_loads): #model.bustype == "PQ":
-                    # Loop through each phase associated with this load and locate the corresponding bus.
-                    for phase_load in model.phase_loads:
-                        if phase_load.p == 0 and phase_load.q == 0:
-                            continue
-
-                        from_bus = self.get_load_connection(model, simulation_state, phase_load.phase[0])
-
-                        if len(phase_load.phase) == 1:
-                            to_bus = GROUND
-                        else:
-                            to_bus = self.get_load_connection(model, simulation_state, phase_load.phase[1])
-
-                        pq_load = PQLoad(from_bus, to_bus, phase_load.p, phase_load.q, 0, 0, 0, 0, None, None)
-                        simulation_state.loads.append(pq_load)
-
+                    pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, 0, 0, 0, 0)
+                    simulation_state.loads.append(pq_load)
 
     def get_load_connection(self, model, simulation_state, phase):
         # Get the existing bus id for each phase load of this PQ load

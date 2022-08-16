@@ -7,7 +7,7 @@ from logic.powerflowsettings import PowerFlowSettings
 from models.positiveseq.generator import Generator
 from models.shared.L2infeasibility import L2InfeasibilityCurrent
 from models.shared.bus import Bus
-from models.shared.pqload import PQLoad
+from models.shared.load import Load
 from models.shared.slack import Slack
 from models.shared.transformer import Transformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
@@ -25,7 +25,7 @@ class NetworkModel():
 
         self.buses: List[Bus]
         self.buses = []
-        self.loads: List[PQLoad]
+        self.loads: List[Load]
         self.loads = []
         self.slack: List[Slack]
         self.slack = []

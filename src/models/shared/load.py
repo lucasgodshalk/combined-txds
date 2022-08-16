@@ -5,7 +5,9 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
+from models.helpers import merge_residuals
 from models.shared.bus import Bus
+from models.shared.line import build_line_stamper_bus
 
 constants = P, Q = symbols('P Q')
 primals = Vr_from, Vi_from, Ir, Ii, Vr_to, Vi_to = symbols('Vr_from, Vi_from, Ir, Ii, Vr_to, Vi_to')
@@ -31,7 +33,7 @@ lagrange = np.dot(duals, eqns)
 lh = LagrangeHandler(lagrange, constants, primals, duals)
 
 #Represents a positive sequence or single phase load.
-class PQLoad:
+class Load:
     _ids = count(0)
 
     def __init__(self,
@@ -39,31 +41,40 @@ class PQLoad:
                  to_bus: Bus,
                  P,
                  Q,
+                 Z,
                  IP,
                  IQ,
                  ZP,
-                 ZQ,
-                 area,
-                 status):
+                 ZQ
+                 ):
         """Initialize an instance of a PQ or ZIP load in the power grid.
 
         Args:
             Bus (int): the bus where the load is located
             P (float): the active power of a constant power (PQ) load.
             Q (float): the reactive power of a constant power (PQ) load.
-            IP (float): the active power component of a constant current load.
-            IQ (float): the reactive power component of a constant current load.
-            ZP (float): the active power component of a constant admittance load.
-            ZQ (float): the reactive power component of a constant admittance load.
-            area (int): location where the load is assigned to.
-            status (bool): indicates if the load is in-service or out-of-service.
+            Z (complex): the linear impedance of the load.
+            IP (float): the active power component of a constant current load. [Not implemented]
+            IQ (float): the reactive power component of a constant current load. [Not implemented]
+            ZP (float): the active power component of a constant admittance load. [Not implemented]
+            ZQ (float): the reactive power component of a constant admittance load. [Not implemented]
         """
-        self.id = PQLoad._ids.__next__()
+        self.id = Load._ids.__next__()
 
         self.from_bus = from_bus
         self.to_bus = to_bus
         self.P = P
         self.Q = Q
+        self.Z = Z
+
+        if not self.Z == 0:
+            r = np.real(self.Z)
+            x = np.imag(self.Z)
+            self.G = r / (r**2 + x**2)
+            self.B = -x / (r**2 + x**2)
+        else:
+            self.G = 0
+            self.B = 0
 
     def assign_nodes(self, node_index, optimization_enabled):
         self.node_Ir = next(node_index)
@@ -89,14 +100,32 @@ class PQLoad:
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
+        if self.Z == 0:
+            self.resistive_stamper = None
+        else:
+            self.resistive_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
+
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         self.stamper.stamp_primal(Y, J, [self.P, self.Q], v_previous)
 
+        if self.resistive_stamper != None:
+            self.resistive_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
+
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         self.stamper.stamp_dual(Y, J, [self.P, self.Q], v_previous)
 
+        if self.resistive_stamper != None:
+            self.resistive_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
+
     def calculate_residuals(self, network, v):
-        return self.stamper.calc_residuals([self.P, self.Q], v)
+        pq_residuals = self.stamper.calc_residuals([self.P, self.Q], v)
+
+        if self.resistive_stamper == None:
+            resistive_residuals = {}
+        else:
+            resistive_residuals = self.resistive_stamper.calc_residuals([self.G, self.B, 0], v)
+
+        return merge_residuals({}, pq_residuals, resistive_residuals)
