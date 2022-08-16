@@ -83,13 +83,17 @@ class ThreePhaseParser:
                         elif hasattr(model, "_connecting_element"):
                             bus = simulation_state.bus_name_map[model._connecting_element + "_" + phase]
                         else:
+                            v_mag = model.nominal_voltage
+                            v_ang = self._phase_to_angle[phase.default_value]
+
                             try:
-                                voltage = getattr(model, "voltage_" + phase.default_value)
-                                v_mag = abs(voltage)
-                                v_ang = cmath.phase(voltage)
+                                #For L1 and L2 on triplex, we always use the nominal magnitude and phase for v_init.
+                                if not phase.default_value in ["1", "2"]:
+                                    voltage = getattr(model, "voltage_" + phase.default_value)
+                                    v_mag = abs(voltage)
+                                    v_ang = cmath.phase(voltage)
                             except:
-                                v_mag = model.nominal_voltage
-                                v_ang = self._phase_to_angle[phase.default_value]
+                                pass
 
                             bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase.default_value, False)
 
