@@ -160,7 +160,6 @@ object triplex_node:1824 {
 	phases CS;
 	parent R1-12-47-1_tm_556;
 	power_1 2300+1200j;
-	power_2 2300+1200j;
 	voltage_1 -60+103.92j;
 	voltage_2 -60+103.92j;
 	voltage_N 0;
