@@ -2,7 +2,7 @@ class PowerFlowSettings:
     def __init__(
         self, 
         tolerance = 1E-05, 
-        max_iters = 1000, 
+        max_iters = 50, 
         voltage_limiting = False, 
         debug = False, 
         flat_start = False, 

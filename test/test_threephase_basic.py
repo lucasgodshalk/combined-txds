@@ -97,6 +97,8 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
 def assert_glm_case_gridlabd_results(casename):
     filepath = get_glm_case_file(casename)
     results = execute_glm_case(filepath)
+    if not results.is_success:
+        raise Exception("Failed to converge")
     comparison = load_gridlabd_csv(casename)
     assert_busresults_gridlabdvoltdump(results, comparison)
 

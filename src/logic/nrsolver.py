@@ -42,6 +42,8 @@ class NRSolver:
 
         linear_index = Y.get_usage()
 
+        max_error_history = []
+
         for iteration_num in range(self.settings.max_iters):
             J = J_linear.copy()
 
@@ -66,6 +68,8 @@ class NRSolver:
 
             err_max = err.max()
             
+            max_error_history.append(err_max)
+
             if err_max < self.settings.tolerance:
                 return (True, v_next, iteration_num)
             elif self.v_limiting != None and err_max > self.settings.tolerance:
