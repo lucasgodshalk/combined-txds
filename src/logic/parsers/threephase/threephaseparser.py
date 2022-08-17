@@ -172,6 +172,9 @@ class ThreePhaseParser:
             if isinstance(model, ditto.models.capacitor.Capacitor):
                 gld_cap = self.all_gld_objects[model.name]
                 for phase_capacitor in model.phase_capacitors:
+                    if not phase_capacitor.phase in model.connected_phases:
+                        continue
+
                     mode = CapacitorMode[gld_cap._control]
                     parent_bus = simulation_state.bus_name_map[gld_cap._parent + '_' + phase_capacitor.phase]
                     nominal_voltage = float(gld_cap._cap_nominal_voltage) #Or could use model.nominal_voltage?
@@ -183,11 +186,12 @@ class ThreePhaseParser:
                     capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, nominal_voltage, mode, model.high, model.low)
                     if mode == CapacitorMode.MANUAL:
                         #Todo: implement ControlLevel
-                        if phase_capacitor.phase == "A":
+                        capacitor.switch = CapSwitchState.CLOSED
+                        if phase_capacitor.phase == "A" and hasattr(gld_cap, "_switchA"):
                             capacitor.switch = CapSwitchState[gld_cap._switchA]
-                        elif phase_capacitor.phase == "B":
+                        elif phase_capacitor.phase == "B" and hasattr(gld_cap, "_switchB"):
                             capacitor.switch = CapSwitchState[gld_cap._switchB]
-                        elif phase_capacitor.phase == "C":
+                        elif phase_capacitor.phase == "C" and hasattr(gld_cap, "_switchC"):
                             capacitor.switch = CapSwitchState[gld_cap._switchC]
                     
                     simulation_state.capacitors.append(capacitor)

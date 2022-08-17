@@ -1855,6 +1855,24 @@ class Reader(AbstractReader):
 
                 api_capacitor.phase_capacitors = phase_capacitors
 
+                try:
+                    connected_phases = str(obj["phases_connected"])
+                except AttributeError:
+                    try:
+                        connected_phases = str(obj["phases"]).upper()
+                        #If we fall back to the phases property, we want to drop the N if there is one.
+                        connected_phases = connected_phases.replace("N", "")
+                    except AttributeError:
+                        raise Exception("Unable to determine connected phases of capacitor")           
+
+                api_capacitor.connected_phases = []
+                api_capacitor.is_delta = False
+                for phase in connected_phases:
+                    if phase == "D":
+                        api_capacitor.is_delta = True
+                    else:
+                        api_capacitor.connected_phases.append(phase)
+
             if obj_type == "regulator":
                 api_regulator = Regulator(model)
                 try:
