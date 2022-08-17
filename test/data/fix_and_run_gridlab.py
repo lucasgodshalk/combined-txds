@@ -96,6 +96,15 @@ for dirpath, dirnames, filenames in os.walk(three_phase_dir):
 #Finally we execute each one with gridlabd.
 ###
 
+failed_cases = []
+
 for (existingcasefile, dirpath) in gridlab_targets:
     print(f"Executing case {existingcasefile}")
-    subprocess.run(["gridlabd.exe", "node.glm"], cwd=dirpath)
+    try:
+        subprocess.run(["gridlabd.exe", "node.glm"], cwd=dirpath, check=True)
+    except subprocess.CalledProcessError:
+        failed_cases.append(existingcasefile)
+
+if len(failed_cases) > 0:
+    print("Some cases failed to run:")
+    print(failed_cases)
