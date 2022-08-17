@@ -36,11 +36,7 @@ object node {
     phases "ABCN";
     bustype SWING;
     nominal_voltage 7200;
-    object recorder {
-        file node1_voltages.csv;
-        interval 60;
-        property voltage_A, voltage_B, voltage_C;
-    };
+    
 }
 
 object transformer:12 {
@@ -57,11 +53,7 @@ object node {
     voltage_B -1200.889-2080.000j;
     voltage_C -1200.889+2080.000j;
     nominal_voltage 2400;
-    object recorder {
-        file node2_voltages.csv;
-        interval 60;
-        property voltage_A, voltage_B, voltage_C;
-    };
+    
 }
 
 

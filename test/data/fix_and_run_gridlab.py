@@ -56,6 +56,8 @@ clockstr = """clock {
 
 tape_regex = r"module tape;"
 
+recorder_regex = r"object\srecorder\s*\{[^//]*?\};?"
+
 gridlab_targets = []
 
 for dirpath, dirnames, filenames in os.walk(three_phase_dir):
@@ -78,6 +80,7 @@ for dirpath, dirnames, filenames in os.walk(three_phase_dir):
 
             filestr = re.sub(voltdump_regex, dumpstr, filestr)
             filestr = re.sub(clock_regex, clockstr, filestr)
+            filestr = re.sub(recorder_regex, "", filestr)
 
             #Tape generates a bunch of extra files we don't want.
             filestr = filestr.replace("module tape;", "")

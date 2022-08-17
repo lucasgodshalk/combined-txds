@@ -86393,37 +86393,13 @@ object underground_line_conductor:5 {
 
 // Recorders
 
-object recorder { 
-    parent R5-12-47-3_reg_1;
-    property tap_A,tap_B,tap_C,power_in_A.real,power_in_A.imag,power_in_B.real,power_in_B.imag,power_in_C.real,power_in_C.imag,power_in.real,power_in.imag; 
-    limit 1440; 
-    interval 60; 
-    file "R5-12.47-3_reg1_output.csv"; 
-};
 
-object recorder { 
-    parent R5-12-47-3_reg_2;
-    property tap_A,tap_B,tap_C,power_in_A.real,power_in_A.imag,power_in_B.real,power_in_B.imag,power_in_C.real,power_in_C.imag,power_in.real,power_in.imag; 
-    limit 1440; 
-    interval 60; 
-    file "R5-12.47-3_reg2_output.csv"; 
-};
 
-object recorder { 
-    parent R5-12-47-3_reg_3;
-    property tap_A,tap_B,tap_C,power_in_A.real,power_in_A.imag,power_in_B.real,power_in_B.imag,power_in_C.real,power_in_C.imag,power_in.real,power_in.imag; 
-    limit 1440; 
-    interval 60; 
-    file "R5-12.47-3_reg3_output.csv"; 
-};
 
-object recorder { 
-    parent R5-12-47-3_reg_4;
-    property tap_A,tap_B,tap_C,power_in_A.real,power_in_A.imag,power_in_B.real,power_in_B.imag,power_in_C.real,power_in_C.imag,power_in.real,power_in.imag; 
-    limit 1440; 
-    interval 60; 
-    file "R5-12.47-3_reg4_output.csv"; 
-};
+
+
+
+
 
 //object recorder { 
 //    parent R5-12-47-3_cap_1; 
@@ -86441,21 +86417,9 @@ object recorder {
 //    limit 1440; 
 //}; 
 
-object recorder { 
-    parent R5-12-47-3_cap_3; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor3.csv; 
-    interval 60; 
-    limit 1440; 
-}; 
+ 
 
-object recorder { 
-    parent R5-12-47-3_cap_4; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor4.csv; 
-    interval 60; 
-    limit 1440; 
-}; 
+ 
 
 //object recorder { 
 //    parent R5-12-47-3_cap_5; 
@@ -86465,69 +86429,21 @@ object recorder {
 //    limit 1440; 
 //}; 
 
-object recorder { 
-    parent R5-12-47-3_cap_6; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor6.csv; 
-    interval 60; 
-    limit 1440; 
-};
 
-object recorder { 
-    parent R5-12-47-3_cap_7; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor7.csv; 
-    interval 60; 
-    limit 1440; 
-};
 
-object recorder { 
-    parent R5-12-47-3_cap_8; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor8.csv; 
-    interval 60; 
-    limit 1440; 
-};
 
-object recorder { 
-    parent R5-12-47-3_cap_9; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor9.csv; 
-    interval 60; 
-    limit 1440; 
-};
 
-object recorder { 
-    parent R5-12-47-3_cap_10; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor10.csv; 
-    interval 60; 
-    limit 1440; 
-};
 
-object recorder { 
-    parent R5-12-47-3_cap_11; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor11.csv; 
-    interval 60; 
-    limit 1440; 
-};
 
-object recorder { 
-    parent R5-12-47-3_cap_12; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor12.csv; 
-    interval 60; 
-    limit 1440; 
-};
 
-object recorder { 
-    parent R5-12-47-3_cap_13; 
-    property "switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"; 
-    file R5-12.47-3_capacitor13.csv; 
-    interval 60; 
-    limit 1440; 
-};
+
+
+
+
+
+
+
+
 
 
 object voltdump {
