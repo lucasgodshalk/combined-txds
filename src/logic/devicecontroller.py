@@ -28,7 +28,7 @@ class DeviceController:
 
         for _ in range(MAX_DEVICE_ITERATIONS):
             is_success, v_final, iteration_num, tx_factor = self.homotopy.run_powerflow(v_init)
-            if not self.try_adjust_devices(v_final):
+            if not self.settings.device_control or not self.try_adjust_devices(v_final):
                 return (is_success, v_final, iteration_num, tx_factor)
         
         raise Exception("Could not find solution where no device adjustments were required.")

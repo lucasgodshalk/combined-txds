@@ -8,7 +8,8 @@ class PowerFlowSettings:
         flat_start = False, 
         tx_stepping = False, 
         infeasibility_analysis = False,
-        dump_matrix = False
+        dump_matrix = False,
+        device_control = True
         ) -> None:
         self.tolerance = tolerance
         self.max_iters = max_iters
@@ -18,3 +19,4 @@ class PowerFlowSettings:
         self.tx_stepping = tx_stepping
         self.infeasibility_analysis = infeasibility_analysis
         self.dump_matrix = dump_matrix
+        self.device_control = device_control
