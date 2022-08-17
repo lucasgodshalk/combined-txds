@@ -1,6 +1,6 @@
 from enum import Enum
 from models.shared.bus import Bus
-from models.shared.line import build_line_stamper_bus
+from models.shared.voltagesource import VoltageSource
 from models.threephase.edge import Edge
 
 class SwitchStatus(Enum):
@@ -22,11 +22,13 @@ class Switch(Edge):
         self.to_node = to_node
         self.phase = phase
 
-        self.G = 1e4
-        self.B = 1e4
+        self.vs = VoltageSource(from_node, to_node, 0, 0)
         
     def assign_nodes(self, node_index, optimization_enabled):
-        self.stamper = build_line_stamper_bus(self.from_node, self.to_node, optimization_enabled)
+        if self.status == SwitchStatus.OPEN:
+            return
+
+        self.vs.assign_nodes(node_index, optimization_enabled)
 
     def get_connections(self):
         if self.status == SwitchStatus.OPEN:
@@ -39,17 +41,17 @@ class Switch(Edge):
         if self.status == SwitchStatus.OPEN:
             return
 
-        self.stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
+        self.vs.stamp_primal(Y, J, v_previous, tx_factor, state)
 
     def stamp_dual(self, Y, J, v_previous, tx_factor, state):
         if self.status == SwitchStatus.OPEN:
             return
 
-        self.stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
+        self.vs.stamp_dual(Y, J, v_previous, tx_factor, state)
     
     def calculate_residuals(self, state, v):
         if self.status == SwitchStatus.OPEN:
             return {}
             
-        return self.stamper.calc_residuals([self.G, self.B, 0], v)
+        return self.vs.calculate_residuals(state, v)
 
