@@ -1,0 +1,247 @@
+#set iteration_limit=100000;
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}
+
+module powerflow {
+	solver_method NR;
+	line_capacitance false;
+	}
+	
+// object voltdump {
+//     filename voltage.csv;
+// 	mode RECT;
+// }
+
+object node { //650 {
+      name n650;
+      phases "ABCN";
+      bustype SWING;
+      voltage_A 2401.7771;
+      voltage_B -1200.8886-2080.000j;
+      voltage_C -1200.8886+2080.000j;
+      nominal_voltage 2401.7771;
+} 
+
+
+object regulator_configuration:75 { 
+     name feeder_reg_cfg; 
+     Control OUTPUT_VOLTAGE; 
+     band_center 7500.0; 
+     band_width 120; 
+     connect_type WYE_WYE; 
+     time_delay 30; 
+     raise_taps 16; 
+     lower_taps 16; 
+     regulation 0.10; 
+     tap_pos_A 0; 
+     tap_pos_B 0; 
+     tap_pos_C 0; 
+} 
+
+object regulator:74 { 
+     name fregn650n630; 
+     from n650; 
+     to n630; 
+     phases ABC; 
+     configuration feeder_reg_cfg; 
+}  
+
+  
+// object regulator {
+// 	 name fregn650n630;
+// 	 phases "ABC";
+// 	 from n650;
+// 	 to n630;
+// 	 configuration regulator_configuration:75;
+// }
+
+object node { //630 {
+     name n630;
+     phases "ABCN";
+     voltage_A 2401.7771+0j;
+     voltage_B -1200.8886-2080.000j;
+     voltage_C -1200.8886+2080.000j;
+     nominal_voltage 2401.7771;
+}
+
+
+
+// Phase Conductor for 601: 556,500 26/7 ACSR
+object overhead_line_conductor {
+	name olc6010;
+	geometric_mean_radius 0.031300;
+	diameter 0.927 in;
+	resistance 0.185900;
+}
+
+// Phase Conductor for 602: 4/0 6/1 ACSR
+object overhead_line_conductor {
+	name olc6020;
+	geometric_mean_radius 0.00814;
+	diameter 0.56 in;
+	resistance 0.592000;
+}
+
+object line_spacing {
+	name ls500601;
+	distance_AB 2.5;
+	distance_AC 4.5;
+	distance_BC 7.0;
+	distance_BN 5.656854;
+	distance_AN 4.272002;
+	distance_CN 5.0;
+	distance_AE 28.0;
+	distance_BE 28.0;
+	distance_CE 28.0;
+	distance_NE 24.0;
+}
+
+object line_configuration {
+	name lc601;
+	conductor_A olc6010;
+	conductor_B olc6010;
+	conductor_C olc6010;
+	conductor_N olc6020;
+	spacing ls500601;
+}
+
+object overhead_line { //630632 {
+     phases "ABCN";
+     name line_630-632;
+     from n630;
+     to n632;
+     length 2000;
+     configuration lc601;
+}
+ 
+
+object node { //632 {
+     name n632;
+     phases "ABCN";
+     voltage_A 2401.7771;
+     voltage_B -1200.8886-2080.000j;
+     voltage_C -1200.8886+2080.000j;
+     nominal_voltage 2401.7771;
+	//  object complex_assert {
+	// 	target voltage_A;
+	// 	value 2452.21-2.49d;
+	// 	within 5;
+	//  };	 object complex_assert {
+	// 	target voltage_B;
+	// 	value 2502.56-121.72d;
+	// 	within 5;
+	//  };	 object complex_assert {
+	// 	target voltage_C;
+	// 	value 2443.56+117.83d;
+	// 	within 5;
+	//  };
+}
+
+// object transformer_configuration:400 {
+//     connect_type 1;
+//     power_rating 6000;
+//     powerA_rating 2000;
+//     powerB_rating 2000;
+//     powerC_rating 2000;
+//     primary_voltage 4160;
+//     secondary_voltage 12470;
+//     resistance 0.0001;
+//     reactance 0.0006;
+// }
+
+
+
+// object underground_line:48 { 
+//      name GC-12-47-1_ul_3; 
+//      phases ABCN; 
+//      from n630; 
+//      to n631; 
+//      length 2000; 
+//      configuration line_configuration:6; 
+// } 
+
+
+// object line_configuration:6 { 
+//      conductor_A underground_line_conductor:2; 
+//      conductor_B underground_line_conductor:2; 
+//      conductor_C underground_line_conductor:2; 
+//      conductor_N underground_line_conductor:2; 
+//      spacing line_spacing:5; 
+// } 
+
+// object line_spacing:5 { 
+//      distance_AB 3.0 in; 
+//      distance_BC 3.0 in; 
+//      distance_AC 3.0 in; 
+//      distance_AN 2.0 in; 
+//      distance_BN 2.0 in; 
+//      distance_CN 2.0 in; 
+// } 
+
+
+// object underground_line_conductor:2 { 
+//      //name 1000 AAC (Conc); 
+//     //  rating.summer.continuous 488.0; 
+//      outer_diameter 2.15; 
+//      conductor_gmr 0.0371 ft; 
+//      conductor_diameter 1.152; 
+//      conductor_resistance 0.091872; 
+//      neutral_gmr 0.0842565914341201 ft; 
+//      neutral_resistance 5.3856; 
+//      neutral_diameter 0.1019; 
+//      neutral_strands 20.0; 
+//     //  shield_gmr 0.00; 
+//     //  shield_resistance 0.00; 
+// } 
+
+
+
+// object node:29 { 
+//      name n631; 
+//      phases ABCN; 
+//      voltage_A 2401.7771+0j;
+//      voltage_B -1200.8886-2080.000j;
+//      voltage_C -1200.8886+2080.000j;
+//      nominal_voltage 2401.7771;
+// } 
+
+object transformer_configuration:42 { 
+     connect_type WYE_WYE; 
+     install_type PADMOUNT; 
+     primary_voltage 12470.000 V; 
+     secondary_voltage 480 V; 
+     power_rating 3000.0; 
+     powerA_rating 1000.0; 
+     powerB_rating 1000.0; 
+     powerC_rating 1000.0; 
+     resistance 0.00003; 
+     reactance 0.00017; 
+      shunt_impedance 6545.460+6655.949j;
+} 
+
+
+object transformer:23 {
+    phases "ABCN";
+    from n632;
+    to l6321;
+    configuration transformer_configuration:42;
+}
+
+object load { //6321 {
+     name l6321;
+     phases "ABCN";
+     constant_power_A 11333.333+6666.6667j;
+     constant_power_B 44000+25333.3333j;
+     constant_power_C 78000+45333.3333j;
+     nominal_voltage 7200;
+}
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

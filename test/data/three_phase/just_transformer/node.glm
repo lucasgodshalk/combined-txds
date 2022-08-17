@@ -1,0 +1,76 @@
+// Just a transformer
+
+/////////////////////////////////////////////
+// BEGIN
+/////////////////////////////////////////////
+
+
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}
+
+module powerflow {
+    solver_method NR;
+    NR_matrix_file "y_matrix_printout.txt";
+    NR_matrix_output_interval PER_CALL;
+    NR_matrix_output_references true;
+};
+
+object transformer_configuration:400 {
+    connect_type 1;
+    power_rating 6000;
+    powerA_rating 2000;
+    powerB_rating 2000;
+    powerC_rating 2000;
+    primary_voltage 12470;
+    secondary_voltage 4160;
+    resistance 0.01;
+    reactance 0.06;
+}
+
+object node {
+    name node1;
+    phases "ABCN";
+    bustype SWING;
+    nominal_voltage 7200;
+    object recorder {
+        file node1_voltages.csv;
+        interval 60;
+        property voltage_A, voltage_B, voltage_C;
+    };
+}
+
+object transformer:12 {
+    phases "ABCN";
+    from node1;
+    to node2;
+    configuration transformer_configuration:400;
+}
+
+object node {
+    name node2;
+    phases "ABCN";
+    voltage_A +2401.777+0.000j;
+    voltage_B -1200.889-2080.000j;
+    voltage_C -1200.889+2080.000j;
+    nominal_voltage 2400;
+    object recorder {
+        file node2_voltages.csv;
+        interval 60;
+        property voltage_A, voltage_B, voltage_C;
+    };
+}
+
+
+///////////////////////////////
+// END
+///////////////////////////////
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

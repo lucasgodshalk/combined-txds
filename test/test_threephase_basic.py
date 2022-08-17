@@ -1,6 +1,5 @@
 # import pytest as pt
 import cmath
-from math import radians
 import math
 from logic.powerflow import FilePowerFlow
 from logic.powerflowresults import PowerFlowResults
@@ -10,7 +9,7 @@ import numpy as np
 import csv
 
 CURR_DIR = os.path.realpath(os.path.dirname(__file__))
-DATA_DIR = os.path.join(CURR_DIR, "data")
+DATA_DIR = os.path.join(CURR_DIR, "data", "three_phase")
 
 def get_glm_case_file(casename, glm_file_name = "node.glm"):
     return os.path.join(DATA_DIR, casename, glm_file_name)
@@ -18,8 +17,7 @@ def get_glm_case_file(casename, glm_file_name = "node.glm"):
 def get_gridlabd_csv_voltdump(casename):
     return os.path.join(DATA_DIR, casename, "result.csv")
 
-def execute_glm_case(casename, glm_file_name = "node.glm", debug = False):
-    filepath = get_glm_case_file(casename, glm_file_name)
+def execute_glm_case(filepath, debug = False):
     powerflow = FilePowerFlow(filepath, PowerFlowSettings(debug=debug))
     return powerflow.execute()
 
@@ -97,7 +95,8 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
         assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" is at {largest[0] + 100}% of tolerance. (magnitude: {largest[2]:.5g}, {largest[3]:.5g}) (degrees: {largest[4]:.5g}, {largest[5]:.5g})"
 
 def assert_glm_case_gridlabd_results(casename):
-    results = execute_glm_case(casename)
+    filepath = get_glm_case_file(casename)
+    results = execute_glm_case(filepath)
     comparison = load_gridlabd_csv(casename)
     assert_busresults_gridlabdvoltdump(results, comparison)
 

@@ -1,0 +1,21 @@
+Note: All indices are zero-referenced.
+
+Matrix Index information for this call - start,stop,name
+0,5,node1
+
+Timestamp: 946713600 - Iteration 0
+Matrix Information - non-zero element count = 12
+Matrix Information - row, column, value
+0,0,10000000000.000000
+3,0,0.000000
+1,1,10000000000.000000
+4,1,0.000000
+2,2,10000000000.000000
+5,2,0.000000
+0,3,0.000000
+3,3,10000000000.000000
+1,4,0.000000
+4,4,10000000000.000000
+2,5,0.000000
+5,5,10000000000.000000
+

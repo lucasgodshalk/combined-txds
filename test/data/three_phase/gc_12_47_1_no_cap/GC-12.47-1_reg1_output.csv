@@ -1,0 +1,9 @@
+# file...... GC-12.47-1_reg1_output.csv
+# date...... Wed Aug 17 15:01:29 2022
+# user...... lucas
+# host...... (null)
+# target.... regulator 1
+# trigger... (none)
+# interval.. 60
+# limit..... 1440
+# timestamp,tap_A,tap_B,tap_C,power_in_A.real,power_in_A.imag,power_in_B.real,power_in_B.imag,power_in_C.real,power_in_C.imag,power_in.real,power_in.imag

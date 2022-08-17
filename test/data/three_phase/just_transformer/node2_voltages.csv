@@ -1,0 +1,9 @@
+# file...... node2_voltages.csv
+# date...... Wed Aug 17 15:01:14 2022
+# user...... lucas
+# host...... (null)
+# target.... node 4
+# trigger... (none)
+# interval.. 60
+# limit..... 0
+# timestamp,voltage_A, voltage_B, voltage_C

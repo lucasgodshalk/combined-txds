@@ -1,0 +1,182 @@
+module powerflow{
+	solver_method NR;
+	// line_capacitance false;
+};
+
+
+object node:4385 {
+	name R1-12-47-1_node_617;
+	bustype SWING;
+	phases ABCN;
+	nominal_voltage 7216.88;
+	voltage_A 7216.88+0.0j;
+	voltage_B -3608.44-6250j;
+	voltage_C -3608.44+6250j;
+}
+
+object switch:4379 {
+	name R1-12-47-1_switch_9;
+	phases ABCN;
+	from R1-12-47-1_node_617;
+	to R1-12-47-1_node_612;
+	status CLOSED;
+}
+
+object node:646 {
+	name R1-12-47-1_node_612;
+	phases ABCN;
+	voltage_A 7216.88+0.0j;
+	voltage_B -3608.44-6250j;
+	voltage_C -3608.44+6250j;
+	nominal_voltage 7216.88;
+}
+
+object overhead_line:4210 {
+	name R1-12-47-1_ol_301;
+	phases ABCN;
+	from R1-12-47-1_node_612;
+	to R1-12-47-1_node_3;
+	length 458.063;
+	configuration line_configuration:22;
+}
+
+object line_configuration:22 {
+	conductor_A overhead_line_conductor:4;
+	conductor_B overhead_line_conductor:4;
+	conductor_C overhead_line_conductor:4;
+	conductor_N overhead_line_conductor:4;
+	spacing line_spacing:13;
+}
+
+object overhead_line_conductor:4 {
+	//name 336 ACSR;
+	rating.summer.continuous 530.0;
+	geometric_mean_radius 0.02300 ft;
+	resistance 0.30300;
+}
+
+object line_spacing:13 {
+	distance_AB 57.6 in;
+	distance_BC 57.6 in;
+	distance_AC 57.6 in;
+	distance_AN 51.6 in;
+	distance_BN 51.6 in;
+	distance_CN 51.6 in;
+}
+
+object node:37 {
+	name R1-12-47-1_node_3;
+	phases ABCN;
+	voltage_A 7216.88+0.0j;
+	voltage_B -3608.44-6250j;
+	voltage_C -3608.44+6250j;
+	nominal_voltage 7216.88;
+}
+
+// Shared Config
+
+object triplex_line_configuration:1 {
+	conductor_1 triplex_1/0 AA;
+	conductor_2 triplex_1/0 AA;
+	conductor_N triplex_1/0 AA;
+	insulation_thickness 0.08;
+	diameter 0.368;
+}
+
+object triplex_line_conductor: {
+	name triplex_1/0 AA;
+	resistance 0.97;
+	geometric_mean_radius 0.0111;
+}
+
+
+// object voltdump {
+//     filename voltage.csv;
+// 	mode RECT;
+// }
+
+// object group_recorder {
+// 	group "class=triplex_node";
+//     property voltage_1;
+//     file triplex_voltage1s.csv;
+// }
+
+// object group_recorder {
+// 	group "class=triplex_node";
+//     property voltage_2;
+//     file triplex_voltage2s.csv;
+// }
+
+// Phase C
+
+object transformer:3687 {
+	name R1-12-47-1_xfmr_556;
+	phases CS;
+	from R1-12-47-1_node_3;
+	to R1-12-47-1_tn_556;
+	configuration transformer_configuration:3115;
+}
+
+object transformer_configuration:3115 {
+	connect_type SINGLE_PHASE_CENTER_TAPPED;
+	install_type POLETOP;
+	primary_voltage 7216.88 V;
+	secondary_voltage 120 V;
+	power_rating 5;
+	powerC_rating 5;
+	resistance 0.015;
+	reactance 0.01;
+}
+
+object triplex_node:1226 {
+	name R1-12-47-1_tn_556;
+	phases CS;
+	voltage_1 -60+103.92j;
+	voltage_2 -60+103.92j;
+	voltage_N 0;
+	nominal_voltage 120;
+}
+
+object triplex_line:30401 {
+	name R1-12-47-1_tl_5561;
+	phases CS;
+	from R1-12-47-1_tn_556;
+	to R1-12-47-1_tm_556;
+	length 30;
+	configuration triplex_line_configuration:1;
+}
+
+object triplex_meter:2422 {
+	name R1-12-47-1_tm_556;
+	phases CS;
+	voltage_1 -60+103.92j;
+	voltage_2 -60+103.92j;
+	voltage_N 0;
+	nominal_voltage 120;
+}
+
+object triplex_node:1824 {
+	name R1-12-47-1_tn_1154;
+	phases CS;
+	parent R1-12-47-1_tm_556;
+	power_1 2300+1200j;
+	voltage_1 -60+103.92j;
+	voltage_2 -60+103.92j;
+	voltage_N 0;
+	nominal_voltage 120;
+}
+
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}
+
+
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}

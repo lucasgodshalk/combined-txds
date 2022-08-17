@@ -1,0 +1,3 @@
+[submodule "test/data/Taxonomy_Feeders"]
+	path = test/data/Taxonomy_Feeders
+	url = https://github.com/gridlab-d/Taxonomy_Feeders.git

@@ -1,0 +1,9 @@
+# file...... R2-35.00-1_capacitor6.csv
+# date...... Wed Aug 17 15:01:09 2022
+# user...... lucas
+# host...... (null)
+# target.... capacitor 7
+# trigger... (none)
+# interval.. 60
+# limit..... 1440
+# timestamp,switchA,switchB,switchC,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag

@@ -14,12 +14,12 @@ from models.shared.voltagesource import VoltageSource
 CURR_DIR = os.path.realpath(os.path.dirname(__file__))
 
 def get_positiveseq_raw(casename):
-    file_path = os.path.join("data", "positiveseq", f"{casename}.RAW")
+    file_path = os.path.join("data", "positive_seq", f"{casename}.RAW")
     full_file_path = os.path.join(CURR_DIR, file_path)
     return full_file_path
 
 def get_positiveseq_mat_result(casename):
-    file_path = os.path.join("result_comparison", f"{casename}.mat")
+    file_path = os.path.join("data", "positive_seq", "result_comparison", f"{casename}.mat")
     full_file_path = os.path.join(CURR_DIR, file_path)
     return full_file_path
 

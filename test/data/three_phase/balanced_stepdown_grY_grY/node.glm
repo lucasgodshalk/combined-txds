@@ -1,0 +1,155 @@
+// $id$
+//	Copyright (C) 2008 Battelle Memorial Institute
+
+// 4 Node Feeder: Balanced step-down grY-grY
+
+/////////////////////////////////////////////
+// BEGIN
+/////////////////////////////////////////////
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}
+
+module powerflow;
+
+object overhead_line_conductor {
+	name olc100;
+	geometric_mean_radius 0.0244;
+	resistance 0.306;
+	diameter 0.721 in;
+}
+
+object overhead_line_conductor {
+	name olc101;
+	geometric_mean_radius 0.00814;
+	resistance 0.592;
+	diameter 0.563 in;
+}
+
+object line_spacing {
+	name ls200;
+	distance_AB 2.5;
+	distance_BC 4.5;
+	distance_AC 7.0;
+	distance_AN 5.656854;
+	distance_BN 4.272002;
+	distance_CN 5.0;
+	distance_AE 28.0;
+	distance_BE 28.0;
+	distance_CE 28.0;
+	distance_NE 24.0;
+}
+
+object line_configuration {
+	name lc300;
+	conductor_A olc100;
+	conductor_B olc100;
+	conductor_C olc100;
+	conductor_N olc101;
+	spacing ls200;
+}
+
+object transformer_configuration {
+	name tc400;
+	connect_type WYE_WYE;
+	install_type PADMOUNT;
+	power_rating 6000;
+	powerA_rating 2000;
+	powerB_rating 2000;
+	powerC_rating 2000;
+	primary_voltage 12470;
+	secondary_voltage 4160;
+	resistance 0.01;
+	reactance 0.06;
+}
+
+object node {
+	name n1;
+	phases "ABCN";
+	bustype SWING;
+	voltage_A +7199.558+0.000j;
+	voltage_B -3599.779-6235.000j;
+	voltage_C -3599.779+6235.000j;
+	nominal_voltage 7200;
+}
+
+object overhead_line {
+	phases "ABCN";
+	name line_1-2;
+	from n1;
+	to n2;
+	length 2000;
+	configuration lc300;
+}
+
+object node {
+	name n2;
+	phases "ABCN";
+	voltage_A +7199.558+0.000j;
+	voltage_B -3599.779-6235.000j;
+	voltage_C -3599.779+6235.000j;
+	nominal_voltage 7200;
+}
+
+object transformer {
+	phases "ABCN";
+	name transformer_2-3;
+	from n2;
+	to n3;
+	configuration tc400;
+}
+
+object node {
+	name n3;
+	phases "ABCN";
+	voltage_A +2401.777+0.000j;
+	voltage_B -1200.889-2080.000j;
+	voltage_C -1200.889+2080.000j;
+	nominal_voltage 2400;
+}
+
+object overhead_line {
+	phases "ABCN";
+	name line_3-4;
+	from n3;
+	to l4;
+	length 2500;
+	configuration lc300;
+}
+
+object load {
+	name l4;
+	phases "ABCN";
+	voltage_A +2401.777+0.000j;
+	voltage_B -1200.889-2080.000j;
+	voltage_C -1200.889+2080.000j;
+	constant_power_A +1800000.000+871779.789j;
+	constant_power_B +1800000.000+871779.789j;
+	constant_power_C +1800000.000+871779.789j;
+	nominal_voltage 2400;
+}
+
+
+// object voltdump {
+//      filename `{out_V}`;
+//      mode POLAR;
+// }
+
+// object currdump {
+//      filename `{out_I}`;
+//      mode POLAR;
+// }
+
+///////////////////////////////
+// END
+///////////////////////////////
+
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

@@ -1,0 +1,169 @@
+/////////////////////////////////////////////
+// BEGIN
+/////////////////////////////////////////////
+
+
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}
+
+module powerflow;
+
+
+// object voltdump {
+//     filename voltage.csv;
+// 	mode RECT;
+// }
+
+// object group_recorder {
+// 	group "class=triplex_node";
+//     property voltage_1;
+//     file triplex_voltage1s.csv;
+// }
+
+// object group_recorder {
+// 	group "class=triplex_node";
+//     property voltage_2;
+//     file triplex_voltage2s.csv;
+// }
+
+object triplex_line_configuration:1 { 
+     conductor_1 triplex_4/0 AA; 
+     conductor_2 triplex_4/0 AA; 
+     conductor_N triplex_4/0 AA; 
+     insulation_thickness 0.08; 
+     diameter 0.522; 
+} 
+
+object triplex_line_conductor: { 
+     name triplex_4/0 AA; 
+     resistance 0.48; 
+     geometric_mean_radius 0.0158; 
+} 
+
+object node {
+    name R1-12-47-1_node_3;
+    phases "C";
+    voltage_C -3599.779+6235.000j;
+    nominal_voltage 7200;
+    bustype SWING;
+}
+
+object transformer:3687 {
+	name R1-12-47-1_xfmr_556;
+	phases CS;
+	from R1-12-47-1_node_3;
+	to R1-12-47-1_tn_556;
+	configuration transformer_configuration:3115;
+}
+
+object transformer_configuration:3115 {
+	connect_type SINGLE_PHASE_CENTER_TAPPED;
+	install_type POLETOP;
+	primary_voltage 7200 V;
+	secondary_voltage 120 V;
+	power_rating 50;
+	powerC_rating 50;
+	resistance 0.011;
+	reactance 0.018;
+}
+
+object triplex_node:1226 {
+	name R1-12-47-1_tn_556;
+	phases CS;
+	nominal_voltage 120;
+}
+
+object triplex_line:30401 {
+	name R1-12-47-1_tl_5561;
+	phases CS;
+	from R1-12-47-1_tn_556;
+	to R1-12-47-1_tn_5561;
+	length 100;
+	configuration triplex_line_configuration:1;
+}
+
+object triplex_node:12261 {
+	name R1-12-47-1_tn_5561;
+	phases CS;
+    // power_1 9.5+3.1225j; // 10kVA at 0.95 lagging pf = (10 * 0.95, 10 * sin(cos-1(0.95)))
+    // power_2 13.5+6.5383484j; // 15kVA at 0.9 lagging pf = (15 * 0.9, 15 * sin(cos-1(0.9)))
+    // power_12 21.25+13.169567j; // 25kVA at 0.85 lagging pf = (25 * 0.85, 25 * sin(cos-1(0.85)))
+	nominal_voltage 120;
+}
+
+object triplex_line:30402 {
+	name R1-12-47-1_tl_5562;
+	phases CS;
+	from R1-12-47-1_tn_5561;
+	to R1-12-47-1_tn_5562;
+	length 30;
+	configuration triplex_line_configuration:1;
+}
+
+object triplex_node:12262{
+	name R1-12-47-1_tn_5562;
+	phases CS;
+	voltage_1 -60+103.92j;
+	voltage_2 -60+103.92j;
+	voltage_N 0;
+	nominal_voltage 120;
+    // object recorder {
+    //     file tn_556_voltages.csv;
+    //     property voltage_1, voltage_2, voltage_N;
+    // };
+}
+
+object triplex_line:3040 {
+	name R1-12-47-1_tl_556;
+	phases CS;
+	from R1-12-47-1_tn_5562;
+	to R1-12-47-1_tm_556;
+	length 30;
+	configuration triplex_line_configuration:1;
+}
+
+object triplex_meter:2422 {
+	name R1-12-47-1_tm_556;
+	phases CS;
+	voltage_1 -60+103.92j;
+	voltage_2 -60+103.92j;
+	voltage_N 0;
+	nominal_voltage 120;
+    // object recorder {
+    //     file tm_556_voltages.csv;
+    //     interval 1;
+    //     property measured_voltage_1, measured_voltage_2, measured_voltage_N;
+    // };
+}
+
+object triplex_node:1824 {
+	name R1-12-47-1_tn_1154;
+	phases CS;
+	parent R1-12-47-1_tm_556;
+    power_1 2300+1200j;
+    power_2 2300+1200j;
+	voltage_1 -60+103.92j;
+	voltage_2 -60+103.92j;
+	voltage_N 0;
+	nominal_voltage 120;
+    // object recorder {
+    //     file tn_1154_voltages.csv;
+    //     property voltage_1, voltage_2, voltage_N;
+    // };
+}
+
+
+
+///////////////////////////////
+// END
+///////////////////////////////
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

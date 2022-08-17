@@ -1,0 +1,43 @@
+// Just a swing bus representing an infinite voltage source
+
+/////////////////////////////////////////////
+// BEGIN
+/////////////////////////////////////////////
+
+
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}
+
+module powerflow {
+    solver_method NR;
+    NR_matrix_file "y_matrix_printout.txt";
+    NR_matrix_output_interval PER_CALL;
+    NR_matrix_output_references true;
+};
+
+object node {
+    name node1;
+    phases "ABCN";
+    nominal_voltage 2400;
+    bustype SWING;
+    // object recorder {
+    //     file node1_voltages.csv;
+    //     interval 60;
+    //     property voltage_A, voltage_B, voltage_C;
+    // };
+}
+
+
+///////////////////////////////
+// END
+///////////////////////////////
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}
