@@ -22,8 +22,8 @@ tr = tr_orig + (1 - tr_orig) * tx_factor
 #I_0 => Leaving primary (positive), I_1, I_2 => Entering secondary (negative). 
 
 eqns = [
-    1 / tr * (Ir_L1 - Ir_L2),
-    1 / tr * (Ii_L1 - Ii_L2),
+    1 / tr * (-Ir_L1 + Ir_L2),
+    1 / tr * (-Ii_L1 + Ii_L2),
     Vr_L1 - 1 / tr * Vr_pri,
     Vi_L1 - 1 / tr * Vi_pri,
     Ir_L1,
