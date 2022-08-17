@@ -176,6 +176,10 @@ class ThreePhaseParser:
                         continue
 
                     mode = CapacitorMode[gld_cap._control]
+                    if mode == CapacitorMode.VOLT and (model.high == None or model.low == None):
+                        #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/capacitor.cpp#L320-L325
+                        mode = CapacitorMode.MANUAL
+
                     parent_bus = simulation_state.bus_name_map[gld_cap._parent + '_' + phase_capacitor.phase]
                     nominal_voltage = float(gld_cap._cap_nominal_voltage) #Or could use model.nominal_voltage?
                     voltage_angle = self._phase_to_angle[phase_capacitor.phase]
@@ -186,7 +190,11 @@ class ThreePhaseParser:
                     capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, nominal_voltage, mode, model.high, model.low)
                     if mode == CapacitorMode.MANUAL:
                         #Todo: implement ControlLevel
-                        capacitor.switch = CapSwitchState.CLOSED
+
+                        #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/capacitor.cpp#L116-L118
+                        #Gridlabd defaults to open.
+                        capacitor.switch = CapSwitchState.OPEN
+
                         if phase_capacitor.phase == "A" and hasattr(gld_cap, "_switchA"):
                             capacitor.switch = CapSwitchState[gld_cap._switchA]
                         elif phase_capacitor.phase == "B" and hasattr(gld_cap, "_switchB"):
