@@ -264,9 +264,6 @@ def test_gc_12_47_1_subset():
 def test_gc_12_47_1_no_cap():
     assert_glm_case_gridlabd_results("gc_12_47_1_no_cap")
 
-def test_gc_12_47_1():
-    assert_glm_case_gridlabd_results("gc_12_47_1")
-
 def test_center_tap_xfmr():
     assert_glm_case_gridlabd_results("center_tap_xfmr")
 
@@ -278,12 +275,6 @@ def test_triplex_load_class():
 
 def test_basic_triplex_network():
     assert_glm_case_gridlabd_results("basic_triplex_network")
-
-def test_r1_12_47_1():
-    assert_glm_case_gridlabd_results("r1_12_47_1")
-
-def test_r1_12_47_3():
-    assert_glm_case_gridlabd_results("r1_12_47_3")
 
 # Requires support for delta connected transformers (not yet supported)
 def test_ieee_four_bus_delta_delta_transformer():

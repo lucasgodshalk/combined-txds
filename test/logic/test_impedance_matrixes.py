@@ -2,7 +2,7 @@
 import numpy as np
 from logic.powerflow import FilePowerFlow
 from logic.powerflowsettings import PowerFlowSettings
-from test_threephase import get_glm_case_file
+from test_threephase_basic import get_glm_case_file
 import cmath
 from ditto.readers.gridlabd.read import compute_triplex_impedance_matrix
 
