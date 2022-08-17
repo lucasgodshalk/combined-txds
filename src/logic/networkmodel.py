@@ -11,6 +11,7 @@ from models.shared.load import Load
 from models.shared.slack import Slack
 from models.shared.transformer import Transformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
+from models.shared.switch import Switch
 
 BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0
@@ -35,6 +36,9 @@ class NetworkModel():
         self.transformers = []
         self.infeasibility_currents: List[L2InfeasibilityCurrent]
         self.infeasibility_currents = []
+        self.switches: List[Switch]
+        self.switches = []
+
         self.size_Y = None
         self.matrix_version = -1
 
@@ -57,12 +61,19 @@ class NetworkModel():
 
         for xfmr in self.transformers:
             if isinstance(xfmr, CenterTapTransformer):
-                continue #todo
+                self.matrix_map[f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L1_Ir"] = xfmr.node_L1_Ir
+                self.matrix_map[f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L1-Ii"] = xfmr.node_L1_Ii
+                self.matrix_map[f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L2-Ir"] = xfmr.node_L2_Ir
+                self.matrix_map[f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L2-Ii"] = xfmr.node_L2_Ii
             else:
                 self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ir-pri"] = xfmr.node_primary_Ir
                 self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ii-pri"] = xfmr.node_primary_Ii
                 self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vr-sec"] = xfmr.node_secondary_Vr
                 self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vi-sec"] = xfmr.node_secondary_Vi
+
+        for switch in self.switches:
+            self.matrix_map[f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ir"] = switch.vs.Ir_index
+            self.matrix_map[f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ii"] = switch.vs.Ii_index
 
         for load in self.loads:
             self.matrix_map[f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ir"] = load.node_Ir
@@ -97,7 +108,7 @@ class TxNetworkModel(NetworkModel):
         self.voltage_sources = voltage_sources
 
     def get_NR_invariant_elements(self):
-        return self.branches + self.shunts + self.transformers + self.slack + self.infeasibility_currents + self.voltage_sources
+        return self.branches + self.shunts + self.transformers + self.slack + self.switches + self.infeasibility_currents + self.voltage_sources
 
     def get_NR_variable_elements(self):
         return self.generators + self.loads
@@ -155,8 +166,6 @@ class DxNetworkModel(NetworkModel):
         self.capacitors = []
         # All of the fuses
         self.fuses = []
-        # All of the switches
-        self.switches = []
         # All of the regulators
         self.regulators = []
 

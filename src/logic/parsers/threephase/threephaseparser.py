@@ -20,8 +20,8 @@ from models.threephase.transmission_line import TransmissionLine
 from models.threephase.fuse import Fuse, FuseStatus
 from models.threephase.fuse import Fuse
 
-from models.threephase.switch import Switch, SwitchStatus
-from models.threephase.switch import Switch
+from models.shared.switch import Switch, SwitchStatus
+from models.shared.switch import Switch
 from models.threephase.regulator import RegControl, RegType, Regulator
 
 class ThreePhaseParser:

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import List
 import numpy as np
 from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
@@ -6,6 +7,7 @@ from logic.lagrangestamper import SKIP, LagrangeStamper
 from models.shared.bus import GROUND
 from models.shared.line import build_line_stamper_bus
 from models.helpers import merge_residuals
+from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
 
 constants = tr_orig, tx_factor = symbols('tr tx_factor')
 primals = [Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2] = symbols('Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2')
@@ -47,6 +49,7 @@ class CenterTapTransformer():
                 , g_shunt
                 , b_shunt
                 ):
+        self.coils: List[CenterTapTransformerCoil]
         self.coils = [coil_1, coil_2, coil_3]
         self.phases = phase
         self.turn_ratio = turn_ratio
