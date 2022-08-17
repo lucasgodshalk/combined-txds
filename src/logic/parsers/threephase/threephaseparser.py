@@ -97,6 +97,13 @@ class ThreePhaseParser:
 
                             bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase.default_value, False)
 
+                            if phase.default_value == "1":
+                                bus.Vr_init = -60.0
+                                bus.Vi_init = 103.92
+                            elif phase.default_value == "2":
+                                bus.Vr_init = 60.0
+                                bus.Vi_init = -103.92
+
                         if isSlack:
                             # Create this phase of the slack bus
                             slack = Slack(bus, v_mag, v_ang, 0, 0)
