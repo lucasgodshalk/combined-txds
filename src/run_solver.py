@@ -27,7 +27,9 @@ settings = PowerFlowSettings(
     infeasibility_analysis=False, 
     tx_stepping=False, 
     voltage_limiting=False,
-    dump_matrix=True
+    dump_matrix=False,
+    loadfile_name = 'test/data/Randomized Hourly Load Data for use with Taxonomy Distribution Feeders/R1-1247-2.csv',
+    loadfile_start = 0
     )
 
 powerflow = FilePowerFlow(casename, settings)

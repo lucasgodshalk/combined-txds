@@ -4,6 +4,7 @@ from logic.devicecontroller import DeviceController
 from logic.homotopycontroller import HomotopyController
 from logic.networkloader import NetworkLoader
 from logic.networkmodel import NetworkModel
+from logic.networkpostprocessor import NetworkPostProcessor
 from logic.nrsolver import NRSolver
 from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflowresults import PowerFlowResults
@@ -40,6 +41,9 @@ class FilePowerFlow(PowerFlow):
         builder = NetworkLoader(settings)
 
         network = builder.from_file(networkfile)
+
+        postprocessor = NetworkPostProcessor(settings)
+        postprocessor.run(network)
 
         PowerFlow.__init__(self, network, settings)
 
