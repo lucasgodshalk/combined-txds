@@ -10,3 +10,4 @@ six
 traitlets
 croniter
 lxml
+dill
