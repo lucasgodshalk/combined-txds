@@ -1,23 +1,17 @@
 from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflow import FilePowerFlow
+import argparse
 
-# path to the grid network RAW file
-#casename = 'test/data/positiveseq/GS-4_prior_solution.RAW'
-#casename = 'test/data/positiveseq/IEEE-14_prior_solution.RAW'
-#casename = 'test/data/positiveseq/IEEE-118_prior_solution.RAW'
-#casename = 'test/data/positiveseq/ACTIVSg500_prior_solution_fixed.RAW'
-#casename = 'test/data/positiveseq/PEGASE-9241_flat_start.RAW'
-#casename = 'test/data/positiveseq/PEGASE-13659_flat_start.RAW'
-#casename = 'test/data/positiveseq/GS-4_stressed.RAW'
-#casename = 'test/data/positiveseq/IEEE-14_stressed_1.RAW'
-#casename = 'test/data/positiveseq/IEEE-14_stressed_2_fixed.RAW'
-# casename = 'test/data/Taxonomy_Feeders/GC-12.47-1.glm'
-casename = 'test/data/three_phase/ieee_four_bus/node.glm'
-#casename = 'test/data/Taxonomy_Feeders/R1-12.47-3.glm'
-# casename = 'test/data/three_phase/center_tap_xfmr_and_single_line_to_load/node.glm'
+parser = argparse.ArgumentParser()
+
+parser.add_argument("case")
+
+args = parser.parse_args()
+
+case = args.case
 
 print("Running power flow solver...")
-print(f'Testcase: {casename}')
+print(f'Testcase: {case}')
 
 settings = PowerFlowSettings(
     debug=True, 
@@ -29,7 +23,7 @@ settings = PowerFlowSettings(
     dump_matrix=True
     )
 
-powerflow = FilePowerFlow(casename, settings)
+powerflow = FilePowerFlow(case, settings)
 
 results = powerflow.execute()
 

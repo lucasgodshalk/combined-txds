@@ -1,4 +1,5 @@
 from itertools import count
+import os
 from typing import Tuple
 from logic.networkmodel import NetworkModel, TxNetworkModel
 from logic.parsers.raw.parser import parse_raw
@@ -11,6 +12,9 @@ class NetworkLoader:
         self.settings = settings
         
     def from_file(self, network_file: str) -> NetworkModel:
+        if not os.path.isfile(network_file):
+            raise Exception("Network file does not exist.")
+
         if ".glm" in network_file:
             return self.__create_three_phase_network(network_file)
         elif ".RAW" in network_file:
