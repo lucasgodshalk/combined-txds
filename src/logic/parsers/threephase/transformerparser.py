@@ -19,16 +19,13 @@ class TransformerParser:
     def __init__(self, parser) -> None:
         self.parser = parser
 
-    def create_transformers(self, ditto_store, simulation_state: DxNetworkModel):
-        # Go through the ditto store for each transformer object
-        for model in ditto_store.models:
-            if isinstance(model, PowerTransformer):
-                if model.is_center_tap:
-                    self.create_center_tap_transformer(model, simulation_state)
-                elif len(model.windings) != 2:
-                    raise Exception("Only 2 winding or center-tap transformers currently supported")
-                else:
-                    self.create_three_phase_transformer(model, simulation_state)
+    def create_transformer(self, model: PowerTransformer, simulation_state: DxNetworkModel):
+        if model.is_center_tap:
+            self.create_center_tap_transformer(model, simulation_state)
+        elif len(model.windings) != 2:
+            raise Exception("Only 2 winding or center-tap transformers currently supported")
+        else:
+            self.create_three_phase_transformer(model, simulation_state)
 
     def create_center_tap_transformer(self, model, simulation_state: DxNetworkModel):
         phase = model.phases[0].default_value
