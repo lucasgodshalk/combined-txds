@@ -70,6 +70,15 @@ class NRSolver:
             
             max_error_history.append(err_max)
 
+            if len(max_error_history) % 5 == 0:
+                #We check regularly if the solver is making progress and bail if not.
+                x = np.array(range(len(max_error_history)))
+                A = np.vstack([x, np.ones(len(x))]).T
+                y = np.array(max_error_history)
+                m, _ = np.linalg.lstsq(A, y, rcond=None)[0]
+                if m > 0:
+                    return (False, v_next, iteration_num)
+            
             if err_max < self.settings.tolerance:
                 return (True, v_next, iteration_num)
             elif self.v_limiting != None and err_max > self.settings.tolerance:

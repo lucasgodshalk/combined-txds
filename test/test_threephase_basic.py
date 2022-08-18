@@ -94,9 +94,9 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
     if largest[0] > 0:
         assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" is at {largest[0] + 100}% of tolerance. (magnitude: {largest[2]:.5g}, {largest[3]:.5g}) (degrees: {largest[4]:.5g}, {largest[5]:.5g})"
 
-def assert_glm_case_gridlabd_results(casename):
+def assert_glm_case_gridlabd_results(casename, debug = False):
     filepath = get_glm_case_file(casename)
-    results = execute_glm_case(filepath)
+    results = execute_glm_case(filepath, debug)
     if not results.is_success:
         raise Exception("Failed to converge")
     comparison = load_gridlabd_csv(casename)
