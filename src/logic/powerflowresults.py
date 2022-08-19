@@ -1,5 +1,6 @@
 import cmath
 import math
+from pathlib import Path
 from typing import List
 import numpy as np
 import pandas as pd
@@ -179,6 +180,16 @@ class PowerFlowResults:
 
         return results
 
+    def output(self, voltagefilepath:Path=Path(".output", "voltage.txt"), powerfilepath:Path=Path(".output", "power.txt")):
+        voltagefilepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(voltagefilepath, "w+") as f:
+            for bus in self.bus_results:
+                f.write(str(bus)+"\n")
+        powerfilepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(powerfilepath, "w+") as f:
+            for gen in self.generator_results:
+                f.write(str(gen)+"\n")
+
 class QuasiTimeSeriesResults:
     def __init__(self):
         self.powerflow_snapshot_results: dict[int, PowerFlowResults]
@@ -193,3 +204,7 @@ class QuasiTimeSeriesResults:
             print(f"HOUR {hour}")
             pf_result.display(verbose)
             print("---------------------")
+    
+    def output(self):
+        for hour, pf_result in self.powerflow_snapshot_results.items():
+            pf_result.output(voltagefilepath=Path(".output", f"voltage_{hour}.txt"), powerfilepath=Path(".output", f"power_{hour}.txt"))

@@ -35,6 +35,7 @@ powerflow = FilePowerFlow(case, settings)
 results = powerflow.execute()
 
 results.display(verbose=True)
+results.output()
 
 postprocessingsettings = PostProcessingSettings(
     loadfile_name = loadfile,
@@ -44,3 +45,4 @@ postprocessingsettings = PostProcessingSettings(
 results = powerflow.execute_quasi_time_series(postprocessingsettings)
 
 results.display(verbose=False)
+results.output()
