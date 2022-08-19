@@ -1,5 +1,6 @@
 import cmath
 import math
+from pathlib import Path
 from typing import List
 import numpy as np
 import pandas as pd
@@ -22,6 +23,10 @@ class GeneratorResult:
     def __str__(self) -> str:
         name = self.type_str
         return f'{name} @ bus {self.generator.bus.Bus} P (MW): {"{:.2f}".format(self.P)}, Q (MVar): {"{:.2f}".format(self.Q)}'
+
+    def csv_string(self) -> str:
+        name = self.type_str
+        return f'{self.generator.bus.Bus}, {name}, {"{:.2f}".format(self.P)}, {"{:.2f}".format(self.Q)}\n'
 
 class BusResult:
     def __init__(self, bus: Bus, V_r, V_i, lambda_r, lambda_i):
@@ -55,6 +60,11 @@ class BusResult:
         v_mag_str = "{:.3f}".format(self.V_mag)
         v_ang_str = "{:.3f}".format(self.V_deg)
         return f'Bus {self.bus.Bus} ({self.bus.NodeName}:{self.bus.NodePhase}) V mag: {v_mag_str}, V ang (deg): {v_ang_str}'
+
+    def csv_string(self) -> str:
+        v_mag_str = "{:.3f}".format(self.V_mag)
+        v_ang_str = "{:.3f}".format(self.V_deg)
+        return f'{self.bus.Bus}, {self.bus.NodeName}:{self.bus.NodePhase}, {v_mag_str}, {v_ang_str}\n'
 
 class PowerFlowResults:
     def __init__(self, is_success: bool, iterations: int, duration_sec, network: NetworkModel, v_final, settings: PowerFlowSettings):
@@ -178,3 +188,34 @@ class PowerFlowResults:
                 results.append(gen_result)
 
         return results
+
+    def output(self, voltagefilepath:Path=Path(".output", "voltage.csv"), powerfilepath:Path=Path(".output", "power.csv")):
+        voltagefilepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(voltagefilepath, "w+") as f:
+            f.write("bus, name, v_magnitude, v_ang_degrees\n")
+            for bus in self.bus_results:
+                f.write(bus.csv_string())
+        powerfilepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(powerfilepath, "w+") as f:
+            f.write("bus, name, P(MW), Q(MVar)\n")
+            for gen in self.generator_results:
+                f.write(gen.csv_string())
+
+class QuasiTimeSeriesResults:
+    def __init__(self):
+        self.powerflow_snapshot_results: dict[int, PowerFlowResults]
+        self.powerflow_snapshot_results = dict()
+    
+    def add_powerflow_snapshot_results(self, hour:int, pf_results : PowerFlowResults):
+        self.powerflow_snapshot_results[hour] = pf_results
+
+    def display(self, verbose=False):
+        for hour, pf_result in self.powerflow_snapshot_results.items():
+            print("---------------------")
+            print(f"HOUR {hour}")
+            pf_result.display(verbose)
+            print("---------------------")
+    
+    def output(self):
+        for hour, pf_result in self.powerflow_snapshot_results.items():
+            pf_result.output(voltagefilepath=Path(".output", f"voltage_{hour}.csv"), powerfilepath=Path(".output", f"power_{hour}.csv"))
