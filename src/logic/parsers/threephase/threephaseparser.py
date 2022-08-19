@@ -124,6 +124,7 @@ class ThreePhaseParser:
         # Go through the ditto store for each load object
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.load.Load):
+                load_num = model.name.split("_")[-1]
                 for phase_load in model.phase_loads:
                     from_bus = self.get_load_connection(model, simulation_state, phase_load.phase[0])
 
@@ -137,11 +138,8 @@ class ThreePhaseParser:
                     elif phase_load.model == 2 and phase_load.z == 0:
                         continue
 
-                    pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, 0, 0, 0, 0)
+                    pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, 0, 0, 0, 0, load_num, phase_load.phase)
                     simulation_state.loads.append(pq_load)
-                    
-                    load_name = self.get_load_name(model, phase_load)
-                    simulation_state.load_name_map[load_name] = pq_load
 
     def get_load_connection(self, model, simulation_state, phase):
         # Get the existing bus id for each phase load of this PQ load
@@ -173,16 +171,6 @@ class ThreePhaseParser:
                         bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase, False)
 
         return bus
-
-    def get_load_name(self, model: ditto.models.load.Load, phase_load):
-        load_num = model.name.split("_")[-1]
-        if phase_load.phase.isalpha():
-            load_name = f"cl_{load_num}{phase_load.phase}"
-        elif phase_load.phase.isnumeric():
-            load_name = f"rl_{load_num}_{phase_load.phase[0]}"
-        else:
-            load_name = f"{load_num}_{phase_load.phase}"
-        return load_name
 
 
     def create_capacitor(self, model: ditto.models.capacitor.Capacitor, simulation_state: DxNetworkModel):

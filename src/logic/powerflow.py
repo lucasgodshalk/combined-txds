@@ -45,6 +45,7 @@ class PowerFlow:
         
         quasi_time_series_results = QuasiTimeSeriesResults()
         postprocessor = NetworkPostProcessor(settings)
+        postprocessor.set_load_names(self.network)
         for hour in range(settings.loadfile_start,settings.loadfile_end):
             postprocessor.set_load_values(self.network, hour)
             snapshot_results = self.execute()
