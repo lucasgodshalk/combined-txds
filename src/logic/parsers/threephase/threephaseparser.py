@@ -47,17 +47,21 @@ class ThreePhaseParser:
 
         # Create a SimulationState object to populate and return
         simulation_state = DxNetworkModel()
+        transformerhandler = TransformerParser(self)
 
         self.create_buses(simulation_state)
-
+        
         self.create_loads(simulation_state)
-        transformerhandler = TransformerParser(self)
-        transformerhandler.create_transformers(self.ditto_store, simulation_state)
-        self.create_capacitors(simulation_state)
-        self.create_regulators(simulation_state)
-        # TODO add and call methods to create other objects
 
-        self.create_transmission_lines(simulation_state)
+        for model in self.ditto_store.models:
+            if isinstance(model, ditto.models.powertransformer.PowerTransformer):
+                transformerhandler.create_transformer(model, simulation_state)
+            if isinstance(model, ditto.models.capacitor.Capacitor):
+                self.create_capacitor(model, simulation_state)
+            if isinstance(model, ditto.models.regulator.Regulator):
+                self.create_regulator(model, simulation_state)
+            if isinstance(model, ditto.models.line.Line):
+                self.create_transmission_line(model, simulation_state)
 
         if self.settings.infeasibility_analysis:
             self.setup_infeasibility(simulation_state)
@@ -135,6 +139,9 @@ class ThreePhaseParser:
 
                     pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, 0, 0, 0, 0)
                     simulation_state.loads.append(pq_load)
+                    
+                    load_name = self.get_load_name(model, phase_load)
+                    simulation_state.load_name_map[load_name] = pq_load
 
     def get_load_connection(self, model, simulation_state, phase):
         # Get the existing bus id for each phase load of this PQ load
@@ -167,160 +174,163 @@ class ThreePhaseParser:
 
         return bus
 
-    def create_capacitors(self, simulation_state: DxNetworkModel):
-        for model in self.ditto_store.models:
-            if isinstance(model, ditto.models.capacitor.Capacitor):
-                gld_cap = self.all_gld_objects[model.name]
-                for phase_capacitor in model.phase_capacitors:
-                    if not phase_capacitor.phase in model.connected_phases:
-                        continue
+    def get_load_name(self, model: ditto.models.load.Load, phase_load):
+        load_num = model.name.split("_")[-1]
+        if phase_load.phase.isalpha():
+            load_name = f"cl_{load_num}{phase_load.phase}"
+        elif phase_load.phase.isnumeric():
+            load_name = f"rl_{load_num}_{phase_load.phase[0]}"
+        else:
+            load_name = f"{load_num}_{phase_load.phase}"
+        return load_name
 
-                    mode = CapacitorMode[gld_cap._control]
-                    if mode == CapacitorMode.VOLT and (model.high == None or model.low == None):
-                        #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/capacitor.cpp#L320-L325
-                        mode = CapacitorMode.MANUAL
 
-                    parent_bus = simulation_state.bus_name_map[gld_cap._parent + '_' + phase_capacitor.phase]
-                    nominal_voltage = float(gld_cap._cap_nominal_voltage) #Or could use model.nominal_voltage?
-                    voltage_angle = self._phase_to_angle[phase_capacitor.phase]
-                    v_r_nom = abs(nominal_voltage)*math.cos(voltage_angle)
-                    v_i_nom = abs(nominal_voltage)*math.sin(voltage_angle)
-                    parent_bus.Vr_init = v_r_nom
-                    parent_bus.Vi_init = v_i_nom
-                    capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, nominal_voltage, mode, model.high, model.low)
-                    if mode == CapacitorMode.MANUAL:
-                        #Todo: implement ControlLevel
+    def create_capacitor(self, model: ditto.models.capacitor.Capacitor, simulation_state: DxNetworkModel):
+        gld_cap = self.all_gld_objects[model.name]
+        for phase_capacitor in model.phase_capacitors:
+            if not phase_capacitor.phase in model.connected_phases:
+                continue
 
-                        #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/capacitor.cpp#L116-L118
-                        #Gridlabd defaults to open.
-                        capacitor.switch = CapSwitchState.OPEN
+            mode = CapacitorMode[gld_cap._control]
+            if mode == CapacitorMode.VOLT and (model.high == None or model.low == None):
+                #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/capacitor.cpp#L320-L325
+                mode = CapacitorMode.MANUAL
 
-                        if phase_capacitor.phase == "A" and hasattr(gld_cap, "_switchA"):
-                            capacitor.switch = CapSwitchState[gld_cap._switchA]
-                        elif phase_capacitor.phase == "B" and hasattr(gld_cap, "_switchB"):
-                            capacitor.switch = CapSwitchState[gld_cap._switchB]
-                        elif phase_capacitor.phase == "C" and hasattr(gld_cap, "_switchC"):
-                            capacitor.switch = CapSwitchState[gld_cap._switchC]
-                    
-                    simulation_state.capacitors.append(capacitor)
+            parent_bus = simulation_state.bus_name_map[gld_cap._parent + '_' + phase_capacitor.phase]
+            nominal_voltage = float(gld_cap._cap_nominal_voltage) #Or could use model.nominal_voltage?
+            voltage_angle = self._phase_to_angle[phase_capacitor.phase]
+            v_r_nom = abs(nominal_voltage)*math.cos(voltage_angle)
+            v_i_nom = abs(nominal_voltage)*math.sin(voltage_angle)
+            parent_bus.Vr_init = v_r_nom
+            parent_bus.Vi_init = v_i_nom
+            capacitor = Capacitor(parent_bus, GROUND, phase_capacitor.var, nominal_voltage, mode, model.high, model.low)
+            if mode == CapacitorMode.MANUAL:
+                #Todo: implement ControlLevel
 
-    def create_regulators(self, simulation_state: DxNetworkModel):
-        for model in self.ditto_store.models:
-            if isinstance(model, ditto.models.regulator.Regulator):
-                if len(model.windings) != 2:
-                    raise Exception("Only 2 windings currently supported")
-                if not (len(model.windings[0].phase_windings) == len(model.windings[1].phase_windings) == 3):
-                    raise Exception("Only 3-phase currently supported")
-                if not (model.windings[0].connection_type == model.windings[1].connection_type == 'Y'):
-                    # gridlabD only supports a Wye-Wye connected regulator as of Jan 20 2022, so do we
-                    raise Exception("Only wye-wye currently supported")
-                
-                reg_config = self.all_gld_objects[self.all_gld_objects[model.name]['configuration']]
+                #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/capacitor.cpp#L116-L118
+                #Gridlabd defaults to open.
+                capacitor.switch = CapSwitchState.OPEN
 
-                ar_step = (model.regulation * 2) / (model.highstep + model.lowstep)
-                reg_type = RegType[model.type if hasattr(model, "type") else "B"]
-                reg_control = RegControl[reg_config._Control]
+                if phase_capacitor.phase == "A" and hasattr(gld_cap, "_switchA"):
+                    capacitor.switch = CapSwitchState[gld_cap._switchA]
+                elif phase_capacitor.phase == "B" and hasattr(gld_cap, "_switchB"):
+                    capacitor.switch = CapSwitchState[gld_cap._switchB]
+                elif phase_capacitor.phase == "C" and hasattr(gld_cap, "_switchC"):
+                    capacitor.switch = CapSwitchState[gld_cap._switchC]
+            
+            simulation_state.capacitors.append(capacitor)
 
-                #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/regulator.cpp#L251
-                band_center = float(reg_config._band_center)
-                band_width = float(reg_config._band_width)
+    def create_regulator(self, model: ditto.models.regulator.Regulator, simulation_state: DxNetworkModel):
+        if len(model.windings) != 2:
+            raise Exception("Only 2 windings currently supported")
+        if not (len(model.windings[0].phase_windings) == len(model.windings[1].phase_windings) == 3):
+            raise Exception("Only 3-phase currently supported")
+        if not (model.windings[0].connection_type == model.windings[1].connection_type == 'Y'):
+            # gridlabD only supports a Wye-Wye connected regulator as of Jan 20 2022, so do we
+            raise Exception("Only wye-wye currently supported")
+        
+        reg_config = self.all_gld_objects[self.all_gld_objects[model.name]['configuration']]
 
-                vlow = band_center - band_width / 2.0;
-                vhigh = band_center + band_width / 2.0;
+        ar_step = (model.regulation * 2) / (model.highstep + model.lowstep)
+        reg_type = RegType[model.type if hasattr(model, "type") else "B"]
+        reg_control = RegControl[reg_config._Control]
 
-                raise_taps = int(reg_config._raise_taps)
-                lower_taps = int(reg_config._lower_taps)
+        #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/regulator.cpp#L251
+        band_center = float(reg_config._band_center)
+        band_width = float(reg_config._band_width)
 
-                tap_change_per = float(reg_config._regulation) / float(reg_config._raise_taps)
-                v_tap_change = band_center * tap_change_per
+        vlow = band_center - band_width / 2.0;
+        vhigh = band_center + band_width / 2.0;
 
-                for winding in model.windings[0].phase_windings:
-                    from_bus = simulation_state.bus_name_map[model.high_from + '_' + winding.phase]
-                    to_bus = simulation_state.bus_name_map[model.low_to + '_' + winding.phase]
+        raise_taps = int(reg_config._raise_taps)
+        lower_taps = int(reg_config._lower_taps)
 
-                    tap_position = int(getattr(reg_config, '_tap_pos_' + winding.phase))
+        tap_change_per = float(reg_config._regulation) / float(reg_config._raise_taps)
+        v_tap_change = band_center * tap_change_per
 
-                    current_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Reg", winding.phase, True)
+        for winding in model.windings[0].phase_windings:
+            from_bus = simulation_state.bus_name_map[model.high_from + '_' + winding.phase]
+            to_bus = simulation_state.bus_name_map[model.low_to + '_' + winding.phase]
 
-                    regulator = Regulator(
-                        from_bus, 
-                        to_bus, 
-                        current_bus, 
-                        tap_position, 
-                        ar_step, 
-                        reg_type, 
-                        reg_control,
-                        vlow,
-                        vhigh,
-                        raise_taps,
-                        lower_taps
-                        )
+            tap_position = int(getattr(reg_config, '_tap_pos_' + winding.phase))
 
-                    v_mag = abs(complex(to_bus.Vr_init, to_bus.Vi_init))
+            current_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Reg", winding.phase, True)
 
-                    tap_guess = math.ceil((band_center - v_mag)/v_tap_change)
-                    #regulator.try_increment_tap_position(tap_guess)
+            regulator = Regulator(
+                from_bus, 
+                to_bus, 
+                current_bus, 
+                tap_position, 
+                ar_step, 
+                reg_type, 
+                reg_control,
+                vlow,
+                vhigh,
+                raise_taps,
+                lower_taps
+                )
 
-                    simulation_state.regulators.append(regulator)
+            v_mag = abs(complex(to_bus.Vr_init, to_bus.Vi_init))
+
+            tap_guess = math.ceil((band_center - v_mag)/v_tap_change)
+            #regulator.try_increment_tap_position(tap_guess)
+
+            simulation_state.regulators.append(regulator)
     
-    def create_transmission_lines(self, simulation_state: DxNetworkModel):
-        # Go through the ditto store for each line object
-        for model in self.ditto_store.models:
-            if isinstance(model, ditto.models.line.Line):
-                # Check for fuses, some are encoded as zero-length lines with no features
-                if model.is_fuse:
-                    for wire in model.wires:
-                        from_bus = simulation_state.bus_name_map[model.from_element + "_" + wire.phase]
-                        to_bus = simulation_state.bus_name_map[model.to_element + "_" + wire.phase]
+    def create_transmission_line(self, model: ditto.models.line.Line, simulation_state: DxNetworkModel):
+        # Check for fuses, some are encoded as zero-length lines with no features
+        if model.is_fuse:
+            for wire in model.wires:
+                from_bus = simulation_state.bus_name_map[model.from_element + "_" + wire.phase]
+                to_bus = simulation_state.bus_name_map[model.to_element + "_" + wire.phase]
 
-                        current_limit = float(model._current_limit)
+                current_limit = float(model._current_limit)
 
-                        fuse_status = FuseStatus.GOOD
-                        if hasattr(model, "phase_" + wire.phase + "_status"):
-                           fuse_status = FuseStatus[getattr(model, "phase_" + wire.phase + "_status")]
+                fuse_status = FuseStatus.GOOD
+                if hasattr(model, "phase_" + wire.phase + "_status"):
+                    fuse_status = FuseStatus[getattr(model, "phase_" + wire.phase + "_status")]
 
-                        fuse_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Fuse", wire.phase, True)
+                fuse_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Fuse", wire.phase, True)
 
-                        fuse = Fuse(from_bus, to_bus, fuse_bus, current_limit, fuse_status, wire.phase)
+                fuse = Fuse(from_bus, to_bus, fuse_bus, current_limit, fuse_status, wire.phase)
 
-                        simulation_state.fuses.append(fuse)
-                # Check for switches, some are encoded as 1-length lines with no features
-                elif model.is_switch:
-                    for wire in model.wires:
-                        from_bus = simulation_state.bus_name_map[model.from_element + "_" + wire.phase]
-                        to_bus = simulation_state.bus_name_map[model.to_element + "_" + wire.phase]
+                simulation_state.fuses.append(fuse)
+        # Check for switches, some are encoded as 1-length lines with no features
+        elif model.is_switch:
+            for wire in model.wires:
+                from_bus = simulation_state.bus_name_map[model.from_element + "_" + wire.phase]
+                to_bus = simulation_state.bus_name_map[model.to_element + "_" + wire.phase]
 
-                        status = SwitchStatus[("OPEN" if (hasattr(wire, "is_open") and wire.is_open) else "CLOSED")]
+                status = SwitchStatus[("OPEN" if (hasattr(wire, "is_open") and wire.is_open) else "CLOSED")]
 
-                        switch = Switch(from_bus, to_bus, status, wire.phase)
-                        
-                        simulation_state.switches.append(switch)
-                else:
-                    impedances = np.array(model.impedance_matrix)
-                    # if model.line_type == 'underground':
-                    #     # Calculate shunt admittance
-                    #     # Note: this assumes symmetrical spacing between lines. TODO update if testing with systems where this is not the case
-                    #     # Note: this assumes an insulation material such as cross-linked polyethylene
-                    #     # Note: this assumes all wires are identical
-                    #     # See Kersting 2007 Section 5.4 for the derivation of the following equation
-                    #     wire = model.wires[0]
-                    #     R_b = (wire.outer_diameter - wire.conductor_diameter) / 2 # in inches # not concentric_neutral_diameter in denom?
-                    #     conductor_radius = wire.conductor_diameter / 2 # in inches 
-                    #     neutral_radius = wire.concentric_neutral_diameter / 2 # in inches 
-                    #     k = wire.concentric_neutral_nstrand
-                    #     y = complex(0,77.3619*1e-6/(math.log(R_b / conductor_radius)))# not - 1/k*math.log(k*neutral_radius/R_b))) # Siemens of admittance per mile
-                    #     y = y / 1609.34 # per meter
-                    #     shunt_admittances = [[0]*3 for i in range(3)]
-                    #     for i in range(3):
-                    #         shunt_admittances[i][i] = y
-                    # else:
-                    shunt_admittances = model.capacitance_matrix
+                switch = Switch(from_bus, to_bus, status, wire.phase)
+                
+                simulation_state.switches.append(switch)
+        else:
+            impedances = np.array(model.impedance_matrix)
+            # if model.line_type == 'underground':
+            #     # Calculate shunt admittance
+            #     # Note: this assumes symmetrical spacing between lines. TODO update if testing with systems where this is not the case
+            #     # Note: this assumes an insulation material such as cross-linked polyethylene
+            #     # Note: this assumes all wires are identical
+            #     # See Kersting 2007 Section 5.4 for the derivation of the following equation
+            #     wire = model.wires[0]
+            #     R_b = (wire.outer_diameter - wire.conductor_diameter) / 2 # in inches # not concentric_neutral_diameter in denom?
+            #     conductor_radius = wire.conductor_diameter / 2 # in inches 
+            #     neutral_radius = wire.concentric_neutral_diameter / 2 # in inches 
+            #     k = wire.concentric_neutral_nstrand
+            #     y = complex(0,77.3619*1e-6/(math.log(R_b / conductor_radius)))# not - 1/k*math.log(k*neutral_radius/R_b))) # Siemens of admittance per mile
+            #     y = y / 1609.34 # per meter
+            #     shunt_admittances = [[0]*3 for i in range(3)]
+            #     for i in range(3):
+            #         shunt_admittances[i][i] = y
+            # else:
+            shunt_admittances = model.capacitance_matrix
 
-                    phases = [wire.phase for wire in model.wires if wire.phase != 'N']
-                    
-                    transmission_line = TransmissionLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
-                    simulation_state.branches.append(transmission_line)
-
+            phases = [wire.phase for wire in model.wires if wire.phase != 'N']
+            
+            transmission_line = TransmissionLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
+            simulation_state.branches.append(transmission_line)
 
     def setup_infeasibility(self, simulation_state: DxNetworkModel):
         for bus in simulation_state.buses:
