@@ -159,6 +159,10 @@ class DxNetworkModel(NetworkModel):
         # The map from a bus name to its bus id
         self.bus_name_map: Dict[str, Bus]
         self.bus_name_map = {}
+        
+        # The map from a load name to its Load object
+        self.load_name_map: Dict[str, Load]
+        self.load_name_map = {}
 
         # All of the transmission lines
         self.branches = []

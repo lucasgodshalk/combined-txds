@@ -77,25 +77,15 @@ class MatrixBuilder:
         if not check_zeros:
             return
 
-        matrix = csc_matrix((self._val, (self._row, self._col))).todense()
+        matrix = csc_matrix((self._val, (self._row, self._col)))
 
-        for row_idx in range(matrix.shape[0]):
-            all_zeros = True
-            for col_idx in range(matrix.shape[1]):
-                if matrix[row_idx, col_idx] != 0:
-                    all_zeros = False
-            
-            if all_zeros:
-                raise Exception(f'Row {row_idx} is invalid')
+        if not np.all(matrix.getnnz(1)>0):
+            zero_rows = np.where(matrix.getnnz(1)==0)
+            raise Exception(f'Row {zero_rows} is invalid')
 
-        for col_idx in range(matrix.shape[1]):
-            all_zeros = True
-            for row_idx in range(matrix.shape[0]):
-                if matrix[row_idx, col_idx] != 0:
-                    all_zeros = False
-            
-            if all_zeros:
-                raise Exception(f'Column {col_idx} is invalid')
+        if not np.all(matrix.getnnz(0)>0):
+            zero_cols = np.where(matrix.getnnz(0)==0)
+            raise Exception(f'Column {zero_cols} is invalid')
 
     def get_usage(self):
         return self._index

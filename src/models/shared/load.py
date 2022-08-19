@@ -45,7 +45,9 @@ class Load:
                  IP,
                  IQ,
                  ZP,
-                 ZQ
+                 ZQ,
+                 load_num=None,
+                 phase=None
                  ):
         """Initialize an instance of a PQ or ZIP load in the power grid.
 
@@ -60,6 +62,8 @@ class Load:
             ZQ (float): the reactive power component of a constant admittance load. [Not implemented]
         """
         self.id = Load._ids.__next__()
+        self.load_num = load_num
+        self.phase = phase
 
         self.from_bus = from_bus
         self.to_bus = to_bus
