@@ -178,3 +178,18 @@ class PowerFlowResults:
                 results.append(gen_result)
 
         return results
+
+class QuasiTimeSeriesResults:
+    def __init__(self):
+        self.powerflow_snapshot_results: dict[int, PowerFlowResults]
+        self.powerflow_snapshot_results = dict()
+    
+    def add_powerflow_snapshot_results(self, hour:int, pf_results : PowerFlowResults):
+        self.powerflow_snapshot_results[hour] = pf_results
+
+    def display(self, verbose=False):
+        for hour, pf_result in self.powerflow_snapshot_results.items():
+            print("---------------------")
+            print(f"HOUR {hour}")
+            pf_result.display(verbose)
+            print("---------------------")

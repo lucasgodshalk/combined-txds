@@ -9,9 +9,7 @@ class PowerFlowSettings:
         tx_stepping = False, 
         infeasibility_analysis = False,
         dump_matrix = False,
-        device_control = True,
-        loadfile_name = None,
-        loadfile_start = 0
+        device_control = True
         ) -> None:
         self.tolerance = tolerance
         self.max_iters = max_iters
@@ -22,5 +20,3 @@ class PowerFlowSettings:
         self.infeasibility_analysis = infeasibility_analysis
         self.dump_matrix = dump_matrix
         self.device_control = device_control
-        self.loadfile_name = loadfile_name
-        self.loadfile_start = loadfile_start
