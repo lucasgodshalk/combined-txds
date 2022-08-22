@@ -1,6 +1,6 @@
 from collections import defaultdict
 import networkx as nx
-
+from models.shared.bus import GROUND
 from logic.networkmodel import DxNetworkModel, NetworkModel
 
 class GraphAnalyzer:
@@ -18,5 +18,7 @@ class GraphAnalyzer:
         
         for element in network.get_all_elements():
             for (from_bus, to_bus) in element.get_connections():
+                if from_bus == GROUND or to_bus == GROUND:
+                    continue
                 self.G.add_edge(from_bus.NodeName, to_bus.NodeName, type="none")
                 self.edge_labels[(from_bus.NodeName, to_bus.NodeName)] += from_bus.NodePhase
