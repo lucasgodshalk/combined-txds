@@ -91,7 +91,7 @@ class Regulator():
         
         self.transformer.tr = self.turn_ratio
 
-        return old_position == self.tap_position
+        return old_position != self.tap_position
 
     def assign_nodes(self, node_index, optimization_enabled):
         self.transformer.assign_nodes(node_index, optimization_enabled)

@@ -67,9 +67,19 @@ class BusResult:
         return f'{self.bus.Bus}, {self.bus.NodeName}:{self.bus.NodePhase}, {v_mag_str}, {v_ang_str}\n'
 
 class PowerFlowResults:
-    def __init__(self, is_success: bool, iterations: int, duration_sec, network: NetworkModel, v_final, settings: PowerFlowSettings):
+    def __init__(
+        self, 
+        is_success: bool, 
+        iterations: int, 
+        tx_percent,
+        duration_sec, 
+        network: NetworkModel,
+         v_final, 
+         settings: PowerFlowSettings
+         ):
         self.is_success = is_success
         self.iterations = iterations
+        self.tx_percent = tx_percent
         self.duration_sec = duration_sec
         self.network = network
         self.v_final = v_final

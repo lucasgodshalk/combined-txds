@@ -17,8 +17,8 @@ def get_glm_case_file(casename, glm_file_name = "node.glm"):
 def get_gridlabd_csv_voltdump(casename):
     return os.path.join(DATA_DIR, casename, "result.csv")
 
-def execute_glm_case(filepath, debug = False):
-    powerflow = FilePowerFlow(filepath, PowerFlowSettings(debug=debug))
+def execute_glm_case(filepath, settings):
+    powerflow = FilePowerFlow(filepath, settings)
     return powerflow.execute()
 
 def load_gridlabd_csv(casename):
@@ -94,11 +94,16 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
     if largest[0] > 0:
         assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" is at {largest[0] + 100}% of tolerance. (magnitude: {largest[2]:.5g}, {largest[3]:.5g}) (degrees: {largest[4]:.5g}, {largest[5]:.5g})"
 
-def assert_glm_case_gridlabd_results(casename, debug = False):
+def assert_glm_case_gridlabd_results(casename, debug = False, device_control = True, tx_stepping = False):
     filepath = get_glm_case_file(casename)
-    results = execute_glm_case(filepath, debug)
+    settings = PowerFlowSettings(
+        debug=debug, 
+        device_control=device_control,
+        tx_stepping=tx_stepping
+        )
+    results = execute_glm_case(filepath, settings)
     if not results.is_success:
-        raise Exception("Failed to converge")
+        raise Exception(f"Failed to converge (iterations: {results.iterations}, tx_percent: {results.tx_percent}")
     comparison = load_gridlabd_csv(casename)
     assert_busresults_gridlabdvoltdump(results, comparison)
 

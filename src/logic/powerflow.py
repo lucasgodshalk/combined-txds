@@ -31,13 +31,21 @@ class PowerFlow:
 
         device_controller = DeviceController(self.settings, homotopy_controller)
 
-        is_success, v_final, iteration_num, tx_factor = device_controller.run_powerflow()
+        is_success, v_final, iteration_num, tx_percent = device_controller.run_powerflow()
 
         end_time = time.perf_counter_ns()
 
         duration_seconds = (end_time * 1.0 - start_time * 1.0) / math.pow(10, 9)
 
-        return PowerFlowResults(is_success, iteration_num, duration_seconds, self.network, v_final, self.settings)
+        return PowerFlowResults(
+            is_success, 
+            iteration_num, 
+            tx_percent,
+            duration_seconds,
+            self.network, 
+            v_final, 
+            self.settings
+            )
 
     def execute_quasi_time_series(self, settings: PostProcessingSettings) -> QuasiTimeSeriesResults:
         if not os.path.isfile(settings.loadfile_name):

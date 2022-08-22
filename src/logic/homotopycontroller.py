@@ -13,10 +13,10 @@ class HomotopyController:
     def run_powerflow(self, v_init):
         #optimistically try to solve without homotopy first.
         is_success, v_final, iteration_num = self.nrsolver.run_powerflow(v_init, 0)
-        if is_success:
+        if is_success or not self.settings.tx_stepping:
             return (is_success, v_final, iteration_num, 0)
 
-        tx_factor = TX_ITERATIONS if self.settings.tx_stepping else 0
+        tx_factor = TX_ITERATIONS
         iterations = 0
         v_next = v_init
         is_success = False
@@ -27,10 +27,11 @@ class HomotopyController:
 
             is_success, v_final, iteration_num = self.nrsolver.run_powerflow(v_next, tx_factor * TX_SCALE)
             iterations = iteration_num + 1
-            tx_factor -= 1
             v_next = v_final
 
             if not is_success:
                 break
+
+            tx_factor -= 1
 
         return (is_success, v_next, iterations, tx_factor * TX_SCALE)

@@ -24,12 +24,15 @@ class DeviceController:
         v_init = self.network.generate_v_init(self.settings)
 
         #Preliminary adjustments based on initial conditions
-        self.try_adjust_devices(v_init)
+        if self.settings.device_control:
+            self.try_adjust_devices(v_init)
 
         for _ in range(MAX_DEVICE_ITERATIONS):
-            is_success, v_final, iteration_num, tx_factor = self.homotopy.run_powerflow(v_init)
+            results = is_success, v_final, _, _ = self.homotopy.run_powerflow(v_init)
+            if not is_success:
+                return results
             if not self.settings.device_control or not self.try_adjust_devices(v_final):
-                return (is_success, v_final, iteration_num, tx_factor)
+                return results
         
         raise Exception("Could not find solution where no device adjustments were required.")
 
@@ -90,13 +93,13 @@ class DeviceController:
         return adjustment_made
 
     def try_set_regulator_taps(self, v):
+        return False
         adjustment_made = False
         reg: Regulator
         for reg in self.network.regulators:
             if reg.reg_control == RegControl.MANUAL:
                 continue
             elif reg.reg_control == RegControl.OUTPUT_VOLTAGE:
-                continue
                 v_r, v_i = v[reg.to_node.node_Vr], v[reg.to_node.node_Vi]
                 v_mag = abs(complex(v_r, v_i))
 
