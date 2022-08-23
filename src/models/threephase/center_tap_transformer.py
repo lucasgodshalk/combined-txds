@@ -130,8 +130,8 @@ class CenterTapTransformer():
 
     def get_connections(self):
         return [
-            (self.coils[0].primary_node, self.coils[1].sending_node), 
-            (self.coils[0].primary_node, self.coils[2].sending_node)
+            (self.coils[0].from_node, self.coils[1].to_node), 
+            (self.coils[0].from_node, self.coils[2].to_node)
         ]
 
     def stamp_primal(self, Y, J, v_previous, tx_factor, state):

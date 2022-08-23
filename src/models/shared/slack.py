@@ -43,6 +43,7 @@ class Slack:
         """
 
         self.bus = bus
+        self.bus.Type = 0
         self.Vset = Vset
         self.ang_rad = ang
 
