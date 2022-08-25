@@ -47,7 +47,8 @@ class Load:
                  ZP,
                  ZQ,
                  load_num=None,
-                 phase=None
+                 phase=None,
+                 triplex_phase=None
                  ):
         """Initialize an instance of a PQ or ZIP load in the power grid.
 
@@ -64,6 +65,7 @@ class Load:
         self.id = Load._ids.__next__()
         self.load_num = load_num
         self.phase = phase
+        self.triplex_phase = triplex_phase
 
         self.from_bus = from_bus
         self.to_bus = to_bus

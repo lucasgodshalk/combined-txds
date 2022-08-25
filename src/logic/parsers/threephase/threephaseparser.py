@@ -125,6 +125,7 @@ class ThreePhaseParser:
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.load.Load):
                 load_num = model.name.split("_")[-1]
+                triplex_phase = model.triplex_phase.default_value if hasattr(model, "triplex_phase") else None
                 for phase_load in model.phase_loads:
                     from_bus = self.get_load_connection(model, simulation_state, phase_load.phase[0])
 
@@ -138,7 +139,7 @@ class ThreePhaseParser:
                     elif phase_load.model == 2 and phase_load.z == 0:
                         continue
 
-                    pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, 0, 0, 0, 0, load_num, phase_load.phase)
+                    pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, 0, 0, 0, 0, load_num, phase_load.phase, triplex_phase)
                     simulation_state.loads.append(pq_load)
 
     def get_load_connection(self, model, simulation_state, phase):
