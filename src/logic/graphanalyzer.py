@@ -9,7 +9,7 @@ from models.threephase.transmission_line import TransmissionLine
 from models.shared.switch import Switch
 
 class GraphAnalyzer:
-    NODE_TYPE_COLOR_MAP = {0:"darkblue", 1:"gray", 2:"darkred", 3:"orange"} # For Slack, Inf, PQ, and PV
+    NODE_TYPE_COLOR_MAP = {0:"magenta", 1:"gray", 2:"darkred", 3:"orange"} # For Slack, Inf, PQ, and PV
     def __init__(self, network):
         self.network = network
         self.G = nx.Graph()
@@ -27,10 +27,10 @@ class GraphAnalyzer:
         
         for element in network.get_all_elements():
             for (from_bus, to_bus) in element.get_connections():
-                if from_bus == GROUND or to_bus == GROUND:
-                    continue
                 if type(element) == Load:
                     self.node_color[from_bus.NodeName]="darkred"
+                elif from_bus == GROUND or to_bus == GROUND:
+                    continue
                 else:
                     self.G.add_edge(from_bus.NodeName, to_bus.NodeName, type="none")
                     self.edge_labels[(from_bus.NodeName, to_bus.NodeName)] += from_bus.NodePhase
@@ -40,8 +40,6 @@ class GraphAnalyzer:
                         self.edge_color[(from_bus.NodeName, to_bus.NodeName)] = "orange"
                     else:
                         self.edge_color[(from_bus.NodeName, to_bus.NodeName)] = "gray"
-
-        self.node_color["Gnd"] = "brown"
 
     def get_island_count(self):
         return len(list(nx.connected_components(self.G)))
