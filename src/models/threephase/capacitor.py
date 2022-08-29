@@ -1,8 +1,8 @@
 from enum import Enum
 import math
 from logic.matrixbuilder import MatrixBuilder
-from models.shared.bus import Bus
-from models.shared.line import build_line_stamper_bus
+from models.singlephase.bus import Bus
+from models.singlephase.line import build_line_stamper_bus
 
 class CapSwitchState(Enum):
     OPEN = "OPEN"

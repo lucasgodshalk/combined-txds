@@ -2,9 +2,9 @@ from enum import Enum
 import math
 from logic.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
-from models.shared.bus import GROUND, Bus
-from models.shared.transformer import Transformer
-from models.shared.voltagesource import CurrentSensor
+from models.singlephase.bus import GROUND, Bus
+from models.singlephase.transformer import Transformer
+from models.singlephase.voltagesource import CurrentSensor
 
 class RegType(Enum):
     A = "A"

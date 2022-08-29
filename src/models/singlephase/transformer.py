@@ -9,8 +9,8 @@ from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 import math
-from models.shared.line import build_line_stamper
-from models.shared.bus import Bus
+from models.singlephase.line import build_line_stamper
+from models.singlephase.bus import Bus
 
 constants = tr, ang, tx_factor = symbols('tr ang tx_factor')
 primals = [Vr_pri_pos, Vi_pri_pos, Vr_pri_neg, Vi_pri_neg, Ir_prim, Ii_prim, Vr_sec_pos, Vi_sec_pos, Vr_sec_neg, Vi_sec_neg] = symbols('Vr_pri_pos Vi_pri_pos Vr_pri_neg Vi_pri_neg Ir_prim Ii_prim Vr_sec_pos Vi_sec_pos Vr_sec_neg Vi_sec_neg')

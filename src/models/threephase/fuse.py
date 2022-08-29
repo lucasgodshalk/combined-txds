@@ -2,10 +2,10 @@ from collections import defaultdict
 from enum import Enum
 from logic.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
-from models.shared.bus import Bus
-from models.shared.line import build_line_stamper_bus
+from models.singlephase.bus import Bus
+from models.singlephase.line import build_line_stamper_bus
 from models.threephase.edge import Edge
-from models.shared.voltagesource import CurrentSensor
+from models.singlephase.voltagesource import CurrentSensor
 
 import numpy as np
 

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from logic.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
-from models.shared.bus import Bus
+from models.singlephase.bus import Bus
 
 class GENTYPE:
     PV = "PV"

@@ -3,7 +3,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.shared.bus import Bus
+from models.singlephase.bus import Bus
 
 constants = Vr_set, Vi_set = symbols("Vr_set Vi_set")
 primals = Vr_from, Vi_from, Vr_to, Vi_to, Ir, Ii = symbols('Vr_from Vi_from Vr_to Vi_to Ir Ii')

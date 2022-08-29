@@ -6,8 +6,8 @@ from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
-from models.shared.bus import Bus
-from models.shared.line import build_line_stamper_bus
+from models.singlephase.bus import Bus
+from models.singlephase.line import build_line_stamper_bus
 
 constants = P, Q = symbols('P Q')
 primals = Vr_from, Vi_from, Ir, Ii, Vr_to, Vi_to = symbols('Vr_from, Vi_from, Ir, Ii, Vr_to, Vi_to')

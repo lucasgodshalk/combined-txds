@@ -1,12 +1,12 @@
 from collections import defaultdict
 import networkx as nx
-from models.shared.bus import GROUND
+from models.singlephase.bus import GROUND
 from logic.networkmodel import DxNetworkModel, NetworkModel
 from logic.powerflowresults import GENTYPE
-from models.shared.load import Load
+from models.singlephase.load import Load
 from models.threephase.center_tap_transformer import CenterTapTransformer
 from models.threephase.transmission_line import TransmissionLine
-from models.shared.switch import Switch
+from models.singlephase.switch import Switch
 
 class GraphAnalyzer:
     NODE_TYPE_COLOR_MAP = {0:"magenta", 1:"gray", 2:"darkred", 3:"orange"} # For Slack, Inf, PQ, and PV

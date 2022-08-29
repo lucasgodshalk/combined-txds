@@ -2,7 +2,7 @@ import numpy as np
 from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
-from models.shared.bus import Bus
+from models.singlephase.bus import Bus
 
 TX_LARGE_G = 20
 TX_LARGE_B = 20

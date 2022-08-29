@@ -1,5 +1,5 @@
 import typing
-from models.shared.bus import Bus
+from models.singlephase.bus import Bus
 
 class PrimaryTransformerCoil():
     

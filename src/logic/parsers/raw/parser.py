@@ -13,7 +13,7 @@
 import time
 from logic.global_vars import global_vars
 
-from models.shared.bus import Bus
+from models.singlephase.bus import Bus
 
 import logic.parsers.raw.data_classes as data_classes
 

@@ -4,14 +4,14 @@ from typing import Dict, List
 
 import numpy as np
 from logic.powerflowsettings import PowerFlowSettings
-from models.positiveseq.generator import Generator
-from models.shared.L2infeasibility import L2InfeasibilityCurrent
-from models.shared.bus import Bus
-from models.shared.load import Load
-from models.shared.slack import Slack
-from models.shared.transformer import Transformer
+from models.singlephase.generator import Generator
+from models.singlephase.L2infeasibility import L2InfeasibilityCurrent
+from models.singlephase.bus import Bus
+from models.singlephase.load import Load
+from models.singlephase.slack import Slack
+from models.singlephase.transformer import Transformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
-from models.shared.switch import Switch
+from models.singlephase.switch import Switch
 
 BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0

@@ -1,6 +1,6 @@
 from enum import Enum
-from models.shared.bus import Bus
-from models.shared.voltagesource import VoltageSource
+from models.singlephase.bus import Bus
+from models.singlephase.voltagesource import VoltageSource
 from models.threephase.edge import Edge
 
 class SwitchStatus(Enum):

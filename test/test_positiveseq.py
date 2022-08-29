@@ -6,10 +6,10 @@ from logic.powerflowresults import PowerFlowResults
 from scipy.io import loadmat
 from logic.powerflowsettings import PowerFlowSettings
 
-from models.shared.bus import GROUND, Bus
-from models.shared.transformer import Transformer
-from models.shared.slack import Slack
-from models.shared.voltagesource import VoltageSource
+from models.singlephase.bus import GROUND, Bus
+from models.singlephase.transformer import Transformer
+from models.singlephase.slack import Slack
+from models.singlephase.voltagesource import VoltageSource
 
 CURR_DIR = os.path.realpath(os.path.dirname(__file__))
 

@@ -2,9 +2,9 @@ from collections import Counter
 from itertools import count
 from logic.lagrangestamper import LagrangeStamper
 from logic.powerflowsettings import PowerFlowSettings
-from models.shared.bus import Bus
+from models.singlephase.bus import Bus
 from logic.matrixbuilder import MatrixBuilder
-from models.shared.line import line_lh, tx_factor
+from models.singlephase.line import line_lh, tx_factor
 
 settings = PowerFlowSettings()
 

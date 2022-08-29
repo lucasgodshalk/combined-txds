@@ -2,7 +2,7 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.shared.bus import Bus
+from models.singlephase.bus import Bus
 
 constants = ()
 primals = [Iir, Iii] = symbols("Iir Iii")

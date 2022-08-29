@@ -1,8 +1,8 @@
 import math
 import typing
 from logic.networkmodel import DxNetworkModel
-from models.shared.bus import Bus, GROUND
-from models.shared.transformer import Transformer
+from models.singlephase.bus import Bus, GROUND
+from models.singlephase.transformer import Transformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
 from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
 from models.threephase.primary_transformer_coil import PrimaryTransformerCoil

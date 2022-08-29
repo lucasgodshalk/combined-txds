@@ -10,9 +10,9 @@
 import math
 import copy
 import typing
-from models.shared.bus import GROUND, Bus
+from models.singlephase.bus import GROUND, Bus
 
-from models.shared.transformer import Transformer
+from models.singlephase.transformer import Transformer
 
 class TwoWindingXfmrs:
 

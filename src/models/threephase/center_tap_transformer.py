@@ -4,8 +4,8 @@ import numpy as np
 from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import SKIP, LagrangeStamper
-from models.shared.bus import GROUND
-from models.shared.line import build_line_stamper_bus
+from models.singlephase.bus import GROUND
+from models.singlephase.line import build_line_stamper_bus
 from models.helpers import merge_residuals
 from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
 

@@ -15,12 +15,12 @@ import numpy as np
 import math
 from logic.global_vars import global_vars
 
-from models.positiveseq.branch import Branch
-from models.shared.bus import GROUND, Bus
-from models.positiveseq.generator import Generator
-from models.shared.load import Load
-from models.shared.slack import Slack
-from models.positiveseq.shunt import Shunt
+from models.singlephase.branch import Branch
+from models.singlephase.bus import GROUND, Bus
+from models.singlephase.generator import Generator
+from models.singlephase.load import Load
+from models.singlephase.slack import Slack
+from models.singlephase.shunt import Shunt
 from logic.parsers.raw.parse_transformers import TwoWindingXfmrs, ThreeWindingXfmrs
 
 class GenType(Enum):

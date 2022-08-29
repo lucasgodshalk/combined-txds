@@ -3,7 +3,7 @@ from logic.networkmodel import NetworkModel, TxNetworkModel
 from logic.parsers.raw.parser import parse_raw
 from logic.powerflowsettings import PowerFlowSettings
 from logic.parsers.threephase.threephaseparser import ThreePhaseParser
-from models.shared.L2infeasibility import L2InfeasibilityCurrent
+from models.singlephase.L2infeasibility import L2InfeasibilityCurrent
 import urllib.request
 import tempfile
 

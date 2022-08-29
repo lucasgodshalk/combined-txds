@@ -6,8 +6,8 @@ from sympy import symbols
 from logic.lagrangehandler import LagrangeHandler
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.shared.line import build_line_stamper_bus
-from models.shared.bus import Bus
+from models.singlephase.line import build_line_stamper_bus
+from models.singlephase.bus import Bus
 
 constants = B_shunt, tx_factor = symbols('B_sh tx_factor')
 primals = [Vr_from, Vi_from, Vr_to, Vi_to] = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
