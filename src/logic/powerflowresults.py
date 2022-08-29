@@ -229,13 +229,22 @@ class PowerFlowResults:
 
         return results
 
-    def output(self, voltagefilepath:Path=Path(".output", "voltage.csv"), powerfilepath:Path=Path(".output", "power.csv")):
+    def output(self, outputfilepath):
+        if not outputfilepath:
+            return
+
+        voltagefilepath=Path(f"{outputfilepath}_voltage.csv")
+        powerfilepath=Path(f"{outputfilepath}_power.csv")
+        
         voltagefilepath.parent.mkdir(parents=True, exist_ok=True)
+
         with open(voltagefilepath, "w+") as f:
             f.write("bus,name,v_magnitude,v_ang_degrees\n")
             for bus in self.bus_results:
                 f.write(bus.csv_string())
+
         powerfilepath.parent.mkdir(parents=True, exist_ok=True)
+        
         with open(powerfilepath, "w+") as f:
             f.write("bus,name,P(MW),Q(MVar)\n")
             for gen in self.generator_results:
@@ -244,10 +253,9 @@ class PowerFlowResults:
                 f.write(load.csv_string())
 
 class QuasiTimeSeriesResults:
-    def __init__(self, outputfilename=None):
+    def __init__(self):
         self.powerflow_snapshot_results: dict[int, PowerFlowResults]
         self.powerflow_snapshot_results = dict()
-        self.outputfilename = outputfilename
     
     def add_powerflow_snapshot_results(self, hour:int, pf_results : PowerFlowResults):
         self.powerflow_snapshot_results[hour] = pf_results
@@ -259,6 +267,9 @@ class QuasiTimeSeriesResults:
             pf_result.display(verbose)
             print("---------------------")
     
-    def output(self):
+    def output(self, outputfilepath):
+        if not outputfilepath:
+            return
+
         for hour, pf_result in self.powerflow_snapshot_results.items():
-            pf_result.output(voltagefilepath=Path(".output", f"{self.outputfilename}_voltage_{hour}.csv"), powerfilepath=Path(".output", f"{self.outputfilename}_power_{hour}.csv"))
+            pf_result.output(f"{outputfilepath}_{hour}")

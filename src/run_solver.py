@@ -13,7 +13,9 @@ parser.add_argument("--loadstart", required=False)
 parser.add_argument("--loadend", required=False)
 parser.add_argument("--negativeload", required=False)
 parser.add_argument("--artificialswingbus", required=False)
-parser.add_argument("--outputfilename", required=False)
+parser.add_argument("--outputfile", required=False)
+parser.add_argument("--debug", required=False, action='store_true')
+parser.add_argument("--verbose", required=False, action='store_true')
 args = parser.parse_args()
 
 case = args.case
@@ -22,13 +24,14 @@ loadstart = args.loadstart
 loadend = args.loadend
 negativeload = args.negativeload
 artificialswingbus = args.artificialswingbus
-outputfilename = args.outputfilename
+outputfile = args.outputfile
+debug = args.debug
+verbose = args.verbose
 
 print("Running power flow solver...")
-print(f'Testcase: {case}')
 
 settings = PowerFlowSettings(
-    debug=True, 
+    debug=debug, 
     max_iters=50, 
     flat_start=False, 
     infeasibility_analysis=False, 
@@ -41,8 +44,8 @@ powerflow = FilePowerFlow(case, settings)
 
 results = powerflow.execute()
 
-results.display(verbose=True)
-results.output()
+results.display(verbose=verbose)
+results.output(outputfile)
 
 try:
     postprocessingsettings = PostProcessingSettings(
@@ -50,14 +53,14 @@ try:
         loadfile_start = loadstart,
         loadfile_end = loadend,
         artificialswingbus = artificialswingbus,
-        negativeload = negativeload,
-        outputfilename = outputfilename
+        negativeload = negativeload
     )
     postprocessor = NetworkPostProcessor(postprocessingsettings, powerflow)
     results = postprocessor.execute()
 
-    results.display(verbose=False)
-    results.output()
+    if results is not None:
+        results.display(verbose=False)
+        results.output(outputfile)
 except Exception as e:
     print(e)
     pass

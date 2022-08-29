@@ -73,7 +73,7 @@ class NetworkPostProcessor:
         if not os.path.isfile(self.settings.loadfile_name):
             raise Exception("Load file does not exist.")
         
-        quasi_time_series_results = QuasiTimeSeriesResults(self.settings.outputfilename)
+        quasi_time_series_results = QuasiTimeSeriesResults()
         self.set_load_names(self.powerflow.network)
         for hour in range(self.settings.loadfile_start, self.settings.loadfile_end):
             self.set_load_values(self.powerflow.network, hour)
@@ -97,4 +97,4 @@ class NetworkPostProcessor:
         elif self.settings.artificialswingbus is not None and self.settings.negativeload is not None:
             return self.execute_powerflow()
         else:
-            raise Exception("No valid postprocessing options provided")
+            return None
