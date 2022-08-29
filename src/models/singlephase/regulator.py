@@ -1,5 +1,4 @@
 from enum import Enum
-import math
 from logic.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
 from models.singlephase.bus import GROUND, Bus
