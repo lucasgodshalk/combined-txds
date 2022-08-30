@@ -1,3 +1,4 @@
+from logic.powerflowsettings import PowerFlowSettings
 from test_threephase_basic import assert_glm_case_gridlabd_results
 
 def test_gc_12_47_1():
@@ -25,7 +26,7 @@ def test_r2_12_47_3():
     assert_glm_case_gridlabd_results("r2_12_47_3")
 
 def test_r2_25_00_1():
-    assert_glm_case_gridlabd_results("r2_25_00_1")
+    assert_glm_case_gridlabd_results("r2_25_00_1", settings=PowerFlowSettings(tolerance=1e-4))
 
 def test_r2_35_00_1():
     assert_glm_case_gridlabd_results("r2_35_00_1")
@@ -64,7 +65,7 @@ def test_r5_12_47_5():
     assert_glm_case_gridlabd_results("r5_12_47_5")
 
 def test_r5_25_00_1():
-    assert_glm_case_gridlabd_results("r5_25_00_1")
+    assert_glm_case_gridlabd_results("r5_25_00_1", settings=PowerFlowSettings(tolerance=1e-4))
 
 def test_r5_35_00_1():
-    assert_glm_case_gridlabd_results("r5_35_00_1")
+    assert_glm_case_gridlabd_results("r5_35_00_1", settings=PowerFlowSettings(tolerance=1e-3))
