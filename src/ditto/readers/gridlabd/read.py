@@ -45,6 +45,144 @@ from ..abstract_reader import AbstractReader
 
 logger = logging.getLogger(__name__)
 
+def read_gld_objects_and_schedules(input_file, origin_datetime="2017 Jun 1 2:00PM"):
+    all_gld_objects = {}
+
+    origin_datetime = datetime.strptime(origin_datetime, "%Y %b %d %I:%M%p")
+    delta_datetime = timedelta(minutes=1)
+    sub_datetime = origin_datetime - delta_datetime
+
+    inputfile = open(input_file, "r")
+    all_rows = inputfile.readlines()
+    curr_object = None
+    curr_schedule = None
+    ignore_elements = False
+    found_schedule = False
+    all_includes = []
+    all_schedules = {}
+    for row in all_rows:
+        if row[:8] == "#include":
+            entries = row.split()
+            location = entries[1].strip('";')
+            include_file = open(location, "r")
+            include_rows = include_file.readlines()
+            all_includes = all_includes + include_rows
+    all_rows = all_rows + all_includes
+    for row in all_rows:
+        row = row.strip()
+        units = None
+
+        # Deal with comments
+        if row[:2] == "//":
+            continue
+        if row.find("//") != -1:
+            row = row[:row.find("//")]
+
+        entries = row.split()
+        if len(entries) > 0 and entries[0] == "object":
+            if curr_object is None:
+                obj = entries[1].split(":")
+                obj_class = obj[0]
+                if (
+                    obj_class == "house"
+                    or obj_class == "solar"
+                    or obj_class == "inverter"
+                    or obj_class == "waterheater"
+                    or obj_class == "climate"
+                    or obj_class == "ZIPload"
+                    or obj_class == "tape.recorder"
+                    or obj_class == "player"
+                    or obj_class == "tape.collector"
+                    or obj_class == "tape.group_recorder"
+                    or obj_class == "recorder"
+                    or obj_class == "voltdump"
+                ):
+                    continue
+                curr_object = getattr(gridlabd, obj_class)()
+                if len(obj) > 1:
+                    curr_object["name"] = obj_class + ":" + obj[1]
+            else:
+                ignore_elements = True
+
+        elif len(entries) > 0 and entries[0] == "schedule":
+            if curr_schedule is None:
+                schedule = entries[1]
+                schedule_bracket_cnt = 1
+            curr_schedule = schedule
+
+        else:
+            if curr_object == None and curr_schedule == None:
+                continue
+            if curr_object != None:
+                if len(row) > 0 and row.find(";") != -1:	
+                    row = row[:row.find(";")]
+                entries = row.split()
+                if len(entries) > 1:
+                    element = entries[0]
+                    value = entries[1]
+                    if len(entries) > 2:
+                        units = entries[2]
+                        # TODO: Deal with units correctly
+                        if obj_class == "line_spacing" and units == "in":
+                            value = str(float(value) / 12)
+                        if obj_class == "capacitor" and units == "MVAr":
+                            value = str(float(value) * 1e6)
+                        # print element,value,units
+                        # if units[0] =='k':
+                        #    value = value/1000.0
+                    # Assuming no nested objects for now.
+                    curr_object[element] = value
+
+                if len(row) >= 1:
+                    if row[-1] == "}" or row[-2:] == "};":
+                        if ignore_elements:  # Assumes only one layer of nesting
+                            ignore_elements = False
+                        else:
+                            try:
+                                all_gld_objects[
+                                    curr_object["name"]
+                                ] = curr_object
+                                curr_object = None
+                            except:
+
+                                if (
+                                    curr_object["from"] != None
+                                    and curr_object["to"] != None
+                                ):
+                                    curr_object["name"] = (
+                                        curr_object["from"]
+                                        + "-"
+                                        + curr_object["to"]
+                                    )
+                                    all_gld_objects[
+                                        curr_object["name"]
+                                    ] = curr_object
+
+                                else:
+                                    logger.debug("Warning object missing a name")
+                                curr_object = None
+            if curr_schedule != None:
+                row = row.strip(";")
+                entries = row.split()
+                if len(entries) > 5 and not found_schedule:
+                    cron = " ".join(entries[:-1])
+                    value = entries[-1]
+                    iter = croniter(cron, sub_datetime)
+                    if iter.get_next(datetime) == origin_datetime:
+                        found_schedule = True
+                        all_schedules[curr_schedule] = value
+
+                if len(row) >= 1:
+                    if row[-1] == "}":
+                        schedule_bracket_cnt = schedule_bracket_cnt - 1
+                    if row[0] == "{":
+                        schedule_bracket_cnt = schedule_bracket_cnt + 1
+                    if schedule_bracket_cnt == 0:
+                        curr_schedule = None
+                        found_schedule = False
+
+    return (all_gld_objects, all_schedules)
+
 class Reader(AbstractReader):
     """
     The schema is read in gridlabd.py which is imported as a module here.
@@ -54,7 +192,6 @@ class Reader(AbstractReader):
 
     def __init__(self, **kwargs):
         self.all_gld_objects = {}
-        self.all_api_objects = {}
 
         """Gridlabd class CONSTRUCTOR."""
 
@@ -350,142 +487,10 @@ class Reader(AbstractReader):
         return distances_arr[:,~np.all(distances_arr, axis=0, where=[-1])][~np.all(distances_arr, axis=1, where=[-1]),:]
 
     def parse(self, model, origin_datetime="2017 Jun 1 2:00PM"):
-        origin_datetime = datetime.strptime(origin_datetime, "%Y %b %d %I:%M%p")
-        delta_datetime = timedelta(minutes=1)
-        sub_datetime = origin_datetime - delta_datetime
-        obj_strips = ('node:', 'load:')
+        self.all_gld_objects, all_schedules = read_gld_objects_and_schedules(self.input_file, origin_datetime)
+
         remove_nonnum = re.compile(r'[^\d.]+')
 
-        inputfile = open(self.input_file, "r")
-        all_rows = inputfile.readlines()
-        curr_object = None
-        curr_schedule = None
-        ignore_elements = False
-        found_schedule = False
-        all_includes = []
-        all_schedules = {}
-        for row in all_rows:
-            if row[:8] == "#include":
-                entries = row.split()
-                location = entries[1].strip('";')
-                include_file = open(location, "r")
-                include_rows = include_file.readlines()
-                all_includes = all_includes + include_rows
-        all_rows = all_rows + all_includes
-        for row in all_rows:
-            row = row.strip()
-            units = None
-
-            # Deal with comments
-            if row[:2] == "//":
-                continue
-            if row.find("//") != -1:
-                row = row[:row.find("//")]
-
-            entries = row.split()
-            if len(entries) > 0 and entries[0] == "object":
-                if curr_object is None:
-                    obj = entries[1].split(":")
-                    obj_class = obj[0]
-                    if (
-                        obj_class == "house"
-                        or obj_class == "solar"
-                        or obj_class == "inverter"
-                        or obj_class == "waterheater"
-                        or obj_class == "climate"
-                        or obj_class == "ZIPload"
-                        or obj_class == "tape.recorder"
-                        or obj_class == "player"
-                        or obj_class == "tape.collector"
-                        or obj_class == "tape.group_recorder"
-                        or obj_class == "recorder"
-                        or obj_class == "voltdump"
-                    ):
-                        continue
-                    curr_object = getattr(gridlabd, obj_class)()
-                    if len(obj) > 1:
-                        curr_object["name"] = obj_class + ":" + obj[1]
-                else:
-                    ignore_elements = True
-
-            elif len(entries) > 0 and entries[0] == "schedule":
-                if curr_schedule is None:
-                    schedule = entries[1]
-                    schedule_bracket_cnt = 1
-                curr_schedule = schedule
-
-            else:
-                if curr_object == None and curr_schedule == None:
-                    continue
-                if curr_object != None:
-                    if len(row) > 0 and row.find(";") != -1:	
-                        row = row[:row.find(";")]
-                    entries = row.split()
-                    if len(entries) > 1:
-                        element = entries[0]
-                        value = entries[1]
-                        if len(entries) > 2:
-                            units = entries[2]
-                            # TODO: Deal with units correctly
-                            if obj_class == "line_spacing" and units == "in":
-                                value = str(float(value) / 12)
-                            if obj_class == "capacitor" and units == "MVAr":
-                                value = str(float(value) * 1e6)
-                            # print element,value,units
-                            # if units[0] =='k':
-                            #    value = value/1000.0
-                        # Assuming no nested objects for now.
-                        curr_object[element] = value
-
-                    if len(row) >= 1:
-                        if row[-1] == "}" or row[-2:] == "};":
-                            if ignore_elements:  # Assumes only one layer of nesting
-                                ignore_elements = False
-                            else:
-                                try:
-                                    self.all_gld_objects[
-                                        curr_object["name"]
-                                    ] = curr_object
-                                    curr_object = None
-                                except:
-
-                                    if (
-                                        curr_object["from"] != None
-                                        and curr_object["to"] != None
-                                    ):
-                                        curr_object["name"] = (
-                                            curr_object["from"]
-                                            + "-"
-                                            + curr_object["to"]
-                                        )
-                                        self.all_gld_objects[
-                                            curr_object["name"]
-                                        ] = curr_object
-
-                                    else:
-                                        logger.debug("Warning object missing a name")
-                                    curr_object = None
-                if curr_schedule != None:
-                    row = row.strip(";")
-                    entries = row.split()
-                    if len(entries) > 5 and not found_schedule:
-                        cron = " ".join(entries[:-1])
-                        value = entries[-1]
-                        iter = croniter(cron, sub_datetime)
-                        if iter.get_next(datetime) == origin_datetime:
-                            found_schedule = True
-                            all_schedules[curr_schedule] = value
-
-                    if len(row) >= 1:
-                        if row[-1] == "}":
-                            schedule_bracket_cnt = schedule_bracket_cnt - 1
-                        if row[0] == "{":
-                            schedule_bracket_cnt = schedule_bracket_cnt + 1
-                        if schedule_bracket_cnt == 0:
-                            curr_schedule = None
-                            found_schedule = False
-
-        logger.debug(all_schedules)
         for obj_name, obj in self.all_gld_objects.items():
             obj_type = type(obj).__name__
 
