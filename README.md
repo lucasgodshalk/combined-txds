@@ -6,7 +6,7 @@ Perform steady state power flow analysis of electrical transmission & distributi
 Assuming you are on the command line in the root of the repository, first install all of the python modules as listed in `requirements.txt`:
 
 ```
-pip install -r ./requirements.txt
+python -m pip install -r ./requirements.txt
 ```
 
 This library can be executed with arguments to target a particular network case:

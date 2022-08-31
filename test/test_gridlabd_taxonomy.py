@@ -29,7 +29,7 @@ def test_r2_25_00_1():
     assert_glm_case_gridlabd_results("r2_25_00_1", settings=PowerFlowSettings(tolerance=1e-4))
 
 def test_r2_35_00_1():
-    assert_glm_case_gridlabd_results("r2_35_00_1")
+    assert_glm_case_gridlabd_results("r2_35_00_1", settings=PowerFlowSettings(tolerance=1e-4))
 
 def test_r3_12_47_1():
     assert_glm_case_gridlabd_results("r3_12_47_1")

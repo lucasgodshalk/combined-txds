@@ -305,6 +305,9 @@ class ThreePhaseParser:
         # Check for switches, some are encoded as 1-length lines with no features
         elif model.is_switch:
             for wire in model.wires:
+                if not wire.phase in model.phases:
+                    continue
+
                 from_bus = simulation_state.bus_name_map[model.from_element + "_" + wire.phase]
                 to_bus = simulation_state.bus_name_map[model.to_element + "_" + wire.phase]
 
