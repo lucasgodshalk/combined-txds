@@ -24,8 +24,8 @@ class Bus:
 
         self.Bus = Bus
         self.Type = Type
-        self.NodeName = NodeName
-        self.NodePhase = NodePhase
+        self.NodeName = NodeName if NodeName is not None else f"Bus:{self.Bus}"
+        self.NodePhase = NodePhase if NodePhase is not None else f"NA"
         self.IsVirtual = IsVirtual
 
         # initialize all nodes

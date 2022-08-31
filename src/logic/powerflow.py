@@ -1,6 +1,7 @@
 import math
 import time
 from logic.devicecontroller import DeviceController
+from logic.graphanalyzer import GraphAnalyzer
 from logic.homotopycontroller import HomotopyController
 from logic.networkloader import NetworkLoader
 from logic.networkmodel import NetworkModel
@@ -16,6 +17,11 @@ class PowerFlow:
 
     def execute(self) -> PowerFlowResults:
         start_time = time.perf_counter_ns()
+
+        ga = GraphAnalyzer(self.network)
+        island_count = ga.get_island_count() 
+        if island_count != 1:
+            raise Exception(f"Detected multiple network islands. (Count: {island_count})")
 
         v_limiting = None
         if not self.network.is_three_phase and self.settings.voltage_limiting:
