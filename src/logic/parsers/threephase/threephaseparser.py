@@ -51,23 +51,44 @@ class ThreePhaseParser:
 
         self.create_buses(simulation_state)
         
-        self.create_loads(simulation_state)
-
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.powertransformer.PowerTransformer):
                 transformerhandler.create_transformer(model, simulation_state)
-            if isinstance(model, ditto.models.capacitor.Capacitor):
+            elif isinstance(model, ditto.models.capacitor.Capacitor):
                 self.create_capacitor(model, simulation_state)
-            if isinstance(model, ditto.models.regulator.Regulator):
+            elif isinstance(model, ditto.models.regulator.Regulator):
                 self.create_regulator(model, simulation_state)
-            if isinstance(model, ditto.models.line.Line):
+            elif isinstance(model, ditto.models.line.Line):
                 self.create_transmission_line(model, simulation_state)
+            elif isinstance(model, ditto.models.load.Load):
+                self.create_load(model, simulation_state)
+            elif self.ignoremodel(model):
+                continue
+            else:
+                raise Exception(f"Unknown model type {model}")
 
         if self.settings.infeasibility_analysis:
             self.setup_infeasibility(simulation_state)
 
         return simulation_state
     
+    def ignoremodel(self, model):
+        ignored_models = [
+            ditto.models.winding.Winding,
+            ditto.models.phase_winding.PhaseWinding,
+            ditto.models.phase_capacitor.PhaseCapacitor,
+            ditto.models.wire.Wire,
+            ditto.models.phase_load.PhaseLoad,
+            ditto.models.node.Node,
+            ditto.models.power_source.PowerSource
+        ]
+
+        for ignored_model in ignored_models:
+            if isinstance(model, ignored_model):
+                return True
+
+        return False
+
     # GridlabD buses default to being "PQ" constant power buses (aka loads)
     # They could also be "PV" voltage-controlled magnitude buses (aka generators)
     def create_buses(self, simulation_state: DxNetworkModel):
@@ -120,27 +141,24 @@ class ThreePhaseParser:
         simulation_state.buses.append(bus)
         return bus            
 
-    def create_loads(self, simulation_state: DxNetworkModel):
-        # Go through the ditto store for each load object
-        for model in self.ditto_store.models:
-            if isinstance(model, ditto.models.load.Load):
-                load_num = model.name.split("_")[-1]
-                triplex_phase = model.triplex_phase.default_value if hasattr(model, "triplex_phase") else None
-                for phase_load in model.phase_loads:
-                    from_bus = self.get_load_connection(model, simulation_state, phase_load.phase[0])
+    def create_load(self, model, simulation_state: DxNetworkModel):
+        load_num = model.name.split("_")[-1]
+        triplex_phase = model.triplex_phase.default_value if hasattr(model, "triplex_phase") else None
+        for phase_load in model.phase_loads:
+            from_bus = self.get_load_connection(model, simulation_state, phase_load.phase[0])
 
-                    if len(phase_load.phase) == 1:
-                        to_bus = GROUND
-                    else:
-                        to_bus = self.get_load_connection(model, simulation_state, phase_load.phase[1])
+            if len(phase_load.phase) == 1:
+                to_bus = GROUND
+            else:
+                to_bus = self.get_load_connection(model, simulation_state, phase_load.phase[1])
 
-                    if phase_load.model == 1 and phase_load.p == 0 and phase_load.q == 0:
-                        continue
-                    elif phase_load.model == 2 and phase_load.z == 0:
-                        continue
+            if phase_load.model == 1 and phase_load.p == 0 and phase_load.q == 0:
+                continue
+            elif phase_load.model == 2 and phase_load.z == 0:
+                continue
 
-                    pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, 0, 0, 0, 0, load_num, phase_load.phase, triplex_phase)
-                    simulation_state.loads.append(pq_load)
+            pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, 0, 0, 0, 0, load_num, phase_load.phase, triplex_phase)
+            simulation_state.loads.append(pq_load)
 
     def get_load_connection(self, model, simulation_state, phase):
         # Get the existing bus id for each phase load of this PQ load
