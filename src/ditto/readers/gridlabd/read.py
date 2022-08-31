@@ -45,6 +45,36 @@ from ..abstract_reader import AbstractReader
 
 logger = logging.getLogger(__name__)
 
+remove_nonnum = re.compile(r'[^\d.]+')
+
+#These objects we ignore entirely for the purpose of the simulator.
+skipped_objects = [
+    "house",
+    "solar",
+    "inverter",
+    "waterheater",
+    "climate",
+    "ZIPload",
+    "tape.recorder",
+    "player",
+    "tape.collector",
+    "tape.group_recorder",
+    "recorder",
+    "voltdump"
+]
+
+#These objects are any shared configuration objects that are only consumed by others.
+shared_config_objects = [
+    'regulator_configuration',
+    'line_configuration',
+    'line_spacing',
+    'transformer_configuration',
+    'triplex_line_conductor',
+    'triplex_line_configuration',
+    'underground_line_conductor',
+    'overhead_line_conductor'
+]
+
 def read_gld_objects_and_schedules(input_file, origin_datetime="2017 Jun 1 2:00PM"):
     all_gld_objects = {}
 
@@ -83,20 +113,7 @@ def read_gld_objects_and_schedules(input_file, origin_datetime="2017 Jun 1 2:00P
             if curr_object is None:
                 obj = entries[1].split(":")
                 obj_class = obj[0]
-                if (
-                    obj_class == "house"
-                    or obj_class == "solar"
-                    or obj_class == "inverter"
-                    or obj_class == "waterheater"
-                    or obj_class == "climate"
-                    or obj_class == "ZIPload"
-                    or obj_class == "tape.recorder"
-                    or obj_class == "player"
-                    or obj_class == "tape.collector"
-                    or obj_class == "tape.group_recorder"
-                    or obj_class == "recorder"
-                    or obj_class == "voltdump"
-                ):
+                if obj_class in skipped_objects:
                     continue
                 curr_object = getattr(gridlabd, obj_class)()
                 if len(obj) > 1:
@@ -198,7 +215,7 @@ class Reader(AbstractReader):
         self.input_file = kwargs.get("input_file", "./input.glm")
         super(Reader, self).__init__(**kwargs)
 
-    def compute_distances(self, outer_diameters, spacing, num_dists, lookup, remove_nonnum, max_dist, max_from, max_to):
+    def compute_distances(self, outer_diameters, spacing, num_dists, lookup, max_dist, max_from, max_to):
         distances = [[-1 for i in range(num_dists)] for j in range(num_dists)]
         for i in range(num_dists):
             for j in range(i + 1, num_dists):
@@ -488,8 +505,6 @@ class Reader(AbstractReader):
 
     def parse(self, model, origin_datetime="2017 Jun 1 2:00PM"):
         self.all_gld_objects, all_schedules = read_gld_objects_and_schedules(self.input_file, origin_datetime)
-
-        remove_nonnum = re.compile(r'[^\d.]+')
 
         for obj_name, obj in self.all_gld_objects.items():
             obj_type = type(obj).__name__
@@ -1565,7 +1580,7 @@ class Reader(AbstractReader):
                         lookup = ["A", "B", "C", "N"]
                         rev_lookup = {"A": 0, "B": 1, "C": 2, "N": 3, "E": 4}
                         num_dists = len(lookup)
-                        distances = self.compute_distances([api_wire.outer_diameter for api_wire in conductors], spacing, num_dists, lookup, remove_nonnum, max_dist=-100, max_from=-1, max_to=-1)
+                        distances = self.compute_distances([api_wire.outer_diameter for api_wire in conductors], spacing, num_dists, lookup, max_dist=-100, max_from=-1, max_to=-1)
                         
                         # Drop all rows and columns with only distances of -1
                         # distances_arr = np.array(distances)
@@ -2126,3 +2141,9 @@ class Reader(AbstractReader):
 
                 windings = [winding1, winding2]
                 api_regulator.windings = windings
+
+            elif obj_type in shared_config_objects:
+                continue
+
+            else:
+                raise Exception(f"Unhandled object type {obj_type}!")
