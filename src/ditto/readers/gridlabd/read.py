@@ -494,6 +494,10 @@ class Reader(AbstractReader):
         for obj_name, obj in self.all_gld_objects.items():
             obj_type = type(obj).__name__
 
+            if obj_type == "triplex_node" or obj_type == "triplex_meter" and hasattr(obj, "_power_12") or hasattr(obj, "_power_1") or hasattr(obj, "_power_2"):
+                # Actually a triplex load. Change obj_type and skip "triplex_node" code, to pick up at "triplex_load" code
+                obj_type = "triplex_load"
+
             if obj_type == "node" or obj_type == "meter":
                 # Using "easier to ask for forgiveness than permission" (EAFP) rather than "look before you leap" (LBYL) which would use if has_attr(obj,'_name').
 
@@ -506,6 +510,7 @@ class Reader(AbstractReader):
                         api_node = Node(model)
                 except AttributeError:
                     api_node = Node(model)
+
                 try:
                     api_node.name = obj["name"]
                 except AttributeError:
@@ -545,42 +550,38 @@ class Reader(AbstractReader):
                 except AttributeError:
                     pass
 
-            if obj_type == "triplex_node" or obj_type == "triplex_meter":
-                if hasattr(obj, "_power_12") or hasattr(obj, "_power_1") or hasattr(obj, "_power_2"):
-                    # Actually a triplex load. Change obj_type and skip "triplex_node" code, to pick up at "triplex_load" code
-                    obj_type = "triplex_load"
-                else:
-                    api_node = Node(model)
-                    try:
-                        api_node.name = obj["name"]
-                    except AttributeError:
-                        pass
+            elif obj_type == "triplex_node" or obj_type == "triplex_meter":
+                api_node = Node(model)
+                try:
+                    api_node.name = obj["name"]
+                except AttributeError:
+                    pass
 
-                    try:
-                        api_node.nominal_voltage = float(obj["nominal_voltage"])
-                    except AttributeError:
-                        pass
+                try:
+                    api_node.nominal_voltage = float(obj["nominal_voltage"])
+                except AttributeError:
+                    pass
 
-                    try:
-                        api_node.voltage_1 = complex(obj["voltage_1"])
-                        api_node.voltage_2 = complex(obj["voltage_2"])
-                    except AttributeError:
-                        pass
+                try:
+                    api_node.voltage_1 = complex(obj["voltage_1"])
+                    api_node.voltage_2 = complex(obj["voltage_2"])
+                except AttributeError:
+                    pass
 
-                    try:
-                        phases_str = obj["phases"].strip('"')
-                        phases = [Unicode("1"), Unicode("2")]
-                        api_node.triplex_phase = Unicode(phases_str[0])
-                        api_node.phases = phases
-                    except AttributeError:
-                        pass
-                    
-                    try:
-                        api_node.parent = obj["parent"]
-                    except AttributeError:
-                        pass
+                try:
+                    phases_str = obj["phases"].strip('"')
+                    phases = [Unicode("1"), Unicode("2")]
+                    api_node.triplex_phase = Unicode(phases_str[0])
+                    api_node.phases = phases
+                except AttributeError:
+                    pass
+                
+                try:
+                    api_node.parent = obj["parent"]
+                except AttributeError:
+                    pass
 
-            if obj_type == "transformer":
+            elif obj_type == "transformer":
 
                 api_transformer = PowerTransformer(model)
                 try:
@@ -941,12 +942,12 @@ class Reader(AbstractReader):
                     windings.append(winding3)
                 api_transformer.windings = windings
 
-            if obj_type == "load" or obj_type == "triplex_load":
+            elif obj_type == "load" or obj_type == "triplex_load":
 
                 load_parser = LoadParser()
                 load_parser.parse(all_schedules, model, obj)
 
-            if obj_type == "fuse":
+            elif obj_type == "fuse":
                 api_line = Line(model)
                 api_line.is_fuse = True
                 try:
@@ -1022,7 +1023,7 @@ class Reader(AbstractReader):
 
                 api_line.wires = wires
 
-            if obj_type == "switch" or obj_type == "recloser":
+            elif obj_type == "switch" or obj_type == "recloser":
                 api_line = Line(model)
                 api_line.is_switch = True
                 api_line.length = 1
@@ -1097,7 +1098,7 @@ class Reader(AbstractReader):
 
                 api_line.wires = wires
 
-            if obj_type == "overhead_line":
+            elif obj_type == "overhead_line":
 
                 api_line = Line(model)
                 api_line.line_type = "overhead"
@@ -1295,7 +1296,7 @@ class Reader(AbstractReader):
                     except AttributeError:
                         pass
 
-            if obj_type == "triplex_line":
+            elif obj_type == "triplex_line":
                 api_line = Line(model)
                 try:
                     api_line.name = obj["name"]
@@ -1410,7 +1411,7 @@ class Reader(AbstractReader):
                 for wire in conductors.keys():
                     api_line.wires.append(wire)
 
-            if obj_type == "underground_line":
+            elif obj_type == "underground_line":
 
                 api_line = Line(model)
                 api_line.line_type = "underground"
@@ -1772,7 +1773,7 @@ class Reader(AbstractReader):
                 for wire in conductors.keys():
                     api_line.wires.append(wire)
 
-            if obj_type == "capacitor":
+            elif obj_type == "capacitor":
 
                 api_capacitor = Capacitor(model)
                 phase_capacitors = []
@@ -1882,7 +1883,7 @@ class Reader(AbstractReader):
                     else:
                         api_capacitor.connected_phases.append(phase)
 
-            if obj_type == "regulator":
+            elif obj_type == "regulator":
                 api_regulator = Regulator(model)
                 try:
                     api_regulator.name = obj["name"]
