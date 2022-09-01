@@ -1,32 +1,14 @@
-from __future__ import absolute_import, division, print_function
-from builtins import super, range, zip, round, map
-
+from builtins import super, range
 from datetime import datetime
 from datetime import timedelta
 from croniter import croniter
 import logging
 import math
-import sys
-import os
-import json
 import re
-
-import networkx as nx
-
 import numpy as np
-
-try:
-    from lxml import etree
-except ImportError:
-    from xml import etree
-
-from ditto.compat import ModuleType
-from ditto.store import Store
 from ditto.models.node import Node
 from ditto.models.power_source import PowerSource
 from ditto.models.line import Line
-from ditto.models.load import Load
-from ditto.models.phase_load import PhaseLoad
 from ditto.models.regulator import Regulator
 from ditto.models.wire import Wire
 from ditto.models.capacitor import Capacitor
@@ -34,14 +16,12 @@ from ditto.models.phase_capacitor import PhaseCapacitor
 from ditto.models.powertransformer import PowerTransformer
 from ditto.models.winding import Winding
 from ditto.models.phase_winding import PhaseWinding
-
 from ditto.formats.gridlabd import gridlabd
 from ditto.formats.gridlabd import base
 from ditto.models.base import Unicode
 from ditto.readers.gridlabd.line_impedance import compute_overhead_impedance_matrix, compute_underground_impedance_matrix, compute_triplex_impedance_matrix
 from ditto.readers.gridlabd.load_parser import LoadParser
-
-from ..abstract_reader import AbstractReader
+from ditto.readers.abstract_reader import AbstractReader
 
 logger = logging.getLogger(__name__)
 
