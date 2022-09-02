@@ -22,12 +22,11 @@ from ditto.models.base import Unicode
 from ditto.readers.gridlabd.line_impedance import compute_overhead_impedance_matrix, compute_underground_impedance_matrix, compute_triplex_impedance_matrix
 from ditto.readers.gridlabd.load_parser import LoadParser
 from ditto.readers.abstract_reader import AbstractReader
+from ditto.readers.gridlabd.helpers import parse_phases, triplex_phases
 
 logger = logging.getLogger(__name__)
 
 remove_nonnum = re.compile(r'[^\d.]+')
-
-triplex_phases = [Unicode("1"), Unicode("2")]
 
 #These objects we ignore entirely for the purpose of the simulator.
 skipped_objects = [
@@ -469,41 +468,6 @@ def compute_distances(outer_diameters, spacing, num_dists, lookup, max_dist, max
                 pass
     return distances
 
-def parse_phases(phase_str, obj_name):
-    phases = []
-
-    #Lines are assumed delta by default,
-    #see phases property docs: http://gridlab-d.shoutwiki.com/wiki/Power_Flow_User_Guide
-    is_neutral = False
-    is_triplex = False
-    #is_neutral and is_delta cannot both be true, but we explicitly handle both as an error check.
-    is_delta = False
-
-    for phase_char in phase_str.strip('"'):
-        # We strip out the non-phase characters and mark them separately.
-        if phase_char == "N":
-            is_neutral = True
-        elif phase_char == "S":
-            is_triplex = True
-        elif phase_char == "D":
-            #Because delta is the default, the D is redundant.
-            continue
-        elif phase_char == "G":
-            #todo: we don't handle ground phase today...
-            continue
-        else:
-            phases.append(phase_char)
-    
-    if not is_neutral and not is_triplex:
-        is_delta = True
-
-    if len(phases) == 0:
-        raise Exception(f"Invalid phase information (no phases provided) (obj: {obj_name}")
-    elif is_triplex and (len(phases) > 1 or is_delta):
-        raise Exception(f"Invalid phase information (triplex info invalid) (obj: {obj_name}")
-
-    return (phases, is_delta, is_triplex)
-
 class Reader(AbstractReader):
     """
     The schema is read in gridlabd.py which is imported as a module here.
@@ -589,9 +553,8 @@ class Reader(AbstractReader):
                 api_node.name = name
 
                 if not is_triplex:
-                    raise Exception("Triplex is not indicated in phase information on a triplex node or meter.")
+                    raise Exception(f"Triplex is not indicated in phase information on a triplex node or meter. (obj:{name})")
 
-                
                 api_node.phases = triplex_phases
                 api_node.is_delta = is_delta
                 api_node.is_triplex = is_triplex

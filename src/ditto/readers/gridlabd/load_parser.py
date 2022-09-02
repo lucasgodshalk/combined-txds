@@ -2,18 +2,22 @@ from ditto.models.node import Node
 from ditto.models.load import Load
 from ditto.models.phase_load import PhaseLoad
 from ditto.models.base import Unicode
+from ditto.readers.gridlabd.helpers import parse_phases, triplex_phases
 
 class LoadParser:
     def parse(self, all_schedules, model, obj):
         api_load = Load(model)
         api_node = None
         has_parent = None
+
         try:
             api_load.connecting_element = obj["parent"]
             has_parent = True
         except AttributeError:
             has_parent = False
             api_node = Node(model)
+
+        api_load.name = None
         try:
             if has_parent:
                 api_load.name = obj["name"]
@@ -78,23 +82,6 @@ class LoadParser:
                 phaseloads.append(phase_load)
         
         return phaseloads
-
-    def __create_phaseload(self, model, phase, is_delta):
-        phaseload = PhaseLoad(model)
-        if is_delta:
-            if phase == "A":
-                phaseload.phase = "AB"
-            elif phase == "B":
-                phaseload.phase = "BC"
-            elif phase == "C":
-                phaseload.phase = "CA"
-        else:
-            phaseload.phase = phase
-        phaseload.p = 0  # Default value
-        phaseload.q = 0
-        phaseload.z = complex(0, 0)
-        phaseload.use_zip = 0
-        return phaseload
 
     def __parse_phase_load(self, model, obj, all_schedules, phase, is_delta):
         # Assume that unless ZIP is specifically specified only one of constant_power, constant_current and constant_impedance is used. A real part of 0 means that I or Z is being used instead.
@@ -199,3 +186,20 @@ class LoadParser:
             yield phaseload
         except AttributeError:
             pass
+
+    def __create_phaseload(self, model, phase, is_delta):
+        phaseload = PhaseLoad(model)
+        if is_delta:
+            if phase == "A":
+                phaseload.phase = "AB"
+            elif phase == "B":
+                phaseload.phase = "BC"
+            elif phase == "C":
+                phaseload.phase = "CA"
+        else:
+            phaseload.phase = phase
+        phaseload.p = 0  # Default value
+        phaseload.q = 0
+        phaseload.z = complex(0, 0)
+        phaseload.use_zip = 0
+        return phaseload
