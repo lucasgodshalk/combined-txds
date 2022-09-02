@@ -34,7 +34,9 @@ class Node(DiTToHasTraits):
         Instance(Unicode),
         help="""This parameter is a list of all the phases at the node.""",
     )
-    triplex_phase = Unicode(help="""Triplex phase if triplex node"""),
+    is_delta = Bool(help="""Defines if the node is delta or not""")
+    is_triplex = Bool(help="""Defines if the node is a triplex or not""")
+    triplex_phase = Unicode(help="""The originating phase for the triplex line"""),
     positions = List(
         Instance(Position),
         help="""This parameter is a list of positional points describing the node - it should only contain one.

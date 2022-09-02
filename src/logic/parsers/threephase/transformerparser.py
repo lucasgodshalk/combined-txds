@@ -28,7 +28,7 @@ class TransformerParser:
             self.create_three_phase_transformer(model, simulation_state)
 
     def create_center_tap_transformer(self, model, simulation_state: DxNetworkModel):
-        phase = model.phases[0].default_value
+        phase = model.phases[0]
         
         winding0 = model.windings[0]
         transformer_coil_0 = CenterTapTransformerCoil(winding0.nominal_voltage, winding0.rated_power, winding0.connection_type, winding0.voltage_limit, winding0.resistance, model.reactances[0])

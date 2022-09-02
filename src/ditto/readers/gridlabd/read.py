@@ -27,6 +27,8 @@ logger = logging.getLogger(__name__)
 
 remove_nonnum = re.compile(r'[^\d.]+')
 
+triplex_phases = [Unicode("1"), Unicode("2")]
+
 #These objects we ignore entirely for the purpose of the simulator.
 skipped_objects = [
     "house",
@@ -467,6 +469,41 @@ def compute_distances(outer_diameters, spacing, num_dists, lookup, max_dist, max
                 pass
     return distances
 
+def parse_phases(phase_str, obj_name):
+    phases = []
+
+    #Lines are assumed delta by default,
+    #see phases property docs: http://gridlab-d.shoutwiki.com/wiki/Power_Flow_User_Guide
+    is_neutral = False
+    is_triplex = False
+    #is_neutral and is_delta cannot both be true, but we explicitly handle both as an error check.
+    is_delta = False
+
+    for phase_char in phase_str.strip('"'):
+        # We strip out the non-phase characters and mark them separately.
+        if phase_char == "N":
+            is_neutral = True
+        elif phase_char == "S":
+            is_triplex = True
+        elif phase_char == "D":
+            #Because delta is the default, the D is redundant.
+            continue
+        elif phase_char == "G":
+            #todo: we don't handle ground phase today...
+            continue
+        else:
+            phases.append(phase_char)
+    
+    if not is_neutral and not is_triplex:
+        is_delta = True
+
+    if len(phases) == 0:
+        raise Exception(f"Invalid phase information (no phases provided) (obj: {obj_name}")
+    elif is_triplex and (len(phases) > 1 or is_delta):
+        raise Exception(f"Invalid phase information (triplex info invalid) (obj: {obj_name}")
+
+    return (phases, is_delta, is_triplex)
+
 class Reader(AbstractReader):
     """
     The schema is read in gridlabd.py which is imported as a module here.
@@ -486,12 +523,17 @@ class Reader(AbstractReader):
     def parse(self, model, origin_datetime="2017 Jun 1 2:00PM"):
         self.all_gld_objects, all_schedules = read_gld_objects_and_schedules(self.input_file, origin_datetime)
 
-        for obj_name, obj in self.all_gld_objects.items():
+        for name, obj in self.all_gld_objects.items():
             obj_type = type(obj).__name__
+
+            if obj_type in shared_config_objects:
+                continue
 
             if obj_type == "triplex_node" or obj_type == "triplex_meter" and hasattr(obj, "_power_12") or hasattr(obj, "_power_1") or hasattr(obj, "_power_2"):
                 # Actually a triplex load. Change obj_type and skip "triplex_node" code, to pick up at "triplex_load" code
                 obj_type = "triplex_load"
+
+            phases, is_delta, is_triplex = parse_phases(obj["phases"], name)
 
             if obj_type == "node" or obj_type == "meter":
                 # Using "easier to ask for forgiveness than permission" (EAFP) rather than "look before you leap" (LBYL) which would use if has_attr(obj,'_name').
@@ -506,11 +548,16 @@ class Reader(AbstractReader):
                 except AttributeError:
                     api_node = Node(model)
 
-                try:
-                    api_node.name = obj["name"]
-                except AttributeError:
-                    pass
+                api_node.name = name
 
+                if is_triplex:
+                    raise Exception(f"Triplex is indicated on a non-triplex node. {api_node.name}")
+
+                api_node.phases = [Unicode(x) for x in phases]
+                api_node.is_delta = is_delta
+                api_node.is_triplex = is_triplex
+                api_node.triplex_phase = None
+       
                 try:
                     api_node.nominal_voltage = float(obj["nominal_voltage"])
                 except AttributeError:
@@ -536,21 +583,19 @@ class Reader(AbstractReader):
                 except AttributeError:
                     has_parent = False
 
-                try:
-                    phases = []
-                    for i in obj["phases"].strip('"'):  # Ignore the 'N' at the end and just say if A,B or C
-                        # With lists of traitlets, the strings aren't automatically cast
-                        phases.append(Unicode(i))
-                    api_node.phases = phases
-                except AttributeError:
-                    pass
-
             elif obj_type == "triplex_node" or obj_type == "triplex_meter":
                 api_node = Node(model)
-                try:
-                    api_node.name = obj["name"]
-                except AttributeError:
-                    pass
+
+                api_node.name = name
+
+                if not is_triplex:
+                    raise Exception("Triplex is not indicated in phase information on a triplex node or meter.")
+
+                
+                api_node.phases = triplex_phases
+                api_node.is_delta = is_delta
+                api_node.is_triplex = is_triplex
+                api_node.triplex_phase = Unicode(phases[0])
 
                 try:
                     api_node.nominal_voltage = float(obj["nominal_voltage"])
@@ -564,14 +609,6 @@ class Reader(AbstractReader):
                     pass
 
                 try:
-                    phases_str = obj["phases"].strip('"')
-                    phases = [Unicode("1"), Unicode("2")]
-                    api_node.triplex_phase = Unicode(phases_str[0])
-                    api_node.phases = phases
-                except AttributeError:
-                    pass
-                
-                try:
                     api_node.parent = obj["parent"]
                 except AttributeError:
                     pass
@@ -579,10 +616,7 @@ class Reader(AbstractReader):
             elif obj_type == "transformer":
 
                 api_transformer = PowerTransformer(model)
-                try:
-                    api_transformer.name = obj["name"]
-                except AttributeError:
-                    pass
+                api_transformer.name = name
 
                 try:
                     api_transformer.from_element = obj["from"]
@@ -594,16 +628,7 @@ class Reader(AbstractReader):
                 except AttributeError:
                     pass
 
-                try:
-                    phases = []
-                    obj["phases"] = obj["phases"].strip('"')
-                    for i in obj[
-                            "phases"]:  # Ignore the 'N' at the end and just say if A,B or C
-                        # With lists of traitlets, the strings aren't automatically cast
-                        phases.append(Unicode(i))
-                    api_transformer.phases = phases
-                except AttributeError:
-                    pass
+                api_transformer.phases = phases
 
                 winding1 = Winding(model)
                 winding2 = Winding(model)
@@ -614,13 +639,10 @@ class Reader(AbstractReader):
                 winding3.voltage_type = 2
 
                 try:
-                    phases = obj["phases"].strip('"')
                     winding1.phase_windings = []
                     winding2.phase_windings = []
                     winding3.phase_windings = []
                     for p in phases:
-                        if p == "N" or p == "S":
-                            continue
                         pw1 = PhaseWinding(model)
                         pw1.phase = p
                         winding1.phase_windings.append(pw1)
@@ -945,10 +967,8 @@ class Reader(AbstractReader):
             elif obj_type == "fuse":
                 api_line = Line(model)
                 api_line.is_fuse = True
-                try:
-                    api_line.name = obj["name"]
-                except AttributeError:
-                    pass
+                api_line.name = name
+                api_line.phases = phases
 
                 try:
                     api_line._current_limit = remove_nonnum.sub('', obj["current_limit"])
@@ -977,6 +997,7 @@ class Reader(AbstractReader):
                     wires.append(api_wire)
                 except AttributeError:
                     pass
+
                 try:
                     status = obj["phase_B_status"]
                     api_wire = Wire(model)
@@ -1003,9 +1024,7 @@ class Reader(AbstractReader):
 
                 try:
                     if len(wires) == 0:
-                        for p in obj["phases"].strip('"'):
-                            if p == "N":
-                                continue
+                        for p in phases:
                             api_wire = Wire(model)
                             api_wire.phase = p
                             wires.append(api_wire)
@@ -1019,13 +1038,13 @@ class Reader(AbstractReader):
                 api_line.wires = wires
 
             elif obj_type == "switch" or obj_type == "recloser":
+                #todo: implement recloser operations.
+
                 api_line = Line(model)
                 api_line.is_switch = True
                 api_line.length = 1
-                try:
-                    api_line.name = obj["name"]
-                except AttributeError:
-                    pass
+                api_line.name = name
+                api_line.phases = phases
 
                 try:
                     api_line.from_element = obj["from"]
@@ -1072,15 +1091,10 @@ class Reader(AbstractReader):
                     wires.append(api_wire)
                 except AttributeError:
                     pass
-                try:
-                    api_line.phases = []
 
-                    no_wires = len(wires) == 0
-                    for p in obj["phases"].strip('"'):
-                        if p == "N":
-                            continue
-                        api_line.phases.append(p)
-                        if no_wires:
+                try:
+                    if len(wires) == 0:
+                        for p in phases:
                             api_wire = Wire(model)
                             api_wire.phase = p
                             wires.append(api_wire)
@@ -1410,10 +1424,8 @@ class Reader(AbstractReader):
 
                 api_line = Line(model)
                 api_line.line_type = "underground"
-                try:
-                    api_line.name = obj["name"]
-                except AttributeError:
-                    pass
+                api_line.name = name
+                api_line.phases = phases
 
                 try:
                     if obj["length"].find('km') != -1:
@@ -1433,17 +1445,6 @@ class Reader(AbstractReader):
 
                 try:
                     api_line.to_element = obj["to"]
-                except AttributeError:
-                    pass
-
-                try:
-                    phases = []
-                    obj["phases"] = obj["phases"].strip('"')
-                    for i in obj[
-                            "phases"]:  # Ignore the 'N' at the end and just say if A,B or C
-                        # With lists of traitlets, the strings aren't automatically cast
-                        phases.append(Unicode(i))
-                    api_line.phases = phases
                 except AttributeError:
                     pass
 
@@ -1771,11 +1772,15 @@ class Reader(AbstractReader):
             elif obj_type == "capacitor":
 
                 api_capacitor = Capacitor(model)
-                phase_capacitors = []
+                api_capacitor.name = name
+
                 try:
-                    api_capacitor.name = obj["name"]
+                    connected_phases, is_delta, _ = parse_phases(str(obj["phases_connected"]), name)
                 except AttributeError:
-                    pass
+                    connected_phases = phases         
+
+                api_capacitor.is_delta = is_delta
+                api_capacitor.connected_phases = connected_phases
 
                 try:
                     api_capacitor.nominal_voltage = float(obj["nominal_voltage"])
@@ -1821,16 +1826,15 @@ class Reader(AbstractReader):
                 except AttributeError:
                     pass
 
+                phase_capacitors = []
                 try:
                     varA = float(obj["capacitor_A"])
                     pc = PhaseCapacitor(model)
                     pc.phase = "A"
                     pc.var = varA
-                    phase_capacitors.append(
-                        pc
-                    )  # in case there is no switching attribute
+                    phase_capacitors.append(pc)  
+                    # in case there is no switching attribute
                     phase_capacitors[-1].switch = obj["switch_A"]
-
                 except AttributeError:
                     pass
 
@@ -1839,9 +1843,8 @@ class Reader(AbstractReader):
                     pc = PhaseCapacitor(model)
                     pc.phase = "B"
                     pc.var = varB
-                    phase_capacitors.append(
-                        pc
-                    )  # in case there is no switching attribute
+                    phase_capacitors.append(pc)
+                    # in case there is no switching attribute
                     phase_capacitors[-1].switch = obj["switch_B"]
                 except AttributeError:
                     pass
@@ -1851,32 +1854,13 @@ class Reader(AbstractReader):
                     pc = PhaseCapacitor(model)
                     pc.phase = "C"
                     pc.var = varC
-                    phase_capacitors.append(
-                        pc
-                    )  # in case there is no switching attribute
+                    phase_capacitors.append(pc)  
+                    # in case there is no switching attribute
                     phase_capacitors[-1].switch = obj["switch_C"]
                 except AttributeError:
                     pass
 
                 api_capacitor.phase_capacitors = phase_capacitors
-
-                try:
-                    connected_phases = str(obj["phases_connected"])
-                except AttributeError:
-                    try:
-                        connected_phases = str(obj["phases"]).upper()
-                        #If we fall back to the phases property, we want to drop the N if there is one.
-                        connected_phases = connected_phases.replace("N", "")
-                    except AttributeError:
-                        raise Exception("Unable to determine connected phases of capacitor")           
-
-                api_capacitor.connected_phases = []
-                api_capacitor.is_delta = False
-                for phase in connected_phases:
-                    if phase == "D":
-                        api_capacitor.is_delta = True
-                    else:
-                        api_capacitor.connected_phases.append(phase)
 
             elif obj_type == "regulator":
                 api_regulator = Regulator(model)
@@ -1915,12 +1899,9 @@ class Reader(AbstractReader):
                     pass
 
                 try:
-                    phases = obj["phases"].strip('"')
                     winding1.phase_windings = []
                     winding2.phase_windings = []
                     for p in phases:
-                        if p == "N" or p == "S":
-                            continue
                         pw1 = PhaseWinding(model)
                         pw1.phase = p
                         winding1.phase_windings.append(pw1)
@@ -2121,9 +2102,6 @@ class Reader(AbstractReader):
 
                 windings = [winding1, winding2]
                 api_regulator.windings = windings
-
-            elif obj_type in shared_config_objects:
-                continue
 
             else:
                 raise Exception(f"Unhandled object type {obj_type}!")
