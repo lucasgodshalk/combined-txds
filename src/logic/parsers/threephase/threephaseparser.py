@@ -10,7 +10,6 @@ from ditto.store import Store
 import ditto.models.load
 from logic.parsers.threephase.transformerparser import TransformerParser
 from logic.powerflowsettings import PowerFlowSettings
-from models.singlephase.L2infeasibility import L2InfeasibilityCurrent
 from models.singlephase.capacitor import Capacitor, CapacitorMode, CapSwitchState
 from models.singlephase.slack import Slack
 
@@ -66,9 +65,6 @@ class ThreePhaseParser:
                 continue
             else:
                 raise Exception(f"Unknown model type {model}")
-
-        if self.settings.infeasibility_analysis:
-            self.setup_infeasibility(simulation_state)
 
         return simulation_state
     
@@ -342,10 +338,7 @@ class ThreePhaseParser:
             transmission_line = TransmissionLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
             simulation_state.branches.append(transmission_line)
 
-    def setup_infeasibility(self, simulation_state: DxNetworkModel):
-        for bus in simulation_state.buses:
-            current = L2InfeasibilityCurrent(bus)
-            simulation_state.infeasibility_currents.append(current)
+
 
 
 if __name__ == "__main__":

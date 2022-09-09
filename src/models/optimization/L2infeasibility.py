@@ -1,8 +1,31 @@
+from typing import List
 from sympy import symbols
 from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
+from models.helpers import merge_residuals
 from models.singlephase.bus import Bus
+
+class L2InfeasibilityOptimization:
+    def __init__(self, buses: List[Bus]) -> None:
+        self.is_linear = True
+        self.infeasibility_currents = []
+
+        for bus in buses:
+            current = L2InfeasibilityCurrent(bus)
+            self.infeasibility_currents.append(current)
+
+    def stamp(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
+        for inf_current in self.infeasibility_currents:
+            inf_current.stamp_primal(Y, J, v_previous, tx_factor, network)
+            inf_current.stamp_dual(Y, J, v_previous, tx_factor, network)
+
+    def calculate_residuals(self, network, v):
+        residuals = []
+        for inf_current in self.infeasibility_currents:
+            residuals.append(inf_current.calculate_residuals(network, v))
+        
+        return merge_residuals({}, residuals)
 
 constants = ()
 primals = [Iir, Iii] = symbols("Iir Iii")

@@ -3,7 +3,7 @@ from logic.networkmodel import NetworkModel, TxNetworkModel
 from logic.parsers.raw.parser import parse_raw
 from logic.powerflowsettings import PowerFlowSettings
 from logic.parsers.threephase.threephaseparser import ThreePhaseParser
-from models.singlephase.L2infeasibility import L2InfeasibilityCurrent
+from models.optimization.L2infeasibility import L2InfeasibilityCurrent, L2InfeasibilityOptimization
 import urllib.request
 import tempfile
 
@@ -43,29 +43,27 @@ class NetworkLoader:
         network_file = pull_network_file(network_uri)
 
         if ".glm" in network_file:
-            return self.__create_three_phase_network(network_file)
+            network = self.__parse_glm_network(network_file)
         elif ".RAW" in network_file:
-            return self.__create_positive_seq_network(network_file)
+            network =  self.__parse_RAW_network(network_file)
         else:
             raise Exception("Unknown network file format")
 
-    def __create_three_phase_network(self, network_file: str):
+        network.optimization = self.__load_optimization(network)
+
+        return network
+
+    def __parse_glm_network(self, network_file: str):
         parser = ThreePhaseParser(network_file, self.settings)
 
         network = parser.parse()
 
         return network
 
-    def __create_positive_seq_network(self, network_file: str):
+    def __parse_RAW_network(self, network_file: str):
         raw_data = parse_raw(network_file)
 
         buses = raw_data['buses']
-
-        infeasibility_currents = []
-        if self.settings.infeasibility_analysis:
-            for bus in buses:
-                inf_current = L2InfeasibilityCurrent(bus)
-                infeasibility_currents.append(inf_current)
 
         loads = raw_data['loads']
         slack = raw_data['slack']
@@ -79,10 +77,15 @@ class NetworkLoader:
             loads=loads, 
             slack=slack, 
             generators=generators, 
-            infeasibility_currents=infeasibility_currents,
             transformers=transformers,
             branches=branches,
             shunts=shunts
             )
 
         return network
+    
+    def __load_optimization(self, network):
+        if self.settings.infeasibility_analysis:
+            return L2InfeasibilityOptimization(network.buses)
+
+        return None

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from logic.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
+from models.optimization.L2infeasibility import L2InfeasibilityOptimization
 from models.singlephase.bus import Bus
 
 class GENTYPE:
@@ -144,14 +145,15 @@ class PowerFlowResults:
             Q = Vi * slack_Ii
             self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Slack))
 
-        for infeasibility_current in self.network.infeasibility_currents:
-            Vr = v_final[infeasibility_current.bus.node_Vr]
-            Vi = v_final[infeasibility_current.bus.node_Vi]
-            inf_Ir = v_final[infeasibility_current.node_Ir_inf]
-            inf_Ii = v_final[infeasibility_current.node_Ii_inf]
-            P = Vr * inf_Ir
-            Q = Vi * inf_Ii
-            self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Inf))    
+        if self.network.optimization != None and isinstance(self.network.optimization, L2InfeasibilityOptimization):
+            for infeasibility_current in self.network.optimization.infeasibility_currents:
+                Vr = v_final[infeasibility_current.bus.node_Vr]
+                Vi = v_final[infeasibility_current.bus.node_Vi]
+                inf_Ir = v_final[infeasibility_current.node_Ir_inf]
+                inf_Ii = v_final[infeasibility_current.node_Ii_inf]
+                P = Vr * inf_Ir
+                Q = Vi * inf_Ii
+                self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Inf))    
 
         self.max_residual, self.max_residual_index, self.residuals = self.calculate_residuals()        
 

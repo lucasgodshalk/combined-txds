@@ -5,7 +5,6 @@ from typing import Dict, List
 import numpy as np
 from logic.powerflowsettings import PowerFlowSettings
 from models.singlephase.generator import Generator
-from models.singlephase.L2infeasibility import L2InfeasibilityCurrent
 from models.singlephase.bus import Bus
 from models.singlephase.load import Load
 from models.singlephase.slack import Slack
@@ -34,10 +33,10 @@ class NetworkModel():
         self.generators = []
         self.transformers: List[Transformer]
         self.transformers = []
-        self.infeasibility_currents: List[L2InfeasibilityCurrent]
-        self.infeasibility_currents = []
         self.switches: List[Switch]
         self.switches = []
+
+        self.optimization = None
 
         self.size_Y = None
         self.matrix_version = -1
@@ -92,7 +91,6 @@ class TxNetworkModel(NetworkModel):
         loads=[], 
         slack=[], 
         generators=[], 
-        infeasibility_currents=[], 
         transformers=[], 
         branches=[], 
         shunts=[],
@@ -104,14 +102,13 @@ class TxNetworkModel(NetworkModel):
         self.loads = loads
         self.slack = slack
         self.generators = generators
-        self.infeasibility_currents = infeasibility_currents
         self.transformers = transformers
         self.branches = branches
         self.shunts = shunts
         self.voltage_sources = voltage_sources
 
     def get_NR_invariant_elements(self):
-        return self.branches + self.shunts + self.transformers + self.slack + self.switches + self.infeasibility_currents + self.voltage_sources
+        return self.branches + self.shunts + self.transformers + self.slack + self.switches + self.voltage_sources
 
     def get_NR_variable_elements(self):
         return self.generators + self.loads
@@ -176,14 +173,12 @@ class DxNetworkModel(NetworkModel):
         # All of the regulators
         self.regulators = []
 
-        self.infeasibility_currents = []
-
         # Reference nodes to be removed from the set of equations
         self.reference_r = None
         self.reference_i = None
     
     def get_NR_invariant_elements(self):
-        return self.slack + self.branches + self.transformers + self.regulators + self.switches + self.infeasibility_currents + self.fuses + self.capacitors
+        return self.slack + self.branches + self.transformers + self.regulators + self.switches + self.fuses + self.capacitors
 
     def get_NR_variable_elements(self):
         return self.loads
