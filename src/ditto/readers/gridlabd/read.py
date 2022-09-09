@@ -65,14 +65,16 @@ def read_gld_objects_and_schedules(input_file, origin_datetime="2017 Jun 1 2:00P
     delta_datetime = timedelta(minutes=1)
     sub_datetime = origin_datetime - delta_datetime
 
-    inputfile = open(input_file, "r")
-    all_rows = inputfile.readlines()
     curr_object = None
     curr_schedule = None
     ignore_elements = False
     found_schedule = False
     all_includes = []
     all_schedules = {}
+
+    inputfile = open(input_file, "r")
+    all_rows = inputfile.readlines()
+
     for row in all_rows:
         if row[:8] == "#include":
             entries = row.split()
@@ -81,6 +83,7 @@ def read_gld_objects_and_schedules(input_file, origin_datetime="2017 Jun 1 2:00P
             include_rows = include_file.readlines()
             all_includes = all_includes + include_rows
     all_rows = all_rows + all_includes
+
     for row in all_rows:
         row = row.strip()
         units = None
@@ -119,7 +122,8 @@ def read_gld_objects_and_schedules(input_file, origin_datetime="2017 Jun 1 2:00P
                 entries = row.split()
                 if len(entries) > 1:
                     element = entries[0]
-                    value = entries[1]
+                    value = entries[1].replace('"', "")
+
                     if len(entries) > 2:
                         units = entries[2]
                         # TODO: Deal with units correctly
@@ -130,6 +134,7 @@ def read_gld_objects_and_schedules(input_file, origin_datetime="2017 Jun 1 2:00P
                         # print element,value,units
                         # if units[0] =='k':
                         #    value = value/1000.0
+
                     # Assuming no nested objects for now.
                     curr_object[element] = value
 
@@ -161,6 +166,7 @@ def read_gld_objects_and_schedules(input_file, origin_datetime="2017 Jun 1 2:00P
                                 else:
                                     logger.debug("Warning object missing a name")
                                 curr_object = None
+
             if curr_schedule != None:
                 row = row.strip(";")
                 entries = row.split()
