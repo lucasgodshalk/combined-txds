@@ -9313,8 +9313,14 @@ object underground_line_conductor {
 
 object underground_line_conductor {
      name "underground_sec_line_conductor_500kcm";
+     outer_diameter 2.0800 in;
      conductor_gmr 0.026 ft;
+     conductor_diameter 1.1240 in;
      conductor_resistance 0.206;
+     neutral_gmr 0.0033 ft;
+     neutral_resistance 5.9026;
+     neutral_diameter 0.1019 in;
+     neutral_strands 20;
      rating.summer.continuous 430;
      rating.summer.emergency  430;
      rating.winter.continuous  430;
@@ -30384,23 +30390,7 @@ object transformer {
 
 
 
-object player {
-     parent "P1";
-     file V_A.player;
-     property voltage_A;
-}
 
-object player {
-     parent "P1";
-     file V_B.player;
-     property voltage_B;
-}
-
-object player {
-     parent "P1";
-     file V_C.player;
-     property voltage_C;
-}
 
 object voltdump {
      filename result.csv;
@@ -30411,33 +30401,4 @@ object currdump {
      filename Current_Dump_NR.csv;
 }
 
-object collector {
-     file Losses_OHL.csv;
-     group "class=overhead_line";
-     interval 1;
-     limit 10;
-     property sum(power_losses_A.real),sum(power_losses_A.imag),sum(power_losses_B.real),sum(power_losses_B.imag),sum(power_losses_C.real),sum(power_losses_C.imag);
-}
-
-object collector {
-     file Losses_Cable.csv;
-     group "class=underground_line";
-     interval 1;
-     limit 10;
-     property sum(power_losses_A.real),sum(power_losses_A.imag),sum(power_losses_B.real),sum(power_losses_B.imag),sum(power_losses_C.real),sum(power_losses_C.imag);
-}
-
-object collector {
-     file Losses_XFMR.csv;
-     group "class=transformer";
-     interval 1;
-     limit 10;
-     property sum(power_losses_A.real),sum(power_losses_A.imag),sum(power_losses_B.real),sum(power_losses_B.imag),sum(power_losses_C.real),sum(power_losses_C.imag);
-}
-
-    object player {
-     parent "10_sw";
-     file Switch.player;
-     property status;
-}
 
