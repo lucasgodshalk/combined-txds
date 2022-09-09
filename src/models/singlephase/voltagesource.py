@@ -1,6 +1,6 @@
 import numpy as np
 from sympy import symbols
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
@@ -20,7 +20,7 @@ eqns = [
 
 lagrange = np.dot(duals, eqns)
 
-lh = LagrangeHandler(lagrange, constants, primals, duals)
+lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 class VoltageSource:
     def __init__(self, from_bus: Bus, to_bus: Bus, Vr_set, Vi_set) -> None:

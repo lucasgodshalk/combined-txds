@@ -3,7 +3,7 @@ from collections import defaultdict
 from itertools import count
 import numpy as np
 from sympy import symbols
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.singlephase.line import build_line_stamper_bus
@@ -24,7 +24,7 @@ shunt_eqns = [
 
 lagrange = np.dot(duals, shunt_eqns)
 
-shunt_lh = LagrangeHandler(lagrange, constants, primals, duals)
+shunt_lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 class Branch:
     _ids = count(0)

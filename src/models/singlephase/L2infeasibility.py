@@ -1,5 +1,5 @@
 from sympy import symbols
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
@@ -10,7 +10,7 @@ duals = [Lr, Li] = symbols("lambda_Vr lambda_Vi")
 
 lagrange = Iir ** 2 + Iii ** 2 + Iir * Lr + Iii * Li
 
-lh = LagrangeHandler(lagrange, constants, primals, duals)
+lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 class L2InfeasibilityCurrent:
     def __init__(self, bus: Bus) -> None:

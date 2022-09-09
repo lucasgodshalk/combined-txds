@@ -101,7 +101,10 @@ class DerivativeEntry:
     def __repr__(self) -> str:
         return f"Entry {self.variable}: {self.expr}"
 
-class LagrangeHandler:
+#This class manages individual segments of the lagrange equation that is supplied by different models.
+#algebraically, you can think of all the segments as summing together to make the full Lagrange equation,
+#but in reality we map individual components straight onto the matrix (see: LagrangeStamper)
+class LagrangeSegment:
     VERSION = 1 #Increment if changes have been made to bust the derivative cache.
     _pickler = LagrangePickler()
 
@@ -111,7 +114,7 @@ class LagrangeHandler:
         self.primals = primal_symbols
         self.duals = dual_symbols
         self.lagrange = lagrange
-        self.lagrange_key = f"{LagrangeHandler.VERSION},{lagrange},{constant_symbols},{primal_symbols},{dual_symbols}"
+        self.lagrange_key = f"{LagrangeSegment.VERSION},{lagrange},{constant_symbols},{primal_symbols},{dual_symbols}"
 
         self.variables = self.primals + self.duals
 
@@ -122,9 +125,9 @@ class LagrangeHandler:
         if self._derivatives != None:
             return self._derivatives
 
-        if LagrangeHandler._pickler.has_pickle(self.lagrange_key):
+        if LagrangeSegment._pickler.has_pickle(self.lagrange_key):
             try:
-                self._derivatives = LagrangeHandler._pickler.try_unpickle(self.lagrange_key)
+                self._derivatives = LagrangeSegment._pickler.try_unpickle(self.lagrange_key)
             except:
                 self._generated_derivatives()
         else:
@@ -144,5 +147,5 @@ class LagrangeHandler:
 
             self._derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, lambda_inputs)
 
-        LagrangeHandler._pickler.try_pickle(self.lagrange_key, self._derivatives)
+        LagrangeSegment._pickler.try_pickle(self.lagrange_key, self._derivatives)
 

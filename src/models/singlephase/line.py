@@ -1,6 +1,6 @@
 import numpy as np
 from sympy import symbols
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import LagrangeStamper
 from models.singlephase.bus import Bus
 
@@ -23,7 +23,7 @@ eqns = [
 
 lagrange = np.dot(duals, eqns)
 
-line_lh = LagrangeHandler(lagrange, constants, primals, duals)
+line_lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 def build_line_stamper_bus(from_bus: Bus, to_bus: Bus, optimization_enabled):
     return build_line_stamper(

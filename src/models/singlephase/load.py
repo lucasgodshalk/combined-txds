@@ -2,7 +2,7 @@ from __future__ import division
 from itertools import count
 import numpy as np
 from sympy import symbols
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
@@ -30,7 +30,7 @@ eqns = [
 
 lagrange = np.dot(duals, eqns)
 
-lh = LagrangeHandler(lagrange, constants, primals, duals)
+lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 #Represents a positive sequence or single phase load.
 class Load:

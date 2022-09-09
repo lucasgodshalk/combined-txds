@@ -2,7 +2,7 @@ from __future__ import division
 from itertools import count
 import numpy as np
 from sympy import symbols
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
@@ -21,7 +21,7 @@ eqns = [
 
 lagrange = np.dot(duals, eqns)
 
-lh = LagrangeHandler(lagrange, constants, primals, duals)
+lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 #Todo: this should be unified with the capacitor class.
 class Shunt:

@@ -1,6 +1,6 @@
 import numpy as np
 from sympy import symbols
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 
 def test_linear_eqn():
     constants = a, b = symbols("a b")
@@ -14,7 +14,7 @@ def test_linear_eqn():
 
     lagrange = np.dot(duals, eqns)
 
-    lh = LagrangeHandler(lagrange, constants, primals, duals)
+    lh = LagrangeSegment(lagrange, constants, primals, duals)
 
     assert 4 == len(lh.get_derivatives())
 
@@ -56,7 +56,7 @@ def test_nonlinear_eqn():
 
     lagrange = np.dot(duals, eqns)
 
-    lh = LagrangeHandler(lagrange, constants, primals, duals)
+    lh = LagrangeSegment(lagrange, constants, primals, duals)
 
     assert 4 == len(lh.get_derivatives())
 

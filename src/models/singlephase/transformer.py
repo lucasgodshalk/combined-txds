@@ -5,7 +5,7 @@ import numpy as np
 from sympy import symbols
 from sympy import cos
 from sympy import sin
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 import math
@@ -46,7 +46,7 @@ eqns = [
 
 lagrange = np.dot(duals, eqns)
 
-xfrmr_lh = LagrangeHandler(lagrange, constants, primals, duals)
+xfrmr_lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 class Transformer:
     _ids = count(0)

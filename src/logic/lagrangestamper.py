@@ -1,5 +1,5 @@
 from collections import defaultdict
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.matrixbuilder import MatrixBuilder
 
 SKIP = None
@@ -11,7 +11,7 @@ class StampEntry:
         self.eval_func = eval_func
 
 class LagrangeStamper:
-    def __init__(self, handler: LagrangeHandler, var_map: dict, optimization_enabled: bool, eqn_map: dict = None) -> None:
+    def __init__(self, handler: LagrangeSegment, var_map: dict, optimization_enabled: bool, eqn_map: dict = None) -> None:
         self.handler = handler
 
         #The equation map is really the row index lookup, and the variable map is really the column index lookup.

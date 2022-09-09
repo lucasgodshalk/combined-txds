@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import List
 import numpy as np
 from sympy import symbols
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import SKIP, LagrangeStamper
 from models.singlephase.bus import GROUND
 from models.singlephase.line import build_line_stamper_bus
@@ -36,7 +36,7 @@ eqns = [
 
 lagrange = np.dot(duals, eqns)
 
-center_tap_xfmr_lh = LagrangeHandler(lagrange, constants, primals, duals)
+center_tap_xfmr_lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 class CenterTapTransformer():
     def __init__(self

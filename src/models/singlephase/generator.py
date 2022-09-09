@@ -1,7 +1,7 @@
 from __future__ import division
 from itertools import count
 from sympy import symbols
-from logic.lagrangehandler import LagrangeHandler
+from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
@@ -16,7 +16,7 @@ F_Q = Vset ** 2 - Vr ** 2 - Vi ** 2
 
 lagrange = Lr * F_Vr + Li * F_Vi + LQ * F_Q
 
-lh = LagrangeHandler(lagrange, constants, primals, duals)
+lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 class Generator:
     _ids = count(0)
