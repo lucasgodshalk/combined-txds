@@ -43,7 +43,11 @@ skipped_objects = [
     "recorder",
     "voltdump",
     "currdump",
-    "collector"
+    "collector",
+    "metrics",
+    "eventgen",
+    "fault_check",
+    "power_metrics"
 ]
 
 #These objects are any shared configuration objects that are only consumed by others.

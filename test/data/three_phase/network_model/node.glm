@@ -9347,8 +9347,14 @@ object underground_line_conductor {
 
 object underground_line_conductor {
      name "underground_sec_line_conductor_500kcm";
+     outer_diameter 2.0800 in;
      conductor_gmr 0.026 ft;
+     conductor_diameter 1.1240 in;
      conductor_resistance 0.206;
+     neutral_gmr 0.0033 ft;
+     neutral_resistance 5.9026;
+     neutral_diameter 0.1019 in;
+     neutral_strands 20;
      rating.summer.continuous 430;
      rating.summer.emergency  430;
      rating.winter.continuous  430;

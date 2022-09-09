@@ -11,7 +11,7 @@ from models.singlephase.load import Load
 from models.singlephase.slack import Slack
 from models.singlephase.transformer import Transformer
 from models.threephase.center_tap_transformer import CenterTapTransformer
-from models.singlephase.switch import Switch
+from models.singlephase.switch import Switch, SwitchStatus
 
 BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0
@@ -72,6 +72,9 @@ class NetworkModel():
                 self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vi-sec"] = xfmr.node_secondary_Vi
 
         for switch in self.switches:
+            if switch.status == SwitchStatus.OPEN:
+                continue
+
             self.matrix_map[f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ir"] = switch.vs.Ir_index
             self.matrix_map[f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ii"] = switch.vs.Ii_index
 
