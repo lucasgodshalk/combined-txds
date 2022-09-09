@@ -765,6 +765,24 @@
                     "unit": "Volt-Amperes"
                 },
                 {
+                    "description": "The constant power quantity of the load attached to phase AB in a delta connection when load is connected to a 4 wire node",
+                    "name": "constant_power_AB",
+                    "type": "complex",
+                    "unit": "Volt-Amperes"
+                },
+                {
+                    "description": "The constant power quantity of the load attached to phase BC in a delta connection when load is connected to a 4 wire node",
+                    "name": "constant_power_BC",
+                    "type": "complex",
+                    "unit": "Volt-Amperes"
+                },
+                {
+                    "description": "The constant power quantity of the load attached to phase CA in a delta connection when load is connected to a 4 wire node",
+                    "name": "constant_power_CA",
+                    "type": "complex",
+                    "unit": "Volt-Amperes"
+                },
+                {
                     "description": "The constant current quantity of the load attached to phase A in a wye connection and phase AB in a delta connection.",
                     "name": "constant_current_A",
                     "type": "complex",
@@ -2151,6 +2169,12 @@
                     "description": "Switching operations governing criterion. Two settings are available: INDIVIDUAL - each phase of the switch object is controlled individually. BANKED - all valid phases of the switch object are controlled together. A voting scheme of valid phases is used to determine this. For example, if a switch has phases A, B, and C with only phase C closed, phase A and B will override it and open phase A.",
                     "name": "operating_mode",
                     "type": "enumeration",
+                    "unit": "N/A"
+                },
+                {
+                    "description": "The resistance value of the switch",
+                    "name": "switch_resistance",
+                    "type": "double",
                     "unit": "N/A"
                 }
             ]

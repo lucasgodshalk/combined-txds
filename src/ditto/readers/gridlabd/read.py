@@ -41,7 +41,9 @@ skipped_objects = [
     "tape.collector",
     "tape.group_recorder",
     "recorder",
-    "voltdump"
+    "voltdump",
+    "currdump",
+    "collector"
 ]
 
 #These objects are any shared configuration objects that are only consumed by others.
