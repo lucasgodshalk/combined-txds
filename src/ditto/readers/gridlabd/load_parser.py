@@ -73,7 +73,11 @@ class LoadParser:
         api_load.phase_loads = phaseloads
         
     def __parse_phase_loads(self, model, obj, all_schedules, is_delta):
-        load_connections = ["A", "B", "C", "1", "2", "12"]
+        #Note that it is possible to have line-to-line loads on a
+        #4 wire connection. For a delta wire configuration, a load on phase "A" 
+        #really means line-to-line "AB", but we need to distinguish if it is 4 wire.
+        # http://gridlab-d.shoutwiki.com/wiki/Power_Flow_User_Guide#Load
+        load_connections = ["A", "B", "C", "AB", "BC", "CA", "1", "2", "12"]
 
         phaseloads = []
         for connection in load_connections:
