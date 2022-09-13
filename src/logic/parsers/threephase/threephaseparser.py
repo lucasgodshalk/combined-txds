@@ -336,7 +336,7 @@ class ThreePhaseParser:
             phases = [wire.phase for wire in model.wires if wire.phase != 'N']
             
             transmission_line = TransmissionLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
-            simulation_state.branches.append(transmission_line)
+            simulation_state.lines.append(transmission_line)
 
 
 

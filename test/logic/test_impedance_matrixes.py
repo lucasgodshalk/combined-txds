@@ -10,7 +10,7 @@ def test_ieee_four_bus_4_wire():
     glmpath = get_glm_case_file("ieee_four_bus")
     powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
 
-    branch = powerflow.network.branches[0]
+    branch = powerflow.network.lines[0]
 
     Z_expected = np.array([
         [0.4576+1.0780j, 0.1559+0.5017j, 0.1535+0.3849j],
@@ -25,7 +25,7 @@ def test_ieee_four_bus_3_wire():
     glmpath = get_glm_case_file("ieee_four_bus_delta_delta_transformer")
     powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
 
-    branch = powerflow.network.branches[0]
+    branch = powerflow.network.lines[0]
 
     Z_expected = np.array([
         [0.4013+1.4133j, 0.0953+0.8515j, 0.0953+0.7266j],
@@ -65,7 +65,7 @@ def test_underground_Z_GC_12_47_1_ul_1():
 
     powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
 
-    ul_1_branch = powerflow.network.branches[0]
+    ul_1_branch = powerflow.network.lines[0]
 
     ul_1_Z_expected = np.array([
         [0.0204926 +0.01162838j, 0.00125544-0.00233556j, 0.00125544-0.00233556j],
@@ -82,7 +82,7 @@ def test_underground_Z_GC_12_47_1_ul_1():
     check = False
     assert check, "Still need to assert for shunt values as well"
 
-    ul_2_branch = powerflow.network.branches[1]
+    ul_2_branch = powerflow.network.lines[1]
 
     ul_2_Z_expected = np.array([
         [0.02698372+0.01531171j, 0.00165311-0.00307535j, 0.00165311-0.00307535j],
@@ -97,7 +97,7 @@ def test_underground_Z_GC_12_47_1_ul_1():
         [0.+0.00000000e+00j, 0.+0.00000000e+00j, 0.+1.14246976e-05j]
     ])
 
-    ul_3_branch = powerflow.network.branches[2]
+    ul_3_branch = powerflow.network.lines[2]
 
 
     ul_3_Z_expected = np.array([

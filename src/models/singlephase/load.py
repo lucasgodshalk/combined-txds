@@ -63,7 +63,7 @@ class Load:
             ZQ (float): the reactive power component of a constant admittance load. [Not implemented]
         """
         self.id = Load._ids.__next__()
-        self.load_num = load_num
+        self.load_num = load_num if load_num != None else str(self.id)
         self.phase = phase
         self.triplex_phase = triplex_phase
 

@@ -35,11 +35,26 @@ class NetworkModel():
         self.transformers = []
         self.switches: List[Switch]
         self.switches = []
+        self.lines: List
+        self.lines = []
 
         self.optimization = None
 
         self.size_Y = None
         self.matrix_version = -1
+
+    def display(self):
+        nodeset = set()
+        for bus in self.buses:
+            nodeset.add(bus.NodeName)
+
+        loadset = set()
+        for load in self.loads:
+            loadset.add(load.load_num)
+
+        print(f"Nodes: {len(nodeset)} ({len(self.buses)} phase buses)")
+        print(f"Lines: {len(self.lines)}")
+        print(f"Loads: {len(loadset)} ({len(self.loads)} phase loads)")
 
     def assign_matrix(self, optimization_enabled):
         node_index = count(0)
@@ -92,7 +107,7 @@ class TxNetworkModel(NetworkModel):
         slack=[], 
         generators=[], 
         transformers=[], 
-        branches=[], 
+        lines=[], 
         shunts=[],
         voltage_sources=[]
         ):
@@ -103,12 +118,12 @@ class TxNetworkModel(NetworkModel):
         self.slack = slack
         self.generators = generators
         self.transformers = transformers
-        self.branches = branches
+        self.lines = lines
         self.shunts = shunts
         self.voltage_sources = voltage_sources
 
     def get_NR_invariant_elements(self):
-        return self.branches + self.shunts + self.transformers + self.slack + self.switches + self.voltage_sources
+        return self.lines + self.shunts + self.transformers + self.slack + self.switches + self.voltage_sources
 
     def get_NR_variable_elements(self):
         return self.generators + self.loads
@@ -164,8 +179,6 @@ class DxNetworkModel(NetworkModel):
         self.load_name_map: Dict[str, Load]
         self.load_name_map = {}
 
-        # All of the transmission lines
-        self.branches = []
         # All of the capacitors
         self.capacitors = []
         # All of the fuses
@@ -178,7 +191,7 @@ class DxNetworkModel(NetworkModel):
         self.reference_i = None
     
     def get_NR_invariant_elements(self):
-        return self.slack + self.branches + self.transformers + self.regulators + self.switches + self.fuses + self.capacitors
+        return self.slack + self.lines + self.transformers + self.regulators + self.switches + self.fuses + self.capacitors
 
     def get_NR_variable_elements(self):
         return self.loads

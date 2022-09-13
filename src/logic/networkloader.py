@@ -14,7 +14,7 @@ def pull_network_file(network_uri: str):
     
     #Otherwise, we attempt to download it as a url.
     if not (network_uri.startswith("http://") or network_uri.startswith("https://")):
-        raise Exception("Unkonwn network file location")
+        raise Exception("Unknown file location")
     
     status_code = urllib.request.urlopen(network_uri).getcode()
     if status_code != 200:
@@ -69,7 +69,7 @@ class NetworkLoader:
         slack = raw_data['slack']
         generators = raw_data['generators']
         transformers = raw_data['xfmrs']
-        branches = raw_data['branches']
+        lines = raw_data['branches']
         shunts = raw_data['shunts']
 
         network = TxNetworkModel(
@@ -78,7 +78,7 @@ class NetworkLoader:
             slack=slack, 
             generators=generators, 
             transformers=transformers,
-            branches=branches,
+            lines=lines,
             shunts=shunts
             )
 

@@ -42,6 +42,8 @@ settings = PowerFlowSettings(
 
 powerflow = FilePowerFlow(case, settings)
 
+powerflow.network.display()
+
 results = powerflow.execute()
 
 results.display(verbose=verbose)
