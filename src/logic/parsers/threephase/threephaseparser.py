@@ -15,7 +15,7 @@ from models.singlephase.slack import Slack
 
 from models.singlephase.load import Load
 from models.singlephase.bus import GROUND, Bus
-from models.threephase.transmission_line import TransmissionLine
+from models.threephase.unbalanced_line import UnbalancedLine
 from models.singlephase.fuse import Fuse, FuseStatus
 from models.singlephase.fuse import Fuse
 
@@ -335,7 +335,7 @@ class ThreePhaseParser:
 
             phases = [wire.phase for wire in model.wires if wire.phase != 'N']
             
-            transmission_line = TransmissionLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
+            transmission_line = UnbalancedLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
             simulation_state.lines.append(transmission_line)
 
 

@@ -1,12 +1,12 @@
 from collections import defaultdict
 import typing
 import numpy as np
-from logic.lagrangestamper import SKIP, LagrangeStamper
+from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.singlephase.line import line_lh
 from models.singlephase.line import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
-from models.threephase.transmission_line_phase import TransmissionLinePhase
 from models.threephase.edge import Edge
+from logic.networkmodel import DxNetworkModel
 
 def calcInverse(Zmatrix):
     num_nnz = np.count_nonzero(Zmatrix)
@@ -33,10 +33,29 @@ def calcInverse(Zmatrix):
         Ymatrix = Ymatrix_red
     return Ymatrix
 
-class TransmissionLine():
+class UnbalancedLinePhase(Edge):
+
+    def __init__(self
+                , from_element
+                , to_element
+                , phase
+                , edge_id = None
+                ):
+        super().__init__(edge_id)
+        self.from_element = from_element
+        self.to_element = to_element
+        self.phase = phase
+    
+    def get_nodes(self, state: DxNetworkModel):
+        from_bus = state.bus_name_map[self.from_element + "_" + self.phase]
+        to_bus = state.bus_name_map[self.to_element + "_" + self.phase]
+        return from_bus, to_bus
+
+#Line where we have a collection of unbalanced phases (or a neutral wire) with admittance effects across wires.
+class UnbalancedLine():
     
     def __init__(self, simulation_state, impedances, shunt_admittances, from_element, to_element, length, phases="ABC"):
-        self.lines: typing.List[TransmissionLinePhase]
+        self.lines: typing.List[UnbalancedLinePhase]
         self.lines = []
 
         self.impedances = np.array(impedances)
@@ -63,7 +82,7 @@ class TransmissionLine():
         self.simulation_state = simulation_state
 
         for phase in phases:
-            self.lines.append(TransmissionLinePhase(self.from_element, self.to_element, phase))
+            self.lines.append(UnbalancedLinePhase(self.from_element, self.to_element, phase))
 
     def assign_nodes(self, node_index, optimization_enabled):
         self.stampers = {}
