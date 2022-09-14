@@ -15,7 +15,7 @@ import numpy as np
 import math
 from logic.global_vars import global_vars
 
-from models.singlephase.branch import Branch
+from models.singlephase.line import Line
 from models.singlephase.bus import GROUND, Bus
 from models.singlephase.generator import Generator
 from models.singlephase.load import Load
@@ -315,7 +315,7 @@ class Branch_data:
         self.f4 = f4
 
     def integrate(self, all_bus_key: typing.Dict[int, Bus]):
-        new_branch = Branch(all_bus_key[self.i], all_bus_key[self.j], self.r, self.x, self.b, self.st,
+        new_branch = Line(all_bus_key[self.i], all_bus_key[self.j], self.r, self.x, self.b, self.st,
                               self.rateA, self.rateB, self.rateC)
         shunt_i = None
         shunt_j = None
