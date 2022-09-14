@@ -1,6 +1,4 @@
-from models.threephase.edge import Edge
-
-class CenterTapTransformerCoil(Edge):
+class CenterTapTransformerCoil():
     
     def __init__(self
                 , nominal_voltage
@@ -9,9 +7,7 @@ class CenterTapTransformerCoil(Edge):
                 , voltage_limit
                 , resistance = None
                 , reactance = None
-                , edge_id = None
                 ):
-        super().__init__(edge_id)
         self.nominal_voltage = nominal_voltage
         self.rated_power = rated_power
         self.connection_type = connection_type

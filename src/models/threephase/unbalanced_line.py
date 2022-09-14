@@ -5,7 +5,6 @@ from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.singlephase.line import line_lh
 from models.singlephase.line import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
-from models.threephase.edge import Edge
 from logic.networkmodel import DxNetworkModel
 
 def calcInverse(Zmatrix):
@@ -33,15 +32,13 @@ def calcInverse(Zmatrix):
         Ymatrix = Ymatrix_red
     return Ymatrix
 
-class UnbalancedLinePhase(Edge):
+class UnbalancedLinePhase():
 
     def __init__(self
                 , from_element
                 , to_element
                 , phase
-                , edge_id = None
                 ):
-        super().__init__(edge_id)
         self.from_element = from_element
         self.to_element = to_element
         self.phase = phase

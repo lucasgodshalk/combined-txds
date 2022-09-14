@@ -1,22 +1,19 @@
 from enum import Enum
 from models.singlephase.bus import Bus
 from models.singlephase.voltagesource import VoltageSource
-from models.threephase.edge import Edge
 
 class SwitchStatus(Enum):
     OPEN = "OPEN"
     CLOSED = "CLOSED"
 
-class Switch(Edge):
+class Switch():
 
     def __init__(self
                 , from_node: Bus
                 , to_node: Bus
                 , status: SwitchStatus
                 , phase
-                , edge_id = Edge._edge_ids.__next__()
                 ):
-        self.edge_id = edge_id
         self.status = status
         self.from_node = from_node
         self.to_node = to_node

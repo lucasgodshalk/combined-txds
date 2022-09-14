@@ -4,7 +4,6 @@ from logic.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus
-from models.threephase.edge import Edge
 from models.singlephase.voltagesource import CurrentSensor
 
 import numpy as np
@@ -13,7 +12,7 @@ class FuseStatus(Enum):
     GOOD = "GOOD"
     BLOWN = "BLOWN"
 
-class Fuse(Edge):
+class Fuse():
 
     def __init__(self
                 , from_node: Bus
@@ -22,9 +21,7 @@ class Fuse(Edge):
                 , current_limit
                 , status: FuseStatus
                 , phase
-                , edge_id = Edge._edge_ids.__next__()
                 ):
-        self.edge_id = edge_id
         self.current_limit = current_limit
         self.status = status
         self.from_node = from_node
