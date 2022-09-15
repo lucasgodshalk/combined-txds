@@ -5,6 +5,13 @@ import argparse
 
 from logic.postprocessingsettings import PostProcessingSettings
 
+from colorama import init
+from termcolor import colored
+
+# use Colorama to make Termcolor work on Windows too
+init()
+
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument("case")
@@ -28,7 +35,7 @@ outputfile = args.outputfile
 debug = args.debug
 verbose = args.verbose
 
-print("Running power flow solver...")
+print(colored("Running power flow solver...",'red'))
 
 settings = PowerFlowSettings(
     debug=debug, 
