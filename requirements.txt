@@ -11,3 +11,5 @@ traitlets
 croniter
 lxml
 dill
+termcolor
+colorama
