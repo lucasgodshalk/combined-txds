@@ -5,23 +5,8 @@ from sympy import symbols
 from logic.lagrangesegment import LagrangeSegment
 from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
-from models.singlephase.bus import Bus
-
-constants = G, B, tx_factor = symbols('G B tx_factor')
-primals = [Vr, Vi] = symbols('Vr Vi')
-duals = [Lr, Li] = symbols('lambda_r lambda_i')
-
-scaled_G = G * (1 - tx_factor)
-scaled_B = B * (1 - tx_factor)
-
-eqns = [
-    scaled_G * Vr - scaled_B * Vi,
-    scaled_G * Vi + scaled_B * Vr
-]
-
-lagrange = np.dot(duals, eqns)
-
-lh = LagrangeSegment(lagrange, constants, primals, duals)
+from models.singlephase.bus import GROUND, Bus
+from models.singlephase.line import build_line_stamper_bus
 
 #Todo: this should be unified with the capacitor class.
 class Shunt:
@@ -65,13 +50,11 @@ class Shunt:
         self.B = B_MVAR / 100
 
     def assign_nodes(self, node_index, optimization_enabled):
-        index_map = {}
-        index_map[Vr] = self.bus.node_Vr
-        index_map[Vi] = self.bus.node_Vi
-        index_map[Lr] = self.bus.node_lambda_Vr
-        index_map[Li] = self.bus.node_lambda_Vi
-
-        self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
+        self.stamper = build_line_stamper_bus(
+            self.bus, 
+            GROUND, 
+            optimization_enabled
+            )
 
     def get_connections(self):
         return []
