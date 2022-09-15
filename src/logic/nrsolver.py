@@ -16,6 +16,18 @@ class NRSolver:
         self.settings = settings
         self.network = network
         self.v_limiting = v_limiting
+        self.bus_mask = None
+
+    def get_or_create_bus_mask(self):
+        if self.bus_mask != None:
+            return self.bus_mask
+
+        self.bus_mask = [False] * self.network.size_Y
+        for bus in self.network.buses:
+           self.bus_mask[bus.node_Vr] = True
+           self.bus_mask[bus.node_Vi] = True
+        
+        return self.bus_mask
 
     def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
         for element in self.network.get_NR_invariant_elements():
@@ -72,7 +84,9 @@ class NRSolver:
             if np.isnan(v_next).any():
                 raise Exception("Error solving linear system")
 
-            diff = v_next - v_previous
+            bus_mask = self.get_or_create_bus_mask()
+
+            diff = v_next[bus_mask] - v_previous[bus_mask]
 
             err = abs(diff)
 
