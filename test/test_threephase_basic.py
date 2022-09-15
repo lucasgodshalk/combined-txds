@@ -99,6 +99,8 @@ def assert_glm_case_gridlabd_results(casename, settings = PowerFlowSettings()):
     results = execute_glm_case(filepath, settings)
     if not results.is_success:
         raise Exception(f"Failed to converge (iterations: {results.iterations}, tx_percent: {results.tx_percent}")
+    elif results.max_residual > 1e-4:
+        raise Exception(f"Residual is unusually high, despite convergence.")
     comparison = load_gridlabd_csv(casename)
     assert_busresults_gridlabdvoltdump(results, comparison)
 
