@@ -57,7 +57,7 @@ class LagrangeStamper:
         if self.optimization_enabled:
             return self.eqn_map[variable]
         else:
-            #For the optimization enabled case, we can't use the dual variable's index
+            #For the optimization disabled case, we can't use the dual variable's index
             #for the matrix row. Instead, we commandeer the index of it's corresponding primal variable.
             return self.eqn_map[self.handler.primals[self.handler.duals.index(variable)]]
 

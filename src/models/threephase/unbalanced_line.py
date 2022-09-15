@@ -6,6 +6,7 @@ from logic.matrixbuilder import MatrixBuilder
 from models.singlephase.line import line_lh
 from models.singlephase.line import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 from logic.networkmodel import DxNetworkModel
+from models.helpers import merge_residuals
 
 def calcInverse(Zmatrix):
     num_nnz = np.count_nonzero(Zmatrix)
@@ -90,6 +91,16 @@ class UnbalancedLine():
             line1 = self.lines[i]
             line1_from, line1_to = line1.get_nodes(self.simulation_state)
 
+            eqn_map = {}
+            eqn_map[Vr_from] = line1_from.node_Vr
+            eqn_map[Vi_from] = line1_from.node_Vi
+            eqn_map[Vr_to] = line1_to.node_Vr
+            eqn_map[Vi_to] = line1_to.node_Vi
+            eqn_map[Lr_from] = line1_from.node_lambda_Vr
+            eqn_map[Li_from] = line1_from.node_lambda_Vi
+            eqn_map[Lr_to] = line1_to.node_lambda_Vr
+            eqn_map[Li_to] = line1_to.node_lambda_Vi
+
             # Go through all lines
             for j in range(len(self.lines)):
                 line2 = self.lines[j]
@@ -104,16 +115,6 @@ class UnbalancedLine():
                 var_map[Li_from] = line2_from.node_lambda_Vi
                 var_map[Lr_to] = line2_to.node_lambda_Vr
                 var_map[Li_to] = line2_to.node_lambda_Vi
-
-                eqn_map = {}
-                eqn_map[Vr_from] = line1_from.node_Vr
-                eqn_map[Vi_from] = line1_from.node_Vi
-                eqn_map[Vr_to] = line1_to.node_Vr
-                eqn_map[Vi_to] = line1_to.node_Vi
-                eqn_map[Lr_from] = line1_from.node_lambda_Vr
-                eqn_map[Li_from] = line1_from.node_lambda_Vi
-                eqn_map[Lr_to] = line1_to.node_lambda_Vr
-                eqn_map[Li_to] = line1_to.node_lambda_Vi
 
                 line_stamper = LagrangeStamper(line_lh, var_map, optimization_enabled, eqn_map)
 
@@ -142,13 +143,12 @@ class UnbalancedLine():
             shunt_stamper.stamp_dual(Y, J, [B/2, tx_factor], v_previous)
 
     def calculate_residuals(self, state, v):
-        residuals = defaultdict(lambda:0)
+        residuals = {}
 
         for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
-            for (key, value) in line_stamper.calc_residuals([g, b, 1], v).items():
-                residuals[key] += value
-            for (key, value) in shunt_stamper.calc_residuals([B/2, 1], v).items():
-                residuals[key] += value
+            line_residuals = line_stamper.calc_residuals([g, b, 0], v)
+            shunt_residuals = shunt_stamper.calc_residuals([B/2, 0], v)
+            merge_residuals(residuals, line_residuals, shunt_residuals)
 
         return residuals
 
