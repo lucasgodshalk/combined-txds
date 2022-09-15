@@ -7,7 +7,6 @@ from logic.postprocessingsettings import PostProcessingSettings
 
 from colorama import init
 from termcolor import colored
-
 # use Colorama to make Termcolor work on Windows too
 init()
 

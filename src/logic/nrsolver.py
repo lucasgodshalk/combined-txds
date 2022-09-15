@@ -5,6 +5,10 @@ from logic.matrixbuilder import MatrixBuilder
 from logic.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
 from pathlib import Path
+from colorama import init
+from termcolor import colored
+# use Colorama to make Termcolor work on Windows too
+init()
 
 class NRSolver:
 
@@ -73,10 +77,12 @@ class NRSolver:
             err = abs(diff)
 
             err_max = err.max()
-            
+            err_arg_max = np.argmax(err)
+            err_max_attr = self.network.matrix_map[err_arg_max]
+            print(colored("The maximum error for this iteration is %f at %s"%(err_max, err_max_attr), 'green')) 
             max_error_history.append(err_max)
 
-            if len(max_error_history) % 5 == 0:
+            if len(max_error_history) % 50 == 0:
                 #We check regularly if the solver is making progress and bail if not.
                 x = np.array(range(len(max_error_history)))
                 A = np.vstack([x, np.ones(len(x))]).T

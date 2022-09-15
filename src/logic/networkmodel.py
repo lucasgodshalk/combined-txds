@@ -66,35 +66,35 @@ class NetworkModel():
 
         self.matrix_map = {}
         for bus in self.buses:
-            self.matrix_map[f"bus:{bus.NodeName}:{bus.NodePhase}:Vr"] = bus.node_Vr
-            self.matrix_map[f"bus:{bus.NodeName}:{bus.NodePhase}:Vi"] = bus.node_Vi
+            self.matrix_map[bus.node_Vr] = f"bus:{bus.NodeName}:{bus.NodePhase}:Vr"
+            self.matrix_map[bus.node_Vi] = f"bus:{bus.NodeName}:{bus.NodePhase}:Vi"
 
         for slack in self.slack:
-            self.matrix_map[f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ir"] = slack.slack_Ir
-            self.matrix_map[f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ii"] = slack.slack_Ii
+            self.matrix_map[slack.slack_Ir] = f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ir"
+            self.matrix_map[slack.slack_Ii] = f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ii"
 
         for xfmr in self.transformers:
             if isinstance(xfmr, CenterTapTransformer):
-                self.matrix_map[f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L1_Ir"] = xfmr.node_L1_Ir
-                self.matrix_map[f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L1-Ii"] = xfmr.node_L1_Ii
-                self.matrix_map[f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L2-Ir"] = xfmr.node_L2_Ir
-                self.matrix_map[f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L2-Ii"] = xfmr.node_L2_Ii
+                self.matrix_map[xfmr.node_L1_Ir] = f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L1_Ir"
+                self.matrix_map[xfmr.node_L1_Ii] = f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L1-Ii"
+                self.matrix_map[xfmr.node_L2_Ir] = f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L2-Ir"
+                self.matrix_map[xfmr.node_L2_Ii] = f"xfmr-ct:{xfmr.coils[0].from_node.NodeName}:{xfmr.coils[0].from_node.NodePhase}:L2-Ii"
             else:
-                self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ir-pri"] = xfmr.node_primary_Ir
-                self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ii-pri"] = xfmr.node_primary_Ii
-                self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vr-sec"] = xfmr.node_secondary_Vr
-                self.matrix_map[f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vi-sec"] = xfmr.node_secondary_Vi
+                self.matrix_map[xfmr.node_primary_Ir] = f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ir-pri"
+                self.matrix_map[xfmr.node_primary_Ii] = f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Ii-pri"
+                self.matrix_map[xfmr.node_secondary_Vr] = f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vr-sec"
+                self.matrix_map[xfmr.node_secondary_Vi] = f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vi-sec"
 
         for switch in self.switches:
             if switch.status == SwitchStatus.OPEN:
                 continue
 
-            self.matrix_map[f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ir"] = switch.vs.Ir_index
-            self.matrix_map[f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ii"] = switch.vs.Ii_index
+            self.matrix_map[switch.vs.Ir_index] = f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ir"
+            self.matrix_map[switch.vs.Ii_index] = f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ii"
 
         for load in self.loads:
-            self.matrix_map[f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ir"] = load.node_Ir
-            self.matrix_map[f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ii"] = load.node_Ii
+            self.matrix_map[load.node_Ir] = f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ir"
+            self.matrix_map[load.node_Ii] = f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ii"
 
         self.matrix_version += 1
 
