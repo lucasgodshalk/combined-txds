@@ -340,7 +340,6 @@ class ThreePhaseParser:
 
 
 
-
 if __name__ == "__main__":
     print("starting script")
     glm_file_path = "test/data/ieee_4_node/node.glm"

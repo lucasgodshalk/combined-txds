@@ -16,9 +16,9 @@ python src/run_solver.py test/data/positive_seq/GS-4_prior_solution.RAW
 ```
 
 In order to save network simulation results (in the same folder) in output_voltage.csv and output_power.csv use:
-'''
+```
 --outputfile ./output  
-'''
+```
 
 In order to run tests:
 ```
