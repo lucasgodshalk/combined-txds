@@ -23,7 +23,7 @@ class PositiveSeqVoltageLimiting:
     def apply_limiting(self, v_next, v_previous, diff):
         self.try_create_mask()
 
-        diff_clip = np.clip(diff, -V_DIFF_MAX, V_DIFF_MAX)
+        diff_clip = np.clip(diff[self.bus_mask], -V_DIFF_MAX, V_DIFF_MAX)
         v_next_clip = np.clip(v_previous[self.bus_mask] + diff_clip, V_MIN, V_MAX)
 
         v_next[self.bus_mask] = v_next_clip

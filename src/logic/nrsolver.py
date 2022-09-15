@@ -16,18 +16,22 @@ class NRSolver:
         self.settings = settings
         self.network = network
         self.v_limiting = v_limiting
-        self.bus_mask = None
+        self.diff_mask = None
 
-    def get_or_create_bus_mask(self):
-        if self.bus_mask != None:
-            return self.bus_mask
+    def get_or_create_diff_mask(self):
+        if self.diff_mask != None:
+            return self.diff_mask
 
-        self.bus_mask = [False] * self.network.size_Y
+        self.diff_mask = [False] * self.network.size_Y
         for bus in self.network.buses:
-           self.bus_mask[bus.node_Vr] = True
-           self.bus_mask[bus.node_Vi] = True
+           self.diff_mask[bus.node_Vr] = True
+           self.diff_mask[bus.node_Vi] = True
+
+        for load in self.network.loads:
+            self.diff_mask[load.node_Ir] = True
+            self.diff_mask[load.node_Ii] = True
         
-        return self.bus_mask
+        return self.diff_mask
 
     def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
         for element in self.network.get_NR_invariant_elements():
@@ -84,11 +88,11 @@ class NRSolver:
             if np.isnan(v_next).any():
                 raise Exception("Error solving linear system")
 
-            bus_mask = self.get_or_create_bus_mask()
+            diff = v_next - v_previous
 
-            diff = v_next[bus_mask] - v_previous[bus_mask]
+            diff_mask = self.get_or_create_diff_mask()
 
-            err = abs(diff)
+            err = abs(diff[diff_mask])
 
             err_max = err.max()
             err_arg_max = np.argmax(err)
