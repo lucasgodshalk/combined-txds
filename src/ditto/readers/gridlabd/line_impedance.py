@@ -9,6 +9,12 @@ remove_nonnum = re.compile(r'[^\d.]+')
 lookup = ["A", "B", "C", "N", "E"]
 rev_lookup = {"A": 0, "B": 1, "C": 2, "N": 3, "E": 4}
 
+#####################
+#####################
+# All terms, eqns and figures are from Kersting 3rd Edition unless noted otherwise.
+#####################
+#####################
+
 def compute_spacing(spacing, conductors, default_height=30):
     num_dists = len(lookup)
     max_dist = -100
@@ -293,6 +299,236 @@ def compute_distances(outer_diameters, spacing, num_dists, lookup, max_dist, max
                 pass
     return distances
 
+def compute_underground_capacitance(wire_list):
+    capacitance_matrix =[[0+0j for i in range(3)] for j in range(3)]
+
+    for index in range(len(wire_list)):
+        wire = wire_list[index]
+        if wire.phase == "N":
+            #No need to calculate shunt values for independent neutral wire.
+            continue
+
+        if hasattr(wire, "_shield_gmr") and wire.shield_gmr != 0:
+            pass
+        else:
+            # Radius of circle passing through neutral strands (see figure 4.11 or 5.4).
+            R_b = (wire.outer_diameter - wire.concentric_neutral_diameter) / 2
+
+            #phase conductor radius
+            RD_c = wire.conductor_diameter / 2
+            
+            #neutral conductor radius
+            RD_s = wire.concentric_neutral_diameter / 2
+
+            #number of neutral strands
+            k = wire.concentric_neutral_nstrand
+
+            #Eqn 5.30
+            V_p1 = np.log(R_b / RD_c) - (1 / k) * np.log(k * RD_s / R_b)
+
+            #Eqn 5.31
+            y_ag = 77.3619 * 1j * 1e-6 / V_p1
+
+            #Shunt values go down the diagonal in wire order.
+            capacitance_matrix[index][index] = y_ag
+    
+    return capacitance_matrix
+
+# def compute_overhead_capacitance(self, linespacing):
+#         #All terms, eqns and figures are from Kersting 3rd Edition.
+
+#         _spacing_idx = LineSpacings.linespacing_index[self.spacing]
+#         self.D_AN = linespacing[_spacing_idx].distanceAN
+#         self.D_BN = linespacing[_spacing_idx].distanceBN
+#         self.D_CN = linespacing[_spacing_idx].distanceCN
+#         self.D_NE = linespacing[_spacing_idx].distanceNE
+#         self.D_AB = linespacing[_spacing_idx].distanceAB
+#         self.D_AC = linespacing[_spacing_idx].distanceAC
+#         self.D_AE = linespacing[_spacing_idx].distanceAE
+#         self.D_BC = linespacing[_spacing_idx].distanceBC
+#         self.D_BE = linespacing[_spacing_idx].distanceBE
+#         self.D_CE = linespacing[_spacing_idx].distanceCE
+#         if self._phases in [_PHASE['ABC'], _PHASE['ABCN']]:
+#             _S = np.zeros((4, 4), dtype=complex)
+#             # Convert NoneType to 0
+#             [self.D_AE, self.D_BE, self.D_CE, self.D_NE] = list(map(LineConfigurations.setNonetoZero,
+#                                                                [self.D_AE, self.D_BE, self.D_CE, self.D_NE]))
+#             _S[0, 0] = 2 * self.D_AE
+#             _S[1, 1] = 2 * self.D_BE
+#             _S[2, 2] = 2 * self.D_CE
+#             _S[3, 3] = 2 * self.D_NE
+#             for i in range(4):
+#                 for j in range(4):
+#                     if (i == 0 and j == 1) or (j == 0 and i == 1):
+#                         _horizDist = self.D_AB
+#                         _vertDist = 2 * self.D_BE
+#                     elif (i == 0 and j == 2) or (j == 0 and i == 2):
+#                         _horizDist = self.D_AC
+#                         _vertDist = 2 * self.D_AE
+#                     elif (i == 0 and j == 3) or (j == 0 and i == 3):
+#                         _horizDist = (self.D_AN ** 2 - (self.D_AE - self.D_NE) ** 2) ** 0.5
+#                         _vertDist = self.D_AE + self.D_NE
+#                     elif (i == 1 and j == 2) or (j == 1 and i == 2):
+#                         _horizDist = self.D_BC
+#                         _vertDist = 2 * self.D_CE
+#                     elif (i == 1 and j == 3) or (j == 1 and i == 3):
+#                         _horizDist = (self.D_BN ** 2 - (self.D_BE - self.D_NE) ** 2) ** 0.5
+#                         _vertDist = self.D_BE + self.D_NE
+#                     elif (i == 2 and j == 3) or (j == 2 and i == 3):
+#                         _horizDist = (self.D_CN ** 2 - (self.D_CE - self.D_NE) ** 2) ** 0.5
+#                         _vertDist = self.D_CE + self.D_NE
+#                     if i != j:  # No diagonal terms exist here
+#                         _S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
+#             # Multiply the diagonal elements by half as we are adding transpose to it
+#             if self._phases == _PHASE['ABC']:
+#                 self.rad.append(-1)
+#             _dist_shunt_mat = [[self.rad[0] * 0.5, self.D_AB, self.D_AC, self.D_AN],
+#                                [0, self.rad[1] * 0.5, self.D_BC, self.D_BN],
+#                                [0, 0, self.rad[2] * 0.5, self.D_CN],
+#                                [0, 0, 0, self.rad[3] * 0.5]]
+#             _dist_shunt_mat = np.array(_dist_shunt_mat, dtype=float)
+#             _dist_shunt_mat += np.transpose(_dist_shunt_mat)
+#             _temp_mat = np.divide(_S, _dist_shunt_mat)
+#             Pprim = 11.17689 * np.log(_temp_mat)
+#             # Apply Kron's reduction if wye
+#             # Slicing is not exclusive in last term careful
+#             # There could be a problem if diagonal terms are zero
+#             if self._phases == _PHASE['ABCN']:
+#                 _Pij = Pprim[:3, :3]
+#                 _Pin = Pprim[:3, 3, np.newaxis]  # singleton to 3x1
+#                 _Pnj = Pprim[3, :3, np.newaxis].T  # singleton to 1x3
+#                 _Pnn = Pprim[3, 3]  # scalar
+#                 Pred = LineConfigurations.kron_reduction(_Pij, _Pin, _Pnj, _Pnn)
+#             else:
+#                 Pred = Pprim[0:3, 0:3]
+#             _C = np.linalg.inv(Pred)
+#             _Y = 376.9911 * 1e-6 * 1j * _C
+#             self.Yshunt_O = _Y
+#         elif self._phases in [_PHASE['AN'], _PHASE['BN'], _PHASE['CN']]:
+#             _S = np.zeros((2, 2), dtype=float)
+#             # Distance Calculations
+#             _D_E = [self.D_AE, self.D_BE, self.D_CE]
+#             _D_N = [self.D_AN, self.D_BN, self.D_CN]
+#             _horizDist = (_D_N[self.single_phase] ** 2 - (_D_E[self.single_phase] - self.D_NE) ** 2) ** 0.5
+#             _vertDist = _D_E[self.single_phase] + self.D_NE
+#             # S matrix calculation
+#             _S[0, 1] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
+#             _S[1, 0] = _S[0, 1]
+#             _S[0, 0] = _D_E[self.single_phase]
+#             _S[1, 1] = self.D_NE
+#             # distance shunt matrix
+#             _dist_shunt_mat = np.array([[self.rad, _D_N[self.single_phase]],
+#                                         [_D_N[self.single_phase], self.rad_N]])
+#             _temp_mat = np.divide(_S, _dist_shunt_mat)
+#             Pprim = 11.17689 * np.log(_temp_mat)
+#             _Pij = Pprim[0, 0]
+#             _Pin = Pprim[0, 1]
+#             _Pnj = Pprim[1, 0]
+#             _Pnn = Pprim[1, 1]
+#             Pred = LineConfigurations.kron_reduction(_Pij, _Pin, _Pnj, _Pnn)
+#             _C = Pred ** -1
+#             _Y = 376.9911 * 1e-6 * 1j * _C
+#             self.Yshunt_O = np.zeros((3, 3), dtype=complex)
+#             self.Yshunt_O[self.single_phase, self.single_phase] = _Y
+#         else:
+#             _S = np.zeros((4, 4), dtype=complex)
+#             # Convert NoneType to 0
+#             [self.D_AE, self.D_BE, self.D_CE, self.D_NE] = list(map(LineConfigurations.setNonetoZero,
+#                                                                [self.D_AE, self.D_BE, self.D_CE, self.D_NE]))
+#             if self._phases & 0x1 == 1:
+#                 _S[0, 0] = 2 * self.D_AE
+#             else:
+#                 self.D_AB = -1
+#                 self.D_AC = -1
+#                 self.D_AN = -1
+#             if self._phases & 0x2 == 2:
+#                 _S[1, 1] = 2 * self.D_BE
+#             else:
+#                 self.D_AB = -1
+#                 self.D_BC = -1
+#                 self.D_BN = -1
+#             if self._phases & 0x4 == 4:
+#                 _S[2, 2] = 2 * self.D_CE
+#             else:
+#                 self.D_BC = -1
+#                 self.D_AC = -1
+#                 self.D_CN = -1
+#             if self._phases & 0x8 == 8:
+#                 _S[3, 3] = 2 * self.D_NE
+#             else:
+#                 self.D_AN = -1
+#                 self.D_BN = -1
+#                 self.D_CN = -1
+#             for i in range(4):
+#                 for j in range(4):
+#                     flag = 0
+#                     if (i == 0 and j == 1) or (j == 0 and i == 1):
+#                         if self.D_AB != -1:
+#                             _horizDist = self.D_AB
+#                             _vertDist = 2 * self.D_BE
+#                             flag = 1
+#                     elif (i == 0 and j == 2) or (j == 0 and i == 2):
+#                         if self.D_AC != -1:
+#                             _horizDist = self.D_AC
+#                             _vertDist = 2 * self.D_AE
+#                             flag = 1
+#                     elif (i == 0 and j == 3) or (j == 0 and i == 3):
+#                         if self.D_AN != -1:
+#                             _horizDist = (self.D_AN ** 2 - (self.D_AE - self.D_NE) ** 2) ** 0.5
+#                             _vertDist = self.D_AE + self.D_NE
+#                             flag = 1
+#                     elif (i == 1 and j == 2) or (j == 1 and i == 2):
+#                         if self.D_BC != -1:
+#                             _horizDist = self.D_BC
+#                             _vertDist = 2 * self.D_CE
+#                             flag = 1
+#                     elif (i == 1 and j == 3) or (j == 1 and i == 3):
+#                         if self.D_BN != -1:
+#                             _horizDist = (self.D_BN ** 2 - (self.D_BE - self.D_NE) ** 2) ** 0.5
+#                             _vertDist = self.D_BE + self.D_NE
+#                             flag = 1
+#                     elif (i == 2 and j == 3) or (j == 2 and i == 3):
+#                         if self.D_CN != -1:
+#                             _horizDist = (self.D_CN ** 2 - (self.D_CE - self.D_NE) ** 2) ** 0.5
+#                             _vertDist = self.D_CE + self.D_NE
+#                             flag = 1
+#                     if i != j:  # No diagonal terms exist here
+#                         if flag == 1:
+#                             _S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
+#             # Multiple the diag by half as we are adding with transpose 
+#             _dist_shunt_mat = [[self.rad[0] * 0.5, self.D_AB, self.D_AC, self.D_AN],
+#                                [0, self.rad[1] * 0.5, self.D_BC, self.D_BN],
+#                                [0, 0, self.rad[2] * 0.5, self.D_CN],
+#                                [0, 0, 0, self.rad[3] * 0.5]]
+#             _dist_shunt_mat = np.array(_dist_shunt_mat, dtype=float)
+#             _dist_shunt_mat += np.transpose(_dist_shunt_mat)
+#             _dist_shunt_mat[_dist_shunt_mat == -1] = 0
+#             # Reduce the dimensions of _S and _dist_shunt_mat
+#             (_S_red, _rowIdx, _colIdx) = LineConfigurations.removeRowColZero(_S)
+#             (_dist_shunt_mat_red, _rowIdx, _colIdx) = LineConfigurations.removeRowColZero(_dist_shunt_mat)
+#             _temp_mat = np.divide(_S_red, _dist_shunt_mat_red)
+#             Pprim = 11.17689 * np.log(_temp_mat)
+#             # Apply Kron's reduction if wye
+#             # Slicing is not exclusive in last term careful
+#             # There could be a problem if diagonal terms are zero
+#             if self._phases & 0x8 == 8:
+#                 _Pij = Pprim[:2, :2]
+#                 _Pin = Pprim[:2, 2, np.newaxis]  # singleton to 3x1
+#                 _Pnj = Pprim[2, :2, np.newaxis].T  # singleton to 1x3
+#                 _Pnn = Pprim[2, 2]  # scalar
+#                 Pred = LineConfigurations.kron_reduction(_Pij, _Pin, _Pnj, _Pnn)
+#             else:
+#                 Pred = Pprim[0:2, 0:2]
+#             _C = np.linalg.inv(Pred)
+#             _Y = 376.9911 * 1e-6 * 1j * _C
+#             # Map into 3x3 structure
+#             _rowIdx = list(_rowIdx).index(True)
+#             _colIdx = list(_colIdx).index(True)
+#             _Y = np.insert(_Y, _rowIdx, 0 + 1j * 0, axis=0)
+#             _Y = np.insert(_Y, _colIdx, 0 + 1j * 0, axis=1)
+#             self.Yshunt_O = _Y
+#         return None
+
 def compute_overhead_impedance_matrix(wire_list, distances, freq=60, resistivity=100, kron_reduce=True):
     wire_map = {"A": 0, "B": 1, "C": 2, "N": 3}
     matrix = [[0 for i in range(4)] for j in range(4)]
@@ -374,6 +610,7 @@ def compute_underground_impedance_matrix(wire_list, conductor_distances, freq=60
     conductor_gmrs = []
     neutral_gmrs = []
     num_non_neutral = 0
+
     for wire in wire_list:
         if wire.phase == "N":
             conductor_own_neutral_distances.append(0)
@@ -387,18 +624,15 @@ def compute_underground_impedance_matrix(wire_list, conductor_distances, freq=60
                 # Neutrals are ignored for tape-shielded wires, but shield may have resistance
                 MAGIC_NUMBER = 7.9385 * 2.3715
                 neutral_resistances.append(wire.shield_resistance if wire.shield_resistance != 0 else (MAGIC_NUMBER / (wire.shield_diameter * wire.shield_thickness)))
-                neutral_gmrs.append(wire.shield_gmr if wire.shield_gmr != 0 else ((wire.shield_diameter - (wire.shield_thickness /1000)) / 24))
-                conductor_own_neutral_distances.append((wire.shield_diameter - wire.shield_thickness) / 24)
+                neutral_gmrs.append(wire.shield_gmr if wire.shield_gmr != 0 else ((wire.shield_diameter - (wire.shield_thickness / 1000)) / (12 * 2)))
+                conductor_own_neutral_distances.append((wire.shield_diameter - wire.shield_thickness) / (12 * 2))
             else:
-                conductor_own_neutral_distance = (wire.outer_diameter - wire.concentric_neutral_diameter) / 24
+                conductor_own_neutral_distance = (wire.outer_diameter - wire.concentric_neutral_diameter) / (12 * 2)
                 conductor_own_neutral_distances.append(conductor_own_neutral_distance)
                 k = wire.concentric_neutral_nstrand
-                # # Try truncating concentric neutral resistance, to match Kersting example 4.2 output
-                # factor = 10.0 ** 2
-                # truncated_cn_res = math.trunc(wire.concentric_neutral_resistance * factor) / factor
-                # # 
                 neutral_resistances.append(wire.concentric_neutral_resistance / k)
                 neutral_gmrs.append((wire.concentric_neutral_gmr * k * (conductor_own_neutral_distance ** (k - 1))) ** (1 / k))
+
     conductor_neutral_distances = []
     for i in range(len(wire_list)):
         temp = []
@@ -408,7 +642,6 @@ def compute_underground_impedance_matrix(wire_list, conductor_distances, freq=60
             else:
                 temp.append((conductor_distances[i][j]**k - conductor_own_neutral_distances[j]**k)**(1/k))
         conductor_neutral_distances.append(temp)
-
 
     _R = np.concatenate((conductor_resistances, neutral_resistances))
     _Z = np.zeros((len(_R), len(_R)), dtype=complex)
@@ -551,3 +784,53 @@ def kron_reduction(Zij, Zin, Znj, Znn):
     Zabc = Zij - _tempZ
     matrix = Zabc.tolist()
     return matrix
+
+line_direct_lookup = {
+    "11": (0, 0),
+    "12": (0, 1), 
+    "13": (0, 2), 
+    "21": (1, 0), 
+    "22": (1, 1), 
+    "23": (1, 2), 
+    "31": (2, 0), 
+    "32": (2, 1), 
+    "33": (2, 2)
+}
+
+def try_load_direct_line_impedance(line_config):
+    #It is possible to specify the line impedance directly in Z matrix form:
+    #http://gridlab-d.shoutwiki.com/wiki/Power_Flow_User_Guide#Line_configuration_properties
+
+    impedance_matrix = None
+    for property_number in line_direct_lookup.keys():
+        prop_name = f"z{property_number}"
+        if not hasattr(line_config, prop_name):
+            continue
+
+        if impedance_matrix == None:
+            impedance_matrix = [[0 for i in range(3)] for j in range(3)]
+        
+        i, j = line_direct_lookup[property_number]
+
+        impedance_matrix[i][j] = complex(line_config[prop_name])
+    
+    return impedance_matrix
+
+def try_load_direct_line_capacitance(line_config):
+    #It is possible to specify the line capacitance directly in Z matrix form:
+    #http://gridlab-d.shoutwiki.com/wiki/Power_Flow_User_Guide#Line_configuration_properties
+
+    capacitance_matrix = None
+    for property_number in line_direct_lookup.keys():
+        prop_name = f"c{property_number}"
+        if not hasattr(line_config, prop_name):
+            continue
+
+        if capacitance_matrix == None:
+            capacitance_matrix = [[0 for i in range(3)] for j in range(3)]
+        
+        i, j = line_direct_lookup[property_number]
+
+        capacitance_matrix[i][j] = complex(line_config[prop_name])
+    
+    return capacitance_matrix

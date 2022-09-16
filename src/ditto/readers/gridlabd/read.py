@@ -19,7 +19,7 @@ from ditto.models.phase_winding import PhaseWinding
 from ditto.formats.gridlabd import gridlabd
 from ditto.formats.gridlabd import base
 from ditto.models.base import Unicode
-from ditto.readers.gridlabd.line_impedance import compute_overhead_impedance_matrix, compute_underground_impedance_matrix, compute_triplex_impedance_matrix, compute_spacing, compute_distances
+from ditto.readers.gridlabd.line_impedance import compute_overhead_impedance_matrix, compute_underground_impedance_matrix, compute_triplex_impedance_matrix, compute_spacing, compute_distances, try_load_direct_line_impedance, try_load_direct_line_capacitance, compute_underground_capacitance
 from ditto.readers.gridlabd.load_parser import LoadParser
 from ditto.readers.abstract_reader import AbstractReader
 from ditto.readers.gridlabd.helpers import parse_phases, triplex_phases
@@ -27,6 +27,8 @@ from ditto.readers.gridlabd.helpers import parse_phases, triplex_phases
 logger = logging.getLogger(__name__)
 
 remove_nonnum = re.compile(r'[^\d.]+')
+
+meters_per_mile = 1609.344
 
 #These objects we ignore entirely for the purpose of the simulator.
 skipped_objects = [
@@ -192,6 +194,27 @@ def read_gld_objects_and_schedules(input_file, origin_datetime="2017 Jun 1 2:00P
                         found_schedule = False
 
     return (all_gld_objects, all_schedules)
+
+def parse_line_length(line, name):
+    #we always return meters
+
+    if not hasattr(line, "_length"):
+        raise Exception(f"Line {name} does not have a length specified")
+
+    if line["length"].find('km') != -1:
+        # If it's given in km, change to meters
+        line["length"] = remove_nonnum.sub('', line["length"])
+        return float(line["length"]) * 1e3
+    else:
+        # Change feet to meters
+        return float(line["length"]) * 0.3048
+
+def convert_Z_matrix_per_mile_to_per_meter(z_matrix):
+    for i in range(len(z_matrix)):
+        for j in range(len(z_matrix[0])):
+            z_matrix[i][j] = z_matrix[i][j] / meters_per_mile
+    
+    return z_matrix
 
 class Reader(AbstractReader):
     """
@@ -804,16 +827,7 @@ class Reader(AbstractReader):
                 except AttributeError:
                     pass
 
-                try:
-                    if obj["length"].find('km') != -1:
-                        # If it's given in km, change to meters
-                        obj["length"] = remove_nonnum.sub('', obj["length"])
-                        api_line.length = float(obj["length"]) * 1e3
-                    else:
-                        # Change feet to meters
-                        api_line.length = float(obj["length"]) * 0.3048
-                except AttributeError:
-                    pass
+                api_line.length = parse_line_length(obj, name)
 
                 try:
                     api_line.from_element = obj["from"]
@@ -864,19 +878,13 @@ class Reader(AbstractReader):
                         cond_name = conductors[api_wire]
                         conductor = self.all_gld_objects[cond_name]
                         try:
-                            api_wire.diameter = float(
-                                conductor["diameter"]
-                            )  # i.e. the same for all the wires.
+                            api_wire.diameter = float(conductor["diameter"])
                         except AttributeError:
                             pass
                         try:
-                            if conductor["geometric_mean_radius"].find(
-                                    'cm') != -1:
-                                conductor[
-                                    "geometric_mean_radius"] = remove_nonnum.sub(
-                                        '', conductor["geometric_mean_radius"])
-                                api_wire.gmr = float(
-                                    conductor["geometric_mean_radius"]) / 30.48 # convert cm to feet
+                            if conductor["geometric_mean_radius"].find('cm') != -1:
+                                conductor["geometric_mean_radius"] = remove_nonnum.sub('', conductor["geometric_mean_radius"])
+                                api_wire.gmr = float(conductor["geometric_mean_radius"]) / 30.48 # convert cm to feet
                             else:
                                 api_wire.gmr = float(conductor["geometric_mean_radius"])
                         except AttributeError:
@@ -916,53 +924,16 @@ class Reader(AbstractReader):
                 except AttributeError:
                     pass
 
-                impedance_matrix = [[0 for i in range(3)] for j in range(3)]
-                impedance_matrix_direct = False
-                try:
-                    impedance_matrix[0][0] = config["z11"]
-                    impedance_matrix[0][1] = config["z12"]
-                    impedance_matrix[0][2] = config["z13"]
-                    impedance_matrix[1][0] = config["z21"]
-                    impedance_matrix[1][1] = config["z22"]
-                    impedance_matrix[1][2] = config["z23"]
-                    impedance_matrix[2][0] = config["z31"]
-                    impedance_matrix[2][1] = config["z32"]
-                    impedance_matrix[2][1] = config["z33"]
-                    impedance_matrix_direct = True
-                except AttributeError:
-                    pass
+                wire_list = list(conductors.keys())
 
-                if not impedance_matrix_direct:
-                    impedance_matrix = compute_overhead_impedance_matrix(list(conductors.keys()), distances)
-                    for i in range(len(impedance_matrix)):
-                        for j in range(len(impedance_matrix[0])):
-                            impedance_matrix[i][j] = impedance_matrix[i][j] / 1609.344
+                impedance_matrix = try_load_direct_line_impedance(config)
 
-                api_line.impedance_matrix = impedance_matrix
+                if impedance_matrix == None:
+                    impedance_matrix = compute_overhead_impedance_matrix(wire_list, distances)
 
-                capacitance_matrix = None
+                api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
 
-                if hasattr(config, 'c11'):
-                    capacitance_matrix = [
-                        [0 for i in range(3)] for j in range(3)
-                    ]
-
-                try:
-                    capacitance_matrix[0][0] = complex(config["c11"])
-                    capacitance_matrix[1][1] = complex(config["c22"])
-                    capacitance_matrix[2][2] = complex(config["c33"])
-                except AttributeError:
-                    pass
-
-                try:
-                    capacitance_matrix[0][1] = complex(config["c12"])
-                    capacitance_matrix[0][2] = complex(config["c13"])
-                    capacitance_matrix[1][0] = complex(config["c21"])
-                    capacitance_matrix[1][2] = complex(config["c23"])
-                    capacitance_matrix[2][0] = complex(config["c31"])
-                    capacitance_matrix[2][1] = complex(config["c32"])
-                except AttributeError:
-                    pass
+                capacitance_matrix = try_load_direct_line_capacitance(config)
 
                 if capacitance_matrix != None:
                     api_line.capacitance_matrix = capacitance_matrix
@@ -971,7 +942,7 @@ class Reader(AbstractReader):
                 # Incorporating line capacitance is an option in GridlabD which is not enabled by default
                 # Would we want to similarly limit it in such a way?
 
-                api_line.wires = list(conductors.keys())
+                api_line.wires = wire_list
                 for api_wire in conductors:
                     try:
                         if api_wire.diameter is not None:
@@ -988,7 +959,7 @@ class Reader(AbstractReader):
                     try:
                         if api_wire.resistance is not None:
                             api_wire.resistance = (
-                                api_wire.resistance / 1609.344
+                                api_wire.resistance / meters_per_mile
                             )  # Convert Ohms/mile into Ohms per meter
                     except AttributeError:
                         pass
@@ -1000,10 +971,7 @@ class Reader(AbstractReader):
                 except AttributeError:
                     pass
 
-                try:
-                    api_line.length = float(obj["length"]) / 5280
-                except AttributeError:
-                    pass
+                api_line.length = parse_line_length(obj, name)
 
                 try:
                     api_line.from_element = obj["from"]
@@ -1076,37 +1044,23 @@ class Reader(AbstractReader):
                             #     api_wire.resistance = (
                             #         float(conductor["resistance"])
                             #         * api_line.length
-                            #         / 1609.344
+                            #         / meters_per_mile
                             #     )  # since we converted the length to m already
                         except AttributeError:
                             pass
-
-                except AttributeError:
-                    pass
-                impedance_matrix = [[0 for i in range(2)] for j in range(2)]
-                impedance_matrix_direct = False
-                try:
-                    impedance_matrix[0][0] = config["z11"]
-                    impedance_matrix[0][1] = config["z12"]
-                    impedance_matrix[1][0] = config["z21"]
-                    impedance_matrix[1][1] = config["z22"]
-                    impedance_matrix_direct = True
                 except AttributeError:
                     pass
 
-                if not impedance_matrix_direct:
-                    impedance_matrix = compute_triplex_impedance_matrix(
-                        list(conductors.keys())
-                    )
+                wire_list = list(conductors.keys())
 
-                    # for i in range(len(impedance_matrix)):	
-                    #     for j in range(len(impedance_matrix[0])):	
-                    #         impedance_matrix[i][j] = impedance_matrix[i][j] / 1609.344
+                impedance_matrix = try_load_direct_line_impedance(config)
 
-                # Ohms/mile
-                api_line.impedance_matrix = impedance_matrix
-                for wire in conductors.keys():
-                    api_line.wires.append(wire)
+                if impedance_matrix == None:
+                    impedance_matrix = compute_triplex_impedance_matrix(wire_list)
+
+                api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
+
+                api_line.wires = wire_list
 
             elif obj_type == "underground_line":
 
@@ -1115,16 +1069,7 @@ class Reader(AbstractReader):
                 api_line.name = name
                 api_line.phases = phases
 
-                try:
-                    if obj["length"].find('km') != -1:
-                        # If it's given in km, change to meters
-                        obj["length"] = remove_nonnum.sub('', obj["length"])
-                        api_line.length = float(obj["length"]) * 1e3
-                    else:
-                        # Change feet to meters
-                        api_line.length = float(obj["length"]) * 0.3048
-                except AttributeError:
-                    pass
+                api_line.length = parse_line_length(obj, name)
 
                 try:
                     api_line.from_element = obj["from"]
@@ -1423,23 +1368,11 @@ class Reader(AbstractReader):
                 except AttributeError:
                     pass
 
-                impedance_matrix = [[0 for i in range(3)] for j in range(3)]
-                impedance_matrix_direct = False
-                try:
-                    impedance_matrix[0][0] = config["z11"]
-                    impedance_matrix[0][1] = config["z12"]
-                    impedance_matrix[0][2] = config["z13"]
-                    impedance_matrix[1][0] = config["z21"]
-                    impedance_matrix[1][1] = config["z22"]
-                    impedance_matrix[1][2] = config["z23"]
-                    impedance_matrix[2][0] = config["z31"]
-                    impedance_matrix[2][1] = config["z32"]
-                    impedance_matrix[2][1] = config["z33"]
-                    impedance_matrix_direct = True
-                except AttributeError:
-                    pass
+                wire_list = list(conductors.keys())
 
-                if not impedance_matrix_direct:
+                impedance_matrix = try_load_direct_line_impedance(config)
+
+                if impedance_matrix == None:
                     # i = 0
                     # for api_wire in conductors:
                     #     distances[i][i] = api_wire.gmr
@@ -1448,14 +1381,18 @@ class Reader(AbstractReader):
                     # Drop all rows and columns with only distances of -1
                     # TODO fix this for triplex lines and other cases where there's not all three phases
                     distances_arr = distances_arr[:,~np.all(distances_arr, axis=0, where=[-1])][~np.all(distances_arr, axis=1, where=[-1]),:]
-                    impedance_matrix = compute_underground_impedance_matrix(list(conductors.keys()), distances_arr)
-                    for i in range(len(impedance_matrix)):
-                        for j in range(len(impedance_matrix[0])):
-                            impedance_matrix[i][j] = impedance_matrix[i][j] / 1609.344
+                    impedance_matrix = compute_underground_impedance_matrix(wire_list, distances_arr)
 
-                api_line.impedance_matrix = impedance_matrix
-                for wire in conductors.keys():
-                    api_line.wires.append(wire)
+                api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
+
+                # capacitance_matrix = try_load_direct_line_capacitance(config)
+
+                # if capacitance_matrix == None:
+                #     capacitance_matrix = compute_underground_capacitance(wire_list)
+                
+                # api_line.capacitance_matrix = convert_Z_matrix_per_mile_to_per_meter(capacitance_matrix)
+
+                api_line.wires = wire_list
 
             elif obj_type == "capacitor":
 
@@ -1793,3 +1730,4 @@ class Reader(AbstractReader):
 
             else:
                 raise Exception(f"Unhandled object type {obj_type}!")
+

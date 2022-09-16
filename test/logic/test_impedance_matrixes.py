@@ -1,12 +1,13 @@
 
+import math
 import numpy as np
 from logic.powerflow import FilePowerFlow
 from logic.powerflowsettings import PowerFlowSettings
 from test_threephase_basic import get_glm_case_file
 import cmath
-from ditto.readers.gridlabd.read import compute_triplex_impedance_matrix
+from ditto.readers.gridlabd.read import compute_triplex_impedance_matrix, compute_underground_capacitance
 
-def test_ieee_four_bus_4_wire():
+def test_ieee_four_bus_overhead_4_wire():
     glmpath = get_glm_case_file("ieee_four_bus")
     powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
 
@@ -21,7 +22,7 @@ def test_ieee_four_bus_4_wire():
     #need to convert impedances to ohm/mile
     assert np.allclose(np.abs(branch.impedances / .3787879), np.abs(Z_expected), atol=1e-3)
 
-def test_ieee_four_bus_3_wire():
+def test_ieee_four_bus_overhead_3_wire():
     glmpath = get_glm_case_file("ieee_four_bus_delta_delta_transformer")
     powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
 
@@ -38,18 +39,38 @@ def test_ieee_four_bus_3_wire():
     assert np.allclose(np.abs(branch.impedances / .3787879), np.abs(Z_expected), atol=2e-3)
 
 class WireTest:
-    def __init__(self, resistance, gmr, phase, diameter, insulation_thickness) -> None:
+    def __init__(
+        self, 
+        phase, 
+        resistance=None, 
+        gmr=None, 
+        overhead_diameter=None, 
+        insulation_thickness=None,
+        outer_diameter=None,
+        concentric_neutral_diameter=None,
+        shield_gmr=None,
+        conductor_diameter=None,
+        concentric_neutral_nstrand=None,
+        num_strands=None
+        ):
+        self.phase = phase
+
         self.resistance = resistance
         self.gmr = gmr
-        self.phase = phase
-        self.diameter = diameter
+        self.diameter = overhead_diameter
         self.insulation_thickness = insulation_thickness
+        self.outer_diameter = outer_diameter
+        self.concentric_neutral_diameter = concentric_neutral_diameter
+        self.shield_gmr = shield_gmr
+        self.conductor_diameter = conductor_diameter
+        self.concentric_neutral_nstrand = concentric_neutral_nstrand
+        self.concentric_neutral_nstrand = num_strands
 
-def test_compute_secondary_matrix_r1_12_47_3():
+def test_compute_triplex_impedance_matrix():
     wire_list = [
-        WireTest(resistance=0.48, gmr=0.0158, phase="1", diameter=0.522, insulation_thickness=0.08),
-        WireTest(resistance=0.48, gmr=0.0158, phase="2", diameter=0.522, insulation_thickness=0.08),
-        WireTest(resistance=0.48, gmr=0.0158, phase="N", diameter=0.522, insulation_thickness=0.08),
+        WireTest(phase="1", resistance=0.48, gmr=0.0158, overhead_diameter=0.522, insulation_thickness=0.08),
+        WireTest(phase="2", resistance=0.48, gmr=0.0158, overhead_diameter=0.522, insulation_thickness=0.08),
+        WireTest(phase="N", resistance=0.48, gmr=0.0158, overhead_diameter=0.522, insulation_thickness=0.08),
     ]
 
     impedence = compute_triplex_impedance_matrix(wire_list, kron_reduce=False)
@@ -58,57 +79,22 @@ def test_compute_secondary_matrix_r1_12_47_3():
     assert cmath.isclose(impedence[0][1], complex(0.0953, 1.31067), abs_tol=1e-3)
     assert cmath.isclose(impedence[0][2], complex(0.0953, 1.32581), abs_tol=1e-3)
 
-def test_underground_Z_GC_12_47_1_ul_1():
-    raise Exception("These test values are incorrect.")
+def test_computer_underground_capacitance():
+    R_b = 0.631
+    neutral_diameter = 0.0641
+    phase_diameter = 0.567
+    outer_diameter = R_b*2 + neutral_diameter
+    num_strands = 13
 
-    glmpath = get_glm_case_file("gc_12_47_1")
+    wire_list = [
+        WireTest(phase="A", shield_gmr=0, concentric_neutral_diameter=neutral_diameter, conductor_diameter=phase_diameter, outer_diameter=outer_diameter, num_strands=num_strands),
+        WireTest(phase="B", shield_gmr=0, concentric_neutral_diameter=neutral_diameter, conductor_diameter=phase_diameter, outer_diameter=outer_diameter, num_strands=num_strands),
+        WireTest(phase="C", shield_gmr=0, concentric_neutral_diameter=neutral_diameter, conductor_diameter=phase_diameter, outer_diameter=outer_diameter, num_strands=num_strands),
+        WireTest(phase="N", shield_gmr=0, concentric_neutral_diameter=neutral_diameter, conductor_diameter=phase_diameter, outer_diameter=outer_diameter, num_strands=num_strands)
+    ]
 
-    powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
+    capacitance = compute_underground_capacitance(wire_list)
 
-    ul_1_branch = powerflow.network.lines[0]
+    compare = [[9.2980664e-5j, 0j, 0j], [0j, 9.2980664e-5j, 0j], [0j, 0j, 9.2980664e-5j]]
 
-    ul_1_Z_expected = np.array([
-        [0.0204926 +0.01162838j, 0.00125544-0.00233556j, 0.00125544-0.00233556j],
-        [0.00125544-0.00233556j, 0.0204926 +0.01162838j, 0.00125544-0.00233556j],
-        [0.00125544-0.00233556j, 0.00125544-0.00233556j, 0.0204926 +0.01162838j]
-    ])
-    assert np.allclose(ul_1_branch.impedances, ul_1_Z_expected)
-
-    ul_1_shunt_Z = np.array([
-        [0.+8.67640916e-06j, 0.+0.00000000e+00j, 0.+0.00000000e+00j],
-        [0.+0.00000000e+00j, 0.+8.67640916e-06j, 0.+0.00000000e+00j],
-        [0.+0.00000000e+00j, 0.+0.00000000e+00j, 0.+8.67640916e-06j]
-    ])
-    check = False
-    assert check, "Still need to assert for shunt values as well"
-
-    ul_2_branch = powerflow.network.lines[1]
-
-    ul_2_Z_expected = np.array([
-        [0.02698372+0.01531171j, 0.00165311-0.00307535j, 0.00165311-0.00307535j],
-        [0.00165311-0.00307535j, 0.02698372+0.01531171j, 0.00165311-0.00307535j],
-        [0.00165311-0.00307535j, 0.00165311-0.00307535j, 0.02698372+0.01531171j]
-    ])
-    assert np.allclose(ul_2_branch.impedances, ul_2_Z_expected)
-
-    ul_2_shunt_Z = np.array([
-        [0.+1.14246976e-05j, 0.+0.00000000e+00j, 0.+0.00000000e+00j],
-        [0.+0.00000000e+00j, 0.+1.14246976e-05j, 0.+0.00000000e+00j],
-        [0.+0.00000000e+00j, 0.+0.00000000e+00j, 0.+1.14246976e-05j]
-    ])
-
-    ul_3_branch = powerflow.network.lines[2]
-
-
-    ul_3_Z_expected = np.array([
-        [0.02973976+0.01687561j, 0.00182195-0.00338946j, 0.00182195-0.00338946j],
-        [0.00182195-0.00338946j, 0.02973976+0.01687561j, 0.00182195-0.00338946j],
-        [0.00182195-0.00338946j, 0.00182195-0.00338946j, 0.02973976+0.01687561j]
-    ])
-    assert np.allclose(ul_3_branch.impedances, ul_3_Z_expected)
-
-    ul_3_shunt_Z = np.array([
-        [0.+1.25915838e-05j, 0.+0.00000000e+00j, 0.+0.00000000e+00j],
-        [0.+0.00000000e+00j, 0.+1.25915838e-05j, 0.+0.00000000e+00j],
-        [0.+0.00000000e+00j, 0.+0.00000000e+00j, 0.+1.25915838e-05j]
-    ])
+    assert np.allclose(capacitance, compare, atol=1e-4)
