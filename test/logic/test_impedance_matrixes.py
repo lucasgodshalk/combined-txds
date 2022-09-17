@@ -5,7 +5,7 @@ from logic.powerflow import FilePowerFlow
 from logic.powerflowsettings import PowerFlowSettings
 from test_threephase_basic import get_glm_case_file
 import cmath
-from ditto.readers.gridlabd.read import compute_triplex_impedance_matrix, compute_underground_capacitance
+from ditto.readers.gridlabd.read import compute_triplex_impedance, compute_underground_capacitance
 
 def test_ieee_four_bus_overhead_4_wire():
     glmpath = get_glm_case_file("ieee_four_bus")
@@ -73,7 +73,7 @@ def test_compute_triplex_impedance_matrix():
         WireTest(phase="N", resistance=0.48, gmr=0.0158, overhead_diameter=0.522, insulation_thickness=0.08),
     ]
 
-    impedence = compute_triplex_impedance_matrix(wire_list, kron_reduce=False)
+    impedence = compute_triplex_impedance(wire_list, kron_reduce=False)
 
     assert cmath.isclose(impedence[0][0], complex(0.5753, 1.4660), abs_tol=1e-3)
     assert cmath.isclose(impedence[0][1], complex(0.0953, 1.31067), abs_tol=1e-3)

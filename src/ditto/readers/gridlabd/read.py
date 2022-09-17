@@ -19,7 +19,7 @@ from ditto.models.phase_winding import PhaseWinding
 from ditto.formats.gridlabd import gridlabd
 from ditto.formats.gridlabd import base
 from ditto.models.base import Unicode
-from ditto.readers.gridlabd.line_impedance import compute_overhead_impedance_matrix, compute_underground_impedance_matrix, compute_triplex_impedance_matrix, compute_spacing, compute_distances, try_load_direct_line_impedance, try_load_direct_line_capacitance, compute_underground_capacitance
+from ditto.readers.gridlabd.line_impedance import compute_overhead_impedance, compute_underground_impedance, compute_triplex_impedance, compute_overhead_spacing, compute_underground_spacing, try_load_direct_line_impedance, try_load_direct_line_capacitance, compute_underground_capacitance
 from ditto.readers.gridlabd.load_parser import LoadParser
 from ditto.readers.abstract_reader import AbstractReader
 from ditto.readers.gridlabd.helpers import parse_phases, triplex_phases
@@ -920,7 +920,7 @@ class Reader(AbstractReader):
                         pass
                     if spacing_name is not None:
                         spacing = self.all_gld_objects[spacing_name]
-                        distances = compute_spacing(spacing, conductors) # sets conductor.X and Y values in meters for 4 wire setups
+                        distances = compute_overhead_spacing(spacing, conductors) # sets conductor.X and Y values in meters for 4 wire setups
                 except AttributeError:
                     pass
 
@@ -929,7 +929,7 @@ class Reader(AbstractReader):
                 impedance_matrix = try_load_direct_line_impedance(config)
 
                 if impedance_matrix == None:
-                    impedance_matrix = compute_overhead_impedance_matrix(wire_list, distances)
+                    impedance_matrix = compute_overhead_impedance(wire_list, distances)
 
                 api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
 
@@ -1056,7 +1056,7 @@ class Reader(AbstractReader):
                 impedance_matrix = try_load_direct_line_impedance(config)
 
                 if impedance_matrix == None:
-                    impedance_matrix = compute_triplex_impedance_matrix(wire_list)
+                    impedance_matrix = compute_triplex_impedance(wire_list)
 
                 api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
 
@@ -1194,7 +1194,7 @@ class Reader(AbstractReader):
                         lookup = ["A", "B", "C", "N"]
                         rev_lookup = {"A": 0, "B": 1, "C": 2, "N": 3, "E": 4}
                         num_dists = len(lookup)
-                        distances = compute_distances([api_wire.outer_diameter for api_wire in conductors], spacing, num_dists, lookup, max_dist=-100, max_from=-1, max_to=-1)
+                        distances = compute_underground_spacing([api_wire.outer_diameter for api_wire in conductors], spacing, num_dists, lookup, max_dist=-100, max_from=-1, max_to=-1)
                         
                         # Drop all rows and columns with only distances of -1
                         # distances_arr = np.array(distances)
@@ -1381,7 +1381,7 @@ class Reader(AbstractReader):
                     # Drop all rows and columns with only distances of -1
                     # TODO fix this for triplex lines and other cases where there's not all three phases
                     distances_arr = distances_arr[:,~np.all(distances_arr, axis=0, where=[-1])][~np.all(distances_arr, axis=1, where=[-1]),:]
-                    impedance_matrix = compute_underground_impedance_matrix(wire_list, distances_arr)
+                    impedance_matrix = compute_underground_impedance(wire_list, distances_arr)
 
                 api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
 
