@@ -919,8 +919,8 @@ class Reader(AbstractReader):
                     except AttributeError:
                         pass
                     if spacing_name is not None:
-                        spacing = self.all_gld_objects[spacing_name]
-                        distances = compute_overhead_spacing(spacing, conductors) # sets conductor.X and Y values in meters for 4 wire setups
+                        spacing_config = self.all_gld_objects[spacing_name]
+                        distances = compute_overhead_spacing(spacing_config, conductors) # sets conductor.X and Y values in meters for 4 wire setups
                 except AttributeError:
                     pass
 
@@ -929,7 +929,8 @@ class Reader(AbstractReader):
                 impedance_matrix = try_load_direct_line_impedance(config)
 
                 if impedance_matrix == None:
-                    impedance_matrix = compute_overhead_impedance(wire_list, distances)
+                    striped_distances = distances[:,~np.all(distances, axis=0, where=[-1])][~np.all(distances, axis=1, where=[-1]),:]
+                    impedance_matrix = compute_overhead_impedance(wire_list, striped_distances)
 
                 api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
 
@@ -1186,185 +1187,11 @@ class Reader(AbstractReader):
                     except AttributeError:
                         pass
                     if spacing_name is not None:
-                        # Assume all wires are 6 feet under by default
-                        DEPTH = 6
-                        SPACE = 0.5
-                        spacing = self.all_gld_objects[spacing_name]
+                        spacing_config = self.all_gld_objects[spacing_name]
 
-                        lookup = ["A", "B", "C", "N"]
-                        rev_lookup = {"A": 0, "B": 1, "C": 2, "N": 3, "E": 4}
-                        num_dists = len(lookup)
-                        distances = compute_underground_spacing([api_wire.outer_diameter for api_wire in conductors], spacing, num_dists, lookup, max_dist=-100, max_from=-1, max_to=-1)
-                        
-                        # Drop all rows and columns with only distances of -1
-                        # distances_arr = np.array(distances)
-                        # distances = distances_arr[:,~np.all(distances_arr, axis=0, where=[-1])][~np.all(distances_arr, axis=1, where=[-1]),:]
-                        n_entries = num_dists ** 2
-                        i_index = 0
-                        j_index = 0
-                        for i in range(num_dists):
-                            for j in range(num_dists):
-                                if distances[i][j] == -1:
-                                    n_entries = n_entries - 1
-                                elif distances[i][j] != 0:
-                                    i_index = i
-                                    j_index = j
-                        n_entries = int(math.sqrt(n_entries))
-                        if n_entries == 2:
-                            if distances[i_index][j_index] != 0:
-                                is_seen = False
-                                for w in conductors:
-                                    if is_seen:
-                                        w.X = distances[i_index][j_index]
-                                        w.Y = -DEPTH
-                                    else:
-                                        w.X = 0
-                                        w.Y = -DEPTH
-                                        is_seen = True
-                            else:
-                                logger.warning(
-                                    "Spacing distance is 0 - using default positions"
-                                )
-                                cnt = 0
-                                for w in conductors:
-                                    w.X = SPACE * cnt
-                                    w.Y = -DEPTH
-                                    cnt += 1
+                        distances = compute_underground_spacing([api_wire.outer_diameter for api_wire in conductors], spacing_config, conductors)
 
-                        if (
-                            n_entries == 3
-                        ):  # make longest side on bottom to form a triangle
-                            first = -1
-                            middle = -1
-                            last = -1
-                            max = -1
-                            total = 0
-                            try:
-                                for i in range(num_dists):
-                                    for j in range(i + 1, num_dists):
-                                        if distances[i][j] != -1:
-                                            total = total + distances[i][j]
-                                            if distances[i][j] > max:
-                                                max = distances[i][j]
-                                                first = i
-                                                last = j
-
-                                for i in range(num_dists):
-                                    if (
-                                        i != first
-                                        and i != last
-                                        and distances[i][first] != -1
-                                    ):
-                                        middle = i
-                                heron_s = total / 2.0
-                                heron_area = heron_s
-                                for i in range(n_entries):
-                                    for j in range(i + 1, n_entries):
-                                        if distances[i][j] != -1:
-                                            heron_area = heron_area * (
-                                                heron_s - distances[i][j]
-                                            )
-                                logger.debug(heron_area)
-                                heron_area = math.sqrt(heron_area)
-                                height = heron_area * 2 / (max * 1.0)
-                                for w in conductors:
-                                    if w.phase == lookup[first]:
-                                        w.X = 0
-                                        w.Y = -DEPTH
-                                    elif w.phase == lookup[last]:
-                                        w.X = max
-                                        w.Y = -DEPTH
-                                    else:
-                                        w.Y = -DEPTH + height
-                                        w.X = math.sqrt(
-                                            distances[middle][first] ** 2 - height ** 2
-                                        )
-
-                            except:
-                                logger.warning(
-                                    "Failed to read spacing - using default positions"
-                                )
-                                cnt = 0
-                                for w in conductors:
-                                    w.X = SPACE * cnt
-                                    w.Y = -DEPTH
-                                    cnt += 1
-
-                        # TODO: underground lines with 4 conductors ABCN. Use Heron's formula for there too in a similar way (works since we have pairwise distances)
-
-                        if (
-                            n_entries == 4
-                        ):  # make longest side on bottom to form a triangle
-                            max_dist = -100
-                            max_from = -1
-                            max_to = -1
-                            try:
-                                for i in range(n_entries):
-                                    for j in range(n_entries):
-                                        if distances[i][j] > max_dist:
-                                            max_dist = distances[i][j]
-                                            max_from = i
-                                            max_to = j
-
-                                seen_one = False
-                                first_x = -10
-                                first_y = -10
-                                first_i = -1
-                                for w in conductors:
-                                    i = rev_lookup[w.phase]
-                                    if i != max_to and i != max_from:
-                                        heron_s = (
-                                            max_dist
-                                            + distances[i][max_to]
-                                            + distances[i][max_from]
-                                        ) / 2.0
-                                        heron_area = (
-                                            heron_s
-                                            * (heron_s - max_dist)
-                                            * (heron_s - distances[i][max_to])
-                                            * (heron_s - distances[i][max_from])
-                                        )
-                                        heron_area = math.sqrt(heron_area)
-                                        height = heron_area * 2 / (max_dist * 1.0)
-                                        if not seen_one:
-                                            w.Y = -DEPTH + height
-                                            w.X = math.sqrt(
-                                                distances[i][max_from] ** 2
-                                                - height ** 2
-                                            )
-                                            seen_one = True
-                                            first_x = w.X
-                                            first_y = w.Y
-                                            first_i = i
-
-                                        else:
-                                            # Warning: possible bug here - needs extra testing.
-                                            w.Y = -DEPTH + height
-                                            w.X = math.sqrt(
-                                                distances[i][max_from] ** 2
-                                                - height ** 2
-                                            )
-                                            if (w.X - first_x) ** 2 + (
-                                                w.Y - first_y
-                                            ) ** 2 != distances[i][first_i] ** 2:
-                                                w.Y = -DEPTH - height
-                                    elif i == max_from:
-                                        w.X = 0
-                                        w.Y = -DEPTH
-                                    elif i == max_to:
-                                        w.X = max_dist
-                                        w.Y = -DEPTH
-
-                            except:
-                                logger.warning(
-                                    "Failed to read spacing - using default positions"
-                                )
-                                cnt = 0
-                                for w in conductors:
-                                    w.X = SPACE * cnt
-                                    w.Y = -DEPTH
-                                    cnt += 1
-                        api_line.spacing = spacing
+                        api_line.spacing = spacing_config
                 except AttributeError:
                     pass
 
@@ -1373,15 +1200,8 @@ class Reader(AbstractReader):
                 impedance_matrix = try_load_direct_line_impedance(config)
 
                 if impedance_matrix == None:
-                    # i = 0
-                    # for api_wire in conductors:
-                    #     distances[i][i] = api_wire.gmr
-                    #     i+=1
-                    distances_arr = np.array(distances)
-                    # Drop all rows and columns with only distances of -1
-                    # TODO fix this for triplex lines and other cases where there's not all three phases
-                    distances_arr = distances_arr[:,~np.all(distances_arr, axis=0, where=[-1])][~np.all(distances_arr, axis=1, where=[-1]),:]
-                    impedance_matrix = compute_underground_impedance(wire_list, distances_arr)
+                    striped_distances = distances[:,~np.all(distances, axis=0, where=[-1])][~np.all(distances, axis=1, where=[-1]),:]
+                    impedance_matrix = compute_underground_impedance(wire_list, striped_distances)
 
                 api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
 
