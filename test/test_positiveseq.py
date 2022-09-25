@@ -47,6 +47,24 @@ def test_GS_4_prior_solution():
     mat_result = loadmat(get_positiveseq_mat_result("GS-4_prior_solution"))
     assert_mat_comparison(mat_result, results)
 
+def test_infeasibility_analysis_GS_4_prior_solution():
+    filepath = get_positiveseq_raw("GS-4_prior_solution")
+    test_runner = FilePowerFlow(filepath, PowerFlowSettings(infeasibility_analysis=True))
+    results = test_runner.execute()
+    assert results.is_success
+    assert results.max_residual < 1e-8
+    assert results.infeasibility_totals == (0, 0)
+
+def test_infeasibility_analysis_GS_4_stressed():
+    filepath = get_positiveseq_raw("GS-4_stressed")
+    test_runner = FilePowerFlow(filepath, PowerFlowSettings(infeasibility_analysis=True, voltage_limiting=True))
+    results = test_runner.execute()
+    assert results.is_success
+    assert results.max_residual < 1e-8
+    P, Q = results.infeasibility_totals
+    assert P > 0
+    assert Q > 0
+
 def test_voltage_limiting():
     filepath = get_positiveseq_raw("GS-4_prior_solution")
     test_runner = FilePowerFlow(filepath, PowerFlowSettings(voltage_limiting=True))

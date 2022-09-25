@@ -96,7 +96,12 @@ class NRSolver:
 
             err_max = err.max()
             err_arg_max = np.argmax(err)
-            err_max_attr = self.network.matrix_map[err_arg_max]
+
+            if err_arg_max in self.network.matrix_map:
+                err_max_attr = self.network.matrix_map[err_arg_max]
+            else:
+                err_max_attr = "other"
+
             print(colored("The maximum error for this iteration is %f at %s"%(err_max, err_max_attr), 'green')) 
             max_error_history.append(err_max)
 

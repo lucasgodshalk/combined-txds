@@ -146,14 +146,25 @@ class PowerFlowResults:
             self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Slack))
 
         if self.network.optimization != None and isinstance(self.network.optimization, L2InfeasibilityOptimization):
+            total_P = 0
+            total_Q = 0
             for infeasibility_current in self.network.optimization.infeasibility_currents:
                 Vr = v_final[infeasibility_current.bus.node_Vr]
                 Vi = v_final[infeasibility_current.bus.node_Vi]
                 inf_Ir = v_final[infeasibility_current.node_Ir_inf]
                 inf_Ii = v_final[infeasibility_current.node_Ii_inf]
                 P = Vr * inf_Ir
+                if P < 1e-5:
+                    P = 0
                 Q = Vi * inf_Ii
-                self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Inf))    
+                if Q < 1e-5:
+                    Q = 0
+
+                total_P += P
+                total_Q += Q
+                self.generator_results.append(GeneratorResult(infeasibility_current, P, Q, GENTYPE.Inf))
+
+            self.infeasibility_totals = (total_P, total_Q)    
 
         self.max_residual, self.max_residual_index, self.residuals = self.calculate_residuals()        
 
@@ -208,6 +219,11 @@ class PowerFlowResults:
             element_residuals = element.calculate_residuals(self.network, self.v_final)
             for (index, value) in element_residuals.items():
                 residual_contributions.append((element, index, value))
+
+        if self.network.optimization != None:
+            element_residuals = self.network.optimization.calculate_residuals(self.network, self.v_final)
+            for (index, value) in element_residuals.items():
+                residual_contributions.append((self.network.optimization, index, value))
 
         residuals = np.zeros(len(self.v_final))
         for (element, index, value) in residual_contributions:

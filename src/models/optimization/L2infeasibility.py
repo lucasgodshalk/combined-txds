@@ -15,17 +15,21 @@ class L2InfeasibilityOptimization:
             current = L2InfeasibilityCurrent(bus)
             self.infeasibility_currents.append(current)
 
+    def assign_nodes(self, node_index, optimization_enabled):
+        for infeas_current in self.infeasibility_currents:
+            infeas_current.assign_nodes(node_index, optimization_enabled)
+
     def stamp(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         for inf_current in self.infeasibility_currents:
             inf_current.stamp_primal(Y, J, v_previous, tx_factor, network)
             inf_current.stamp_dual(Y, J, v_previous, tx_factor, network)
 
     def calculate_residuals(self, network, v):
-        residuals = []
+        residuals = {}
         for inf_current in self.infeasibility_currents:
-            residuals.append(inf_current.calculate_residuals(network, v))
+            merge_residuals(residuals, inf_current.calculate_residuals(network, v))
         
-        return merge_residuals({}, residuals)
+        return residuals
 
 constants = ()
 primals = [Iir, Iii] = symbols("Iir Iii")

@@ -62,6 +62,9 @@ class NetworkModel():
         for ele in self.get_all_elements():
             ele.assign_nodes(node_index, optimization_enabled)
 
+        if self.optimization != None:
+            self.optimization.assign_nodes(node_index, optimization_enabled)
+
         self.size_Y = next(node_index)
 
         self.matrix_map = {}
