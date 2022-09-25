@@ -92,6 +92,28 @@ class Regulator():
 
         return old_position != self.tap_position
 
+    def try_adjust_device(self, v):
+        #Still a work in progress. Disabling for now.
+        return False
+
+        adjustment_made = False
+        if self.reg_control == RegControl.MANUAL:
+            return False
+        elif self.reg_control == RegControl.OUTPUT_VOLTAGE:
+            v_r, v_i = v[self.to_node.node_Vr], v[self.to_node.node_Vi]
+            v_mag = abs(complex(v_r, v_i))
+
+            if v_mag < self.vlow:
+                if self.try_increment_tap_position(1):
+                    adjustment_made = True
+            elif v_mag > self.vhigh:
+                if self.try_increment_tap_position(-1):
+                    adjustment_made = True
+        else:
+            raise Exception(f"{self.reg_control} mode for regulator not implemented")
+    
+        return adjustment_made
+
     def assign_nodes(self, node_index, optimization_enabled):
         self.transformer.assign_nodes(node_index, optimization_enabled)
         self.current_sensor.assign_nodes(node_index, optimization_enabled)

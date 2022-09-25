@@ -36,80 +36,15 @@ class DeviceController:
         
         raise Exception("Could not find solution where no device adjustments were required.")
 
-
-    #Returns True if a device adjustment is performed.
     def try_adjust_devices(self, v):
         adjustment_made = False
         if self.network.is_three_phase:
-            if self.try_switch_capacitors(v):
-                adjustment_made = True
-            if self.try_blow_fuses(v):
-                adjustment_made = True
-            if self.try_set_regulator_taps(v):
-                adjustment_made = True
-
-        return adjustment_made
-
-    def try_blow_fuses(self, v):
-        adjustment_made = False
-        fuse: Fuse
-        for fuse in self.network.fuses:
-            if fuse.status == FuseStatus.BLOWN:
-                continue
-
-            i_r, i_i = fuse.get_current(v)
-
-            i = complex(i_r, i_i)
-            if abs(i) > fuse.current_limit:
-                self.status = FuseStatus.BLOWN
-                adjustment_made = True
-                #We assume that once a fuse is blown, we will never un-blow it.
-    
-        return adjustment_made
-
-    def try_switch_capacitors(self, v):
-        adjustment_made = False
-        cap: Capacitor
-        for cap in self.network.capacitors:
-            if cap.mode == CapacitorMode.MANUAL:
-                continue
-            elif cap.mode == CapacitorMode.VOLT:
-                f_r, f_i = (cap.from_bus.node_Vr, cap.from_bus.node_Vi)
-                v_r = v[f_r]
-                v_i = v[f_i]
-
-                v_magnitude = abs(complex(v_r,v_i))
-                if v_magnitude > cap.high_voltage:
-                    if cap.switch == CapSwitchState.OPEN:
-                        cap.switch = CapSwitchState.CLOSED
+            for device in self.network.get_all_elements():
+                if isinstance(device, (Fuse, Capacitor, Regulator)):
+                    if device.try_adjust_device(v):
                         adjustment_made = True
-                if v_magnitude < cap.low_voltage:
-                    if cap.switch == CapSwitchState.CLOSED:
-                        cap.switch = CapSwitchState.OPEN
-                        adjustment_made = True
-            else:
-                raise Exception(f"{cap.mode} mode for capacitor not implemented")
+        else:
+            #No device control for transmission networks for now.
+            pass
 
-        return adjustment_made
-
-    def try_set_regulator_taps(self, v):
-        return False
-        adjustment_made = False
-        reg: Regulator
-        for reg in self.network.regulators:
-            if reg.reg_control == RegControl.MANUAL:
-                continue
-            elif reg.reg_control == RegControl.OUTPUT_VOLTAGE:
-                v_r, v_i = v[reg.to_node.node_Vr], v[reg.to_node.node_Vi]
-                v_mag = abs(complex(v_r, v_i))
-
-                if v_mag < reg.vlow:
-                    if reg.try_increment_tap_position(1):
-                        adjustment_made = True
-                elif v_mag > reg.vhigh:
-                    if reg.try_increment_tap_position(-1):
-                        adjustment_made = True
-            else:
-                raise Exception(f"{reg.reg_control} mode for regulator not implemented")
-    
         return adjustment_made

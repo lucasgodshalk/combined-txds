@@ -32,7 +32,7 @@ lagrange = np.dot(duals, eqns)
 
 lh = LagrangeSegment(lagrange, constants, primals, duals)
 
-#Represents a positive sequence or single phase load.
+#Represents a two-terminal load. Can be used for positive sequence or three phase.
 class Load:
     _ids = count(0)
 

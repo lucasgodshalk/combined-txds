@@ -49,6 +49,19 @@ class Fuse():
         
         return self.current_sensor.get_current(v)
 
+    def try_adjust_device(self, v):
+        if self.status == FuseStatus.BLOWN:
+            #We assume that once a fuse is blown, we will never un-blow it.
+            return False
+
+        i_r, i_i = self.get_current(v)
+        i = complex(i_r, i_i)
+        if abs(i) > self.current_limit:
+            self.status = FuseStatus.BLOWN
+            return True
+    
+        return False
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if self.status == FuseStatus.BLOWN:
             raise Exception("Blown fuses are not supported")

@@ -37,6 +37,29 @@ class Capacitor:
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
 
+    def try_adjust_device(self, v):
+        adjustment_made = False
+        if self.mode == CapacitorMode.MANUAL:
+            return False
+        elif self.mode == CapacitorMode.VOLT:
+            f_r, f_i = (self.from_bus.node_Vr, self.from_bus.node_Vi)
+            v_r = v[f_r]
+            v_i = v[f_i]
+
+            v_magnitude = abs(complex(v_r,v_i))
+            if v_magnitude > self.high_voltage:
+                if self.switch == CapSwitchState.OPEN:
+                    self.switch = CapSwitchState.CLOSED
+                    adjustment_made = True
+            if v_magnitude < self.low_voltage:
+                if self.switch == CapSwitchState.CLOSED:
+                    self.switch = CapSwitchState.OPEN
+                    adjustment_made = True
+        else:
+            raise Exception(f"{self.mode} mode for capacitor not implemented")
+
+        return adjustment_made
+
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if self.switch == CapSwitchState.OPEN:
             return
