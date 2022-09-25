@@ -11,6 +11,8 @@ python -m pip install -r ./requirements.txt
 
 This library can be executed with arguments to target a particular network case (either three-phase or positive sequence):
 
+Note! This may take a while to execute the first time as everything gets derived/compiled. Subsequent executions should be much faster.
+
 ```
 python src/run_solver.py test/data/positive_seq/GS-4_prior_solution.RAW
 ```
