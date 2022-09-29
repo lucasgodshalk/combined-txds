@@ -491,6 +491,10 @@ def compute_underground_capacitance(wire_list):
             #Shunt values go down the diagonal in wire order.
             capacitance_matrix[index][index] = y_ag
     
+    for i in range(len(capacitance_matrix)):
+        for j in range(len(capacitance_matrix[0])):
+            capacitance_matrix[i][j] = capacitance_matrix[i][j] / 2
+
     return capacitance_matrix
 
 def compute_overhead_capacitance(wire_list, distances):
