@@ -1205,12 +1205,12 @@ class Reader(AbstractReader):
 
                 api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
 
-                # capacitance_matrix = try_load_direct_line_capacitance(config)
+                capacitance_matrix = try_load_direct_line_capacitance(config)
 
-                # if capacitance_matrix == None:
-                #     capacitance_matrix = compute_underground_capacitance(wire_list)
+                if capacitance_matrix == None:
+                    capacitance_matrix = compute_underground_capacitance(wire_list)
                 
-                # api_line.capacitance_matrix = convert_Z_matrix_per_mile_to_per_meter(capacitance_matrix)
+                api_line.capacitance_matrix = convert_Z_matrix_per_mile_to_per_meter(capacitance_matrix)
 
                 api_line.wires = wire_list
 
