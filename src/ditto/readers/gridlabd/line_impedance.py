@@ -498,11 +498,12 @@ def compute_underground_capacitance(wire_list):
     return capacitance_matrix
 
 def compute_overhead_capacitance(wire_list, distances):
-    e_index = rev_lookup["E"]
+    neutral_index = rev_lookup["N"]
+    earth_index = rev_lookup["E"]
 
-    _S = np.zeros((4, 4), dtype=complex)
+    S = np.zeros((4, 4), dtype=complex)
     for i in len(wire_list):
-        _S[i, i] = 2 * distances[i][i]
+        S[i, i] = 2 * distances[i][i]
 
         i_phase = wire_list[i].phase
         for j in len(wire_list):
@@ -513,27 +514,20 @@ def compute_overhead_capacitance(wire_list, distances):
 
             phasepair = i_phase + j_phase 
 
-            if phasepair in ["AB", "BA"]:
-                _horizDist = distances[i][j]
-                _vertDist = 2 * D_BE
-            elif phasepair in ["AC", "CA"]:
-                _horizDist = distances[i][j]
-                _vertDist = 2 * D_AE
+            phase_phase_dist = distances[i][j]
+            phase_neutral_dist = distances[i][neutral_index]
+            phase_earth_dist = distances[i][earth_index]
+            neutral_earth_dist = distances[neutral_index][earth_index]
 
-            elif (i == 0 and j == 3) or (j == 0 and i == 3):
-                _horizDist = (D_AN ** 2 - (D_AE - D_NE) ** 2) ** 0.5
-                _vertDist = D_AE + D_NE
-            elif (i == 1 and j == 2) or (j == 1 and i == 2):
-                _horizDist = D_BC
-                _vertDist = 2 * D_CE
-            elif (i == 1 and j == 3) or (j == 1 and i == 3):
-                _horizDist = (D_BN ** 2 - (D_BE - D_NE) ** 2) ** 0.5
-                _vertDist = D_BE + D_NE
-            elif (i == 2 and j == 3) or (j == 2 and i == 3):
-                _horizDist = (D_CN ** 2 - (D_CE - D_NE) ** 2) ** 0.5
-                _vertDist = D_CE + D_NE
+            if phasepair in ["AB", "BA", "AC", "CA", "BC", "CB"]:
+                _horizDist = phase_phase_dist
+                _vertDist = 2 * phase_earth_dist
 
-            _S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
+            elif phasepair in ["AN", "NA", "BN", "NB", "CN", "NC"]:
+                _horizDist = (phase_neutral_dist ** 2 - (phase_earth_dist - neutral_earth_dist) ** 2) ** 0.5
+                _vertDist = phase_earth_dist + neutral_earth_dist
+
+            S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
 
     if _phases in [_PHASE['ABC'], _PHASE['ABCN']]:
         for i in range(4):
@@ -557,7 +551,7 @@ def compute_overhead_capacitance(wire_list, distances):
                     _horizDist = (D_CN ** 2 - (D_CE - D_NE) ** 2) ** 0.5
                     _vertDist = D_CE + D_NE
                 if i != j:  # No diagonal terms exist here
-                    _S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
+                    S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
                 
         # Multiply the diagonal elements by half as we are adding transpose to it
         if _phases == _PHASE['ABC']:
@@ -568,7 +562,7 @@ def compute_overhead_capacitance(wire_list, distances):
                             [0, 0, 0, rad[3] * 0.5]]
         _dist_shunt_mat = np.array(_dist_shunt_mat, dtype=float)
         _dist_shunt_mat += np.transpose(_dist_shunt_mat)
-        _temp_mat = np.divide(_S, _dist_shunt_mat)
+        _temp_mat = np.divide(S, _dist_shunt_mat)
         Pprim = 11.17689 * np.log(_temp_mat)
         # Apply Kron's reduction if wye
         # Slicing is not exclusive in last term careful
@@ -585,21 +579,21 @@ def compute_overhead_capacitance(wire_list, distances):
         _Y = 376.9911 * 1e-6 * 1j * _C
         Yshunt_O = _Y
     elif _phases in [_PHASE['AN'], _PHASE['BN'], _PHASE['CN']]:
-        _S = np.zeros((2, 2), dtype=float)
+        S = np.zeros((2, 2), dtype=float)
         # Distance Calculations
         _D_E = [D_AE, D_BE, D_CE]
         _D_N = [D_AN, D_BN, D_CN]
         _horizDist = (_D_N[single_phase] ** 2 - (_D_E[single_phase] - D_NE) ** 2) ** 0.5
         _vertDist = _D_E[single_phase] + D_NE
         # S matrix calculation
-        _S[0, 1] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
-        _S[1, 0] = _S[0, 1]
-        _S[0, 0] = _D_E[single_phase]
-        _S[1, 1] = D_NE
+        S[0, 1] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
+        S[1, 0] = S[0, 1]
+        S[0, 0] = _D_E[single_phase]
+        S[1, 1] = D_NE
         # distance shunt matrix
         _dist_shunt_mat = np.array([[rad, _D_N[single_phase]],
                                     [_D_N[single_phase], rad_N]])
-        _temp_mat = np.divide(_S, _dist_shunt_mat)
+        _temp_mat = np.divide(S, _dist_shunt_mat)
         Pprim = 11.17689 * np.log(_temp_mat)
         _Pij = Pprim[0, 0]
         _Pin = Pprim[0, 1]
@@ -611,30 +605,30 @@ def compute_overhead_capacitance(wire_list, distances):
         Yshunt_O = np.zeros((3, 3), dtype=complex)
         Yshunt_O[single_phase, single_phase] = _Y
     else:
-        _S = np.zeros((4, 4), dtype=complex)
+        S = np.zeros((4, 4), dtype=complex)
         # Convert NoneType to 0
         [D_AE, D_BE, D_CE, D_NE] = list(map(LineConfigurations.setNonetoZero,
                                                             [D_AE, D_BE, D_CE, D_NE]))
         if _phases & 0x1 == 1:
-            _S[0, 0] = 2 * D_AE
+            S[0, 0] = 2 * D_AE
         else:
             D_AB = -1
             D_AC = -1
             D_AN = -1
         if _phases & 0x2 == 2:
-            _S[1, 1] = 2 * D_BE
+            S[1, 1] = 2 * D_BE
         else:
             D_AB = -1
             D_BC = -1
             D_BN = -1
         if _phases & 0x4 == 4:
-            _S[2, 2] = 2 * D_CE
+            S[2, 2] = 2 * D_CE
         else:
             D_BC = -1
             D_AC = -1
             D_CN = -1
         if _phases & 0x8 == 8:
-            _S[3, 3] = 2 * D_NE
+            S[3, 3] = 2 * D_NE
         else:
             D_AN = -1
             D_BN = -1
@@ -674,7 +668,7 @@ def compute_overhead_capacitance(wire_list, distances):
                         flag = 1
                 if i != j:  # No diagonal terms exist here
                     if flag == 1:
-                        _S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
+                        S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
         # Multiple the diag by half as we are adding with transpose 
         _dist_shunt_mat = [[rad[0] * 0.5, D_AB, D_AC, D_AN],
                             [0, rad[1] * 0.5, D_BC, D_BN],
@@ -684,7 +678,7 @@ def compute_overhead_capacitance(wire_list, distances):
         _dist_shunt_mat += np.transpose(_dist_shunt_mat)
         _dist_shunt_mat[_dist_shunt_mat == -1] = 0
         # Reduce the dimensions of _S and _dist_shunt_mat
-        (_S_red, _rowIdx, _colIdx) = LineConfigurations.removeRowColZero(_S)
+        (_S_red, _rowIdx, _colIdx) = LineConfigurations.removeRowColZero(S)
         (_dist_shunt_mat_red, _rowIdx, _colIdx) = LineConfigurations.removeRowColZero(_dist_shunt_mat)
         _temp_mat = np.divide(_S_red, _dist_shunt_mat_red)
         Pprim = 11.17689 * np.log(_temp_mat)
