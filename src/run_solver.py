@@ -22,6 +22,7 @@ parser.add_argument("--artificialswingbus", required=False)
 parser.add_argument("--outputfile", required=False)
 parser.add_argument("--debug", required=False, action='store_true')
 parser.add_argument("--verbose", required=False, action='store_true')
+parser.add_argument("--infeas", required=False, default='False')
 args = parser.parse_args()
 
 case = args.case
@@ -33,14 +34,15 @@ artificialswingbus = args.artificialswingbus
 outputfile = args.outputfile
 debug = args.debug
 verbose = args.verbose
-
+infeas = args.infeas
 print(colored("Running power flow solver...",'red'))
+print(colored("Infeasibility option is %s" % infeas, 'green'))
 
 settings = PowerFlowSettings(
     debug=debug, 
     max_iters=50, 
     flat_start=False, 
-    infeasibility_analysis=False, 
+    infeasibility_analysis=infeas, 
     tx_stepping=False, 
     voltage_limiting=False,
     dump_matrix=False
