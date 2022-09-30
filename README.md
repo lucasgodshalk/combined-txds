@@ -37,3 +37,10 @@ If you are using VS Code with the Python extension and want to run unit tests, y
 ```
 PYTHONPATH="./src:./test"
 ```
+
+The codebase is based on the following papers:
+```
+1. Pandey, A., Jereminov, M., Wagner, M. R., Bromberg, D. M., Hug, G., & Pileggi, L. (2018). Robust power flow and three-phase power flow analyses. IEEE Transactions on Power Systems, 34(1), 616-626.
+2. Jereminov, M., Bromberg, D. M., Pandey, A., Wagner, M. R., & Pileggi, L. (2020). Evaluating feasibility within power flow. IEEE Transactions on Smart Grid, 11(4), 3522-3534.
+3. Foster, E., Pandey, A., & Pileggi, L. (2022). Three-phase infeasibility analysis for distribution grid studies. Electric Power Systems Research, 212, 108486.
+```
