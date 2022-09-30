@@ -141,7 +141,10 @@ class CenterTapTransformer():
         self.L2_impedance_stamper.stamp_primal(Y, J, [self.g2, self.b2, tx_factor], v_previous)
 
     def stamp_dual(self, Y, J, v_previous, tx_factor, state):
-        raise Exception("Not implemented")
+        self.center_tap_xfmr_stamper.stamp_dual(Y, J, [self.turn_ratio, tx_factor], v_previous)
+        self.primary_impedance_stamper.stamp_dual(Y, J, [self.g0, self.b0, tx_factor], v_previous)
+        self.L1_impedance_stamper.stamp_dual(Y, J, [self.g1, self.b1, tx_factor], v_previous)
+        self.L2_impedance_stamper.stamp_dual(Y, J, [self.g2, self.b2, tx_factor], v_previous)
 
     def calculate_residuals(self, state, v):
         center_tap_xfmr_resid = self.center_tap_xfmr_stamper.calc_residuals([self.turn_ratio, 0], v)
