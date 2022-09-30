@@ -1,4 +1,4 @@
-# Combined Transmisison & Distribution Analysis
+# Positive Sequence Transmisison or Three-Phase Distribution Power Flow Analysis
 Perform steady state power flow analysis of electrical transmission & distribution systems.
 
 ## Get Started
