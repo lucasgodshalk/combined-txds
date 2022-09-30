@@ -12,40 +12,10 @@ module powerflow {
 
 #set profiler=1;
 #set relax_naming_rules=1;
-#set savefile="Output.xml";
 
 module reliability {
 	maximum_event_length 18000;	//Maximum length of events in seconds (manual events are excluded from this limit);
 	report_event_log false;
-}
-
-object fault_check {
-	name test_fault;
-	check_mode ONCHANGE;
-	eventgen_object testgendev_rand;
-	output_filename filename.txt;
-}
-
-object metrics {
-	name testmetrics;
-	report_file testmetrics.txt;
-	module_metrics_object pwrmetrics;	
-	metrics_of_interest "SAIFI";
-	customer_group "class=meter";
-	metric_interval 5 h; 
-	report_interval 5 h;
-}
-
-object eventgen {
-	name testgendev_rand;
-	parent testmetrics;
-	fault_type "SW-ABC"; //Type of fault for the object to induce
-	manual_outages "10_sw,2001-01-01 3:00:01,2001-01-01 3:00:02";
-}
-
-object power_metrics {
-	name pwrmetrics;
-	base_time_value 1 h;
 }
 
 // Node Objects

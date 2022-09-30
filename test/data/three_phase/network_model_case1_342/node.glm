@@ -12,7 +12,6 @@ module powerflow {
 
 #set profiler=1;
 #set relax_naming_rules=1;
-#set savefile="Output.xml";
 
 // Node Objects
 
@@ -30368,82 +30367,8 @@ object transformer {
 
 // Recorders
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-object player {
-     parent "P1";
-     file V_A.player;
-     property voltage_A;
-}
-
-object player {
-     parent "P1";
-     file V_B.player;
-     property voltage_B;
-}
-
-object player {
-     parent "P1";
-     file V_C.player;
-     property voltage_C;
-}
-
 object voltdump {
      filename result.csv;
      mode RECT;
-}
-
-object currdump {
-     filename Current_Dump_NR.csv;
-}
-
-object collector {
-     file Losses_OHL.csv;
-     group "class=overhead_line";
-     interval 1;
-     limit 10;
-     property sum(power_losses_A.real),sum(power_losses_A.imag),sum(power_losses_B.real),sum(power_losses_B.imag),sum(power_losses_C.real),sum(power_losses_C.imag);
-}
-
-object collector {
-     file Losses_Cable.csv;
-     group "class=underground_line";
-     interval 1;
-     limit 10;
-     property sum(power_losses_A.real),sum(power_losses_A.imag),sum(power_losses_B.real),sum(power_losses_B.imag),sum(power_losses_C.real),sum(power_losses_C.imag);
-}
-
-object collector {
-     file Losses_XFMR.csv;
-     group "class=transformer";
-     interval 1;
-     limit 10;
-     property sum(power_losses_A.real),sum(power_losses_A.imag),sum(power_losses_B.real),sum(power_losses_B.imag),sum(power_losses_C.real),sum(power_losses_C.imag);
-}
-
-    object player {
-     parent "10_sw";
-     file Switch.player;
-     property status;
 }
 
