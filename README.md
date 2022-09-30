@@ -14,7 +14,10 @@ This library can be executed with arguments to target a particular network case 
 Note! This may take a while to execute the first time as everything gets derived/compiled. Subsequent executions should be much faster.
 
 ```
-python src/run_solver.py test/data/positive_seq/GS-4_prior_solution.RAW
+For three-phase distribution cases, run:
+python src/run_solver.py $PATH-TO-GLM-FILE$
+For transmission cases, run:
+python src/run_solver.py $PATH-TO-RAW-FILE$
 ```
 
 In order to save network simulation results (in the same folder) in output_voltage.csv and output_power.csv use:
