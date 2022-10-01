@@ -1,7 +1,8 @@
 
 import math
 import numpy as np
-from logic.powerflow import FilePowerFlow
+from logic.powerflow import PowerFlow
+from logic.networkloader import NetworkLoader
 from logic.powerflowsettings import PowerFlowSettings
 from test_threephase_basic import get_glm_case_file
 import cmath
@@ -9,7 +10,9 @@ from ditto.readers.gridlabd.read import compute_triplex_impedance, compute_under
 
 def test_ieee_four_bus_overhead_4_wire():
     glmpath = get_glm_case_file("ieee_four_bus")
-    powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
+    settings = PowerFlowSettings()
+    network = NetworkLoader(settings).from_file(glmpath)
+    powerflow = PowerFlow(network, settings)
 
     branch = powerflow.network.lines[0]
 
@@ -24,7 +27,9 @@ def test_ieee_four_bus_overhead_4_wire():
 
 def test_ieee_four_bus_overhead_3_wire():
     glmpath = get_glm_case_file("ieee_four_bus_delta_delta_transformer")
-    powerflow = FilePowerFlow(glmpath, PowerFlowSettings())
+    settings = PowerFlowSettings()
+    network = NetworkLoader(settings).from_file(glmpath)
+    powerflow = PowerFlow(network, settings)
 
     branch = powerflow.network.lines[0]
 
