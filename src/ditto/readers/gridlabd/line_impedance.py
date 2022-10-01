@@ -497,20 +497,27 @@ def compute_underground_capacitance(wire_list):
 
     return capacitance_matrix
 
-def compute_overhead_capacitance(wire_list, distances):
+def compute_overhead_capacitance(wire_list, distances, freq = 60):
     neutral_index = rev_lookup["N"]
     earth_index = rev_lookup["E"]
 
+    phases = [wire.phase for wire in wire_list]
+
+    #See definitions below eqn 5.5
     S = np.zeros((4, 4), dtype=complex)
-    for i in len(wire_list):
+    RD = np.zeros(4)
+
+    indexes = []
+    for i in range(len(wire_list)):
+        indexes.append(i)
+
         S[i, i] = 2 * distances[i][i]
 
-        i_phase = wire_list[i].phase
-        for j in len(wire_list):
-            if i == j:
-                continue
+        i_phase = phases[i]
 
-            j_phase = wire_list[j].phase
+        RD[i] = wire_list[i].diameter / 2
+        for j in range(len(wire_list)):
+            j_phase = phases[j]
 
             phasepair = i_phase + j_phase 
 
@@ -519,189 +526,46 @@ def compute_overhead_capacitance(wire_list, distances):
             phase_earth_dist = distances[i][earth_index]
             neutral_earth_dist = distances[neutral_index][earth_index]
 
+            if i == j:
+                _horizDist = 0
+                _vertDist = 2 * phase_earth_dist
             if phasepair in ["AB", "BA", "AC", "CA", "BC", "CB"]:
                 _horizDist = phase_phase_dist
                 _vertDist = 2 * phase_earth_dist
-
             elif phasepair in ["AN", "NA", "BN", "NB", "CN", "NC"]:
                 _horizDist = (phase_neutral_dist ** 2 - (phase_earth_dist - neutral_earth_dist) ** 2) ** 0.5
                 _vertDist = phase_earth_dist + neutral_earth_dist
 
             S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
 
-    if _phases in [_PHASE['ABC'], _PHASE['ABCN']]:
-        for i in range(4):
-            for j in range(4):
-                if (i == 0 and j == 1) or (j == 0 and i == 1):
-                    _horizDist = D_AB
-                    _vertDist = 2 * D_BE
-                elif (i == 0 and j == 2) or (j == 0 and i == 2):
-                    _horizDist = D_AC
-                    _vertDist = 2 * D_AE
-                elif (i == 0 and j == 3) or (j == 0 and i == 3):
-                    _horizDist = (D_AN ** 2 - (D_AE - D_NE) ** 2) ** 0.5
-                    _vertDist = D_AE + D_NE
-                elif (i == 1 and j == 2) or (j == 1 and i == 2):
-                    _horizDist = D_BC
-                    _vertDist = 2 * D_CE
-                elif (i == 1 and j == 3) or (j == 1 and i == 3):
-                    _horizDist = (D_BN ** 2 - (D_BE - D_NE) ** 2) ** 0.5
-                    _vertDist = D_BE + D_NE
-                elif (i == 2 and j == 3) or (j == 2 and i == 3):
-                    _horizDist = (D_CN ** 2 - (D_CE - D_NE) ** 2) ** 0.5
-                    _vertDist = D_CE + D_NE
-                if i != j:  # No diagonal terms exist here
-                    S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
-                
-        # Multiply the diagonal elements by half as we are adding transpose to it
-        if _phases == _PHASE['ABC']:
-            rad.append(-1)
-        _dist_shunt_mat = [[rad[0] * 0.5, D_AB, D_AC, D_AN],
-                            [0, rad[1] * 0.5, D_BC, D_BN],
-                            [0, 0, rad[2] * 0.5, D_CN],
-                            [0, 0, 0, rad[3] * 0.5]]
-        _dist_shunt_mat = np.array(_dist_shunt_mat, dtype=float)
-        _dist_shunt_mat += np.transpose(_dist_shunt_mat)
-        _temp_mat = np.divide(S, _dist_shunt_mat)
-        Pprim = 11.17689 * np.log(_temp_mat)
-        # Apply Kron's reduction if wye
-        # Slicing is not exclusive in last term careful
-        # There could be a problem if diagonal terms are zero
-        if _phases == _PHASE['ABCN']:
-            _Pij = Pprim[:3, :3]
-            _Pin = Pprim[:3, 3, np.newaxis]  # singleton to 3x1
-            _Pnj = Pprim[3, :3, np.newaxis].T  # singleton to 1x3
-            _Pnn = Pprim[3, 3]  # scalar
-            Pred = LineConfigurations.kron_reduction(_Pij, _Pin, _Pnj, _Pnn)
-        else:
-            Pred = Pprim[0:3, 0:3]
-        _C = np.linalg.inv(Pred)
-        _Y = 376.9911 * 1e-6 * 1j * _C
-        Yshunt_O = _Y
-    elif _phases in [_PHASE['AN'], _PHASE['BN'], _PHASE['CN']]:
-        S = np.zeros((2, 2), dtype=float)
-        # Distance Calculations
-        _D_E = [D_AE, D_BE, D_CE]
-        _D_N = [D_AN, D_BN, D_CN]
-        _horizDist = (_D_N[single_phase] ** 2 - (_D_E[single_phase] - D_NE) ** 2) ** 0.5
-        _vertDist = _D_E[single_phase] + D_NE
-        # S matrix calculation
-        S[0, 1] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
-        S[1, 0] = S[0, 1]
-        S[0, 0] = _D_E[single_phase]
-        S[1, 1] = D_NE
-        # distance shunt matrix
-        _dist_shunt_mat = np.array([[rad, _D_N[single_phase]],
-                                    [_D_N[single_phase], rad_N]])
-        _temp_mat = np.divide(S, _dist_shunt_mat)
-        Pprim = 11.17689 * np.log(_temp_mat)
-        _Pij = Pprim[0, 0]
-        _Pin = Pprim[0, 1]
-        _Pnj = Pprim[1, 0]
-        _Pnn = Pprim[1, 1]
-        Pred = LineConfigurations.kron_reduction(_Pij, _Pin, _Pnj, _Pnn)
-        _C = Pred ** -1
-        _Y = 376.9911 * 1e-6 * 1j * _C
-        Yshunt_O = np.zeros((3, 3), dtype=complex)
-        Yshunt_O[single_phase, single_phase] = _Y
+    #See eqn's 5.9 and 5.10.
+    #Assumes distances is zero along diag so we don't overwrite RD
+    reduced_distances = distances[:, indexes][indexes, :]
+    reduced_RD = RD[indexes]
+    reduced_S = S[:, indexes][indexes, :]
+
+    S_divisor = np.diag(reduced_RD) + reduced_distances
+    P_primitive = 11.17689 * np.log(np.divide(reduced_S, S_divisor))
+
+    if "N" in phases:
+        #Eqn 5.12 and 5.13
+        phs_cnt = len(phases) - 1
+
+        Pij = P_primitive[:phs_cnt, :phs_cnt]
+        Pin = P_primitive[:phs_cnt, phs_cnt, np.newaxis]
+        Pnj = P_primitive[phs_cnt, :phs_cnt, np.newaxis].T
+        Pnn = P_primitive[phs_cnt, phs_cnt]
+
+        P_abc = kron_reduction(Pij, Pin, Pnj, Pnn)
     else:
-        S = np.zeros((4, 4), dtype=complex)
-        # Convert NoneType to 0
-        [D_AE, D_BE, D_CE, D_NE] = list(map(LineConfigurations.setNonetoZero,
-                                                            [D_AE, D_BE, D_CE, D_NE]))
-        if _phases & 0x1 == 1:
-            S[0, 0] = 2 * D_AE
-        else:
-            D_AB = -1
-            D_AC = -1
-            D_AN = -1
-        if _phases & 0x2 == 2:
-            S[1, 1] = 2 * D_BE
-        else:
-            D_AB = -1
-            D_BC = -1
-            D_BN = -1
-        if _phases & 0x4 == 4:
-            S[2, 2] = 2 * D_CE
-        else:
-            D_BC = -1
-            D_AC = -1
-            D_CN = -1
-        if _phases & 0x8 == 8:
-            S[3, 3] = 2 * D_NE
-        else:
-            D_AN = -1
-            D_BN = -1
-            D_CN = -1
-        for i in range(4):
-            for j in range(4):
-                flag = 0
-                if (i == 0 and j == 1) or (j == 0 and i == 1):
-                    if D_AB != -1:
-                        _horizDist = D_AB
-                        _vertDist = 2 * D_BE
-                        flag = 1
-                elif (i == 0 and j == 2) or (j == 0 and i == 2):
-                    if D_AC != -1:
-                        _horizDist = D_AC
-                        _vertDist = 2 * D_AE
-                        flag = 1
-                elif (i == 0 and j == 3) or (j == 0 and i == 3):
-                    if D_AN != -1:
-                        _horizDist = (D_AN ** 2 - (D_AE - D_NE) ** 2) ** 0.5
-                        _vertDist = D_AE + D_NE
-                        flag = 1
-                elif (i == 1 and j == 2) or (j == 1 and i == 2):
-                    if D_BC != -1:
-                        _horizDist = D_BC
-                        _vertDist = 2 * D_CE
-                        flag = 1
-                elif (i == 1 and j == 3) or (j == 1 and i == 3):
-                    if D_BN != -1:
-                        _horizDist = (D_BN ** 2 - (D_BE - D_NE) ** 2) ** 0.5
-                        _vertDist = D_BE + D_NE
-                        flag = 1
-                elif (i == 2 and j == 3) or (j == 2 and i == 3):
-                    if D_CN != -1:
-                        _horizDist = (D_CN ** 2 - (D_CE - D_NE) ** 2) ** 0.5
-                        _vertDist = D_CE + D_NE
-                        flag = 1
-                if i != j:  # No diagonal terms exist here
-                    if flag == 1:
-                        S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
-        # Multiple the diag by half as we are adding with transpose 
-        _dist_shunt_mat = [[rad[0] * 0.5, D_AB, D_AC, D_AN],
-                            [0, rad[1] * 0.5, D_BC, D_BN],
-                            [0, 0, rad[2] * 0.5, D_CN],
-                            [0, 0, 0, rad[3] * 0.5]]
-        _dist_shunt_mat = np.array(_dist_shunt_mat, dtype=float)
-        _dist_shunt_mat += np.transpose(_dist_shunt_mat)
-        _dist_shunt_mat[_dist_shunt_mat == -1] = 0
-        # Reduce the dimensions of _S and _dist_shunt_mat
-        (_S_red, _rowIdx, _colIdx) = LineConfigurations.removeRowColZero(S)
-        (_dist_shunt_mat_red, _rowIdx, _colIdx) = LineConfigurations.removeRowColZero(_dist_shunt_mat)
-        _temp_mat = np.divide(_S_red, _dist_shunt_mat_red)
-        Pprim = 11.17689 * np.log(_temp_mat)
-        # Apply Kron's reduction if wye
-        # Slicing is not exclusive in last term careful
-        # There could be a problem if diagonal terms are zero
-        if _phases & 0x8 == 8:
-            _Pij = Pprim[:2, :2]
-            _Pin = Pprim[:2, 2, np.newaxis]  # singleton to 3x1
-            _Pnj = Pprim[2, :2, np.newaxis].T  # singleton to 1x3
-            _Pnn = Pprim[2, 2]  # scalar
-            Pred = LineConfigurations.kron_reduction(_Pij, _Pin, _Pnj, _Pnn)
-        else:
-            Pred = Pprim[0:2, 0:2]
-        _C = np.linalg.inv(Pred)
-        _Y = 376.9911 * 1e-6 * 1j * _C
-        # Map into 3x3 structure
-        _rowIdx = list(_rowIdx).index(True)
-        _colIdx = list(_colIdx).index(True)
-        _Y = np.insert(_Y, _rowIdx, 0 + 1j * 0, axis=0)
-        _Y = np.insert(_Y, _colIdx, 0 + 1j * 0, axis=1)
-        Yshunt_O = _Y
-    return None
+        P_abc = P_primitive[0:len(phases), 0:len(phases)]
+
+    C = np.linalg.inv(P_abc)
+    
+    #Eqn 5.15
+    Y = 2 * math.pi * freq * 1e-6 * 1j * C
+
+    return Y
 
 def compute_overhead_impedance(wire_list, distances, freq=60, resistivity=100, kron_reduce=True):
     matrix = [[0 for i in range(4)] for j in range(4)]
@@ -942,8 +806,6 @@ def calc_Zij(Dij, is_underground, resistivity = 100, freq = 60):
     return Zij
 
 def kron_reduction(Zij, Zin, Znj, Znn):
-    #  _r = Zij.shape[0]
-    #  _c = Zij.shape[1]
     if hasattr(Znn, "__len__"):
         Znn_inv = np.linalg.inv(Znn)
     else:
