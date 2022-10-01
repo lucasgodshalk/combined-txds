@@ -939,7 +939,8 @@ class Reader(AbstractReader):
                 if capacitance_matrix == None:
                     capacitance_matrix = compute_overhead_capacitance(wire_list, distances)
                 
-                api_line.capacitance_matrix = convert_Z_matrix_per_mile_to_per_meter(capacitance_matrix)
+                if capacitance_matrix != None:
+                    api_line.capacitance_matrix = convert_Z_matrix_per_mile_to_per_meter(capacitance_matrix)
 
                 # Calculate the shunt admittance of the line, based on the capacitance matrix.
                 # Incorporating line capacitance is an option in GridlabD which is not enabled by default

@@ -501,30 +501,33 @@ def compute_overhead_capacitance(wire_list, distances, freq = 60):
     neutral_index = rev_lookup["N"]
     earth_index = rev_lookup["E"]
 
-    phases = [wire.phase for wire in wire_list]
-
     #See definitions below eqn 5.5
     S = np.zeros((4, 4), dtype=complex)
     RD = np.zeros(4)
 
+    has_neutral = False
     indexes = []
-    for i in range(len(wire_list)):
+    for i_wire in wire_list:
+        if i_wire.diameter == None:
+            return None
+            
+        if i_wire.phase == "N":
+            has_neutral = True
+
+        i = rev_lookup[i_wire.phase]
         indexes.append(i)
-
         S[i, i] = 2 * distances[i][i]
+        RD[i] = i_wire.diameter / 2
 
-        i_phase = phases[i]
-
-        RD[i] = wire_list[i].diameter / 2
-        for j in range(len(wire_list)):
-            j_phase = phases[j]
-
-            phasepair = i_phase + j_phase 
+        for j_wire in wire_list:
+            j = rev_lookup[j_wire.phase]
 
             phase_phase_dist = distances[i][j]
             phase_neutral_dist = distances[i][neutral_index]
             phase_earth_dist = distances[i][earth_index]
             neutral_earth_dist = distances[neutral_index][earth_index]
+
+            phasepair = i_wire.phase + j_wire.phase 
 
             if i == j:
                 _horizDist = 0
@@ -547,9 +550,9 @@ def compute_overhead_capacitance(wire_list, distances, freq = 60):
     S_divisor = np.diag(reduced_RD) + reduced_distances
     P_primitive = 11.17689 * np.log(np.divide(reduced_S, S_divisor))
 
-    if "N" in phases:
+    if has_neutral:
         #Eqn 5.12 and 5.13
-        phs_cnt = len(phases) - 1
+        phs_cnt = len(wire_list) - 1
 
         Pij = P_primitive[:phs_cnt, :phs_cnt]
         Pin = P_primitive[:phs_cnt, phs_cnt, np.newaxis]
@@ -558,14 +561,14 @@ def compute_overhead_capacitance(wire_list, distances, freq = 60):
 
         P_abc = kron_reduction(Pij, Pin, Pnj, Pnn)
     else:
-        P_abc = P_primitive[0:len(phases), 0:len(phases)]
+        P_abc = P_primitive[0:len(wire_list), 0:len(wire_list)]
 
     C = np.linalg.inv(P_abc)
     
     #Eqn 5.15
     Y = 2 * math.pi * freq * 1e-6 * 1j * C
 
-    return Y
+    return [[Y[i, j] for i in range(Y.shape[1])] for j in range(Y.shape[0])]
 
 def compute_overhead_impedance(wire_list, distances, freq=60, resistivity=100, kron_reduce=True):
     matrix = [[0 for i in range(4)] for j in range(4)]
