@@ -491,6 +491,7 @@ def compute_underground_capacitance(wire_list):
             #Shunt values go down the diagonal in wire order.
             capacitance_matrix[index][index] = y_ag
     
+    #Shunt capacitance is applied on either side of the line.
     for i in range(len(capacitance_matrix)):
         for j in range(len(capacitance_matrix[0])):
             capacitance_matrix[i][j] = capacitance_matrix[i][j] / 2
@@ -510,7 +511,7 @@ def compute_overhead_capacitance(wire_list, distances, freq = 60):
     for i_wire in wire_list:
         if i_wire.diameter == None:
             return None
-            
+
         if i_wire.phase == "N":
             has_neutral = True
 
@@ -542,11 +543,11 @@ def compute_overhead_capacitance(wire_list, distances, freq = 60):
             S[i, j] = (_horizDist ** 2 + _vertDist ** 2) ** 0.5
 
     #See eqn's 5.9 and 5.10.
-    #Assumes distances is zero along diag so we don't overwrite RD
     reduced_distances = distances[:, indexes][indexes, :]
     reduced_RD = RD[indexes]
     reduced_S = S[:, indexes][indexes, :]
 
+    #Assumes distances matrix is zero along diag so we don't overwrite RD
     S_divisor = np.diag(reduced_RD) + reduced_distances
     P_primitive = 11.17689 * np.log(np.divide(reduced_S, S_divisor))
 
@@ -567,6 +568,9 @@ def compute_overhead_capacitance(wire_list, distances, freq = 60):
     
     #Eqn 5.15
     Y = 2 * math.pi * freq * 1e-6 * 1j * C
+
+    #Shunt capacitance is applied on either side of the line.
+    Y = Y / 2
 
     return [[Y[i, j] for i in range(Y.shape[1])] for j in range(Y.shape[0])]
 
