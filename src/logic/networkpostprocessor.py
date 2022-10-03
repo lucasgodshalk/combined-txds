@@ -1,12 +1,14 @@
 import math
 import os
 import typing
-from logic.networkmodel import DxNetworkModel, NetworkModel
+from logic.networkmodel import DxNetworkModel
 from pandas import read_csv
 
 from logic.postprocessingsettings import PostProcessingSettings
 from logic.powerflow import PowerFlow
 from logic.powerflowresults import PowerFlowResults, QuasiTimeSeriesResults
+
+
 
 class NetworkPostProcessor:
     THRESHOLD = 1e-1
@@ -98,3 +100,5 @@ class NetworkPostProcessor:
             return self.execute_powerflow()
         else:
             return None
+
+    

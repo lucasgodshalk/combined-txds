@@ -9,7 +9,8 @@ class PowerFlowSettings:
         tx_stepping = False, 
         infeasibility_analysis = False,
         dump_matrix = False,
-        device_control = True
+        device_control = True,
+        load_factor = None
         ) -> None:
         self.tolerance = tolerance
         self.max_iters = max_iters
@@ -20,3 +21,4 @@ class PowerFlowSettings:
         self.infeasibility_analysis = infeasibility_analysis
         self.dump_matrix = dump_matrix
         self.device_control = device_control
+        self.load_factor = load_factor

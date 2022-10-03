@@ -5,6 +5,7 @@ from logic.graphanalyzer import GraphAnalyzer
 from logic.homotopycontroller import HomotopyController
 from logic.networkloader import NetworkLoader
 from logic.networkmodel import NetworkModel
+from logic.loadfactorpostprocessor import LoadFactorPostProcessor
 from logic.nrsolver import NRSolver
 from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflowresults import PowerFlowResults
@@ -22,6 +23,9 @@ class PowerFlow:
         island_count = ga.get_island_count() 
         if island_count != 1:
             raise Exception(f"Detected multiple network islands. (Count: {island_count})")
+
+        load_factor_post_processor = LoadFactorPostProcessor(self.settings, self.network)
+        load_factor_post_processor.set_load_factor()
 
         v_limiting = None
         if not self.network.is_three_phase and self.settings.voltage_limiting:
