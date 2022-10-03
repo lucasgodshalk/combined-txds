@@ -53,15 +53,5 @@ class PowerFlow:
             self.settings
             )
 
-class FilePowerFlow(PowerFlow):
-    def __init__(self, networkfile: str, settings: PowerFlowSettings = PowerFlowSettings()):
-        builder = NetworkLoader(settings)
-
-        network = builder.from_file(networkfile)
-
-        PowerFlow.__init__(self, network, settings)
-
-
-
     
     

@@ -19,7 +19,7 @@ from ditto.models.phase_winding import PhaseWinding
 from ditto.formats.gridlabd import gridlabd
 from ditto.formats.gridlabd import base
 from ditto.models.base import Unicode
-from ditto.readers.gridlabd.line_impedance import compute_overhead_impedance, compute_underground_impedance, compute_triplex_impedance, compute_overhead_spacing, compute_underground_spacing, try_load_direct_line_impedance, try_load_direct_line_capacitance, compute_underground_capacitance
+from ditto.readers.gridlabd.line_impedance import compute_overhead_capacitance, compute_overhead_impedance, compute_underground_impedance, compute_triplex_impedance, compute_overhead_spacing, compute_underground_spacing, try_load_direct_line_impedance, try_load_direct_line_capacitance, compute_underground_capacitance
 from ditto.readers.gridlabd.load_parser import LoadParser
 from ditto.readers.abstract_reader import AbstractReader
 from ditto.readers.gridlabd.helpers import parse_phases, triplex_phases
@@ -936,8 +936,11 @@ class Reader(AbstractReader):
 
                 capacitance_matrix = try_load_direct_line_capacitance(config)
 
+                if capacitance_matrix == None:
+                    capacitance_matrix = compute_overhead_capacitance(wire_list, distances)
+                
                 if capacitance_matrix != None:
-                    api_line.capacitance_matrix = capacitance_matrix
+                    api_line.capacitance_matrix = convert_Z_matrix_per_mile_to_per_meter(capacitance_matrix)
 
                 # Calculate the shunt admittance of the line, based on the capacitance matrix.
                 # Incorporating line capacitance is an option in GridlabD which is not enabled by default

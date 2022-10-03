@@ -44,3 +44,5 @@ The codebase is based on the following papers:
 2. Jereminov, M., Bromberg, D. M., Pandey, A., Wagner, M. R., & Pileggi, L. (2020). Evaluating feasibility within power flow. IEEE Transactions on Smart Grid, 11(4), 3522-3534.
 3. Foster, E., Pandey, A., & Pileggi, L. (2022). Three-phase infeasibility analysis for distribution grid studies. Electric Power Systems Research, 212, 108486.
 ```
+
+In addition, three phase component modeling references Distribution System Modeling and Analysis 3rd ed by W. Kersting.

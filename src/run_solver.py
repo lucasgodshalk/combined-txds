@@ -1,6 +1,7 @@
 from logic.networkpostprocessor import NetworkPostProcessor
 from logic.powerflowsettings import PowerFlowSettings
-from logic.powerflow import FilePowerFlow
+from logic.powerflow import PowerFlow
+from logic.networkloader import NetworkLoader
 import argparse
 
 from logic.postprocessingsettings import PostProcessingSettings
@@ -51,9 +52,11 @@ settings = PowerFlowSettings(
     load_factor=load_factor
     )
 
-powerflow = FilePowerFlow(case, settings)
+network = NetworkLoader(settings).from_file(case)
 
-powerflow.network.display()
+network.display()
+
+powerflow = PowerFlow(network, settings)
 
 results = powerflow.execute()
 

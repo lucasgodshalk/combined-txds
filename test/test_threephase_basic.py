@@ -1,7 +1,8 @@
 # import pytest as pt
 import cmath
 import math
-from logic.powerflow import FilePowerFlow
+from logic.powerflow import PowerFlow
+from logic.networkloader import NetworkLoader
 from logic.powerflowresults import PowerFlowResults
 from logic.powerflowsettings import PowerFlowSettings
 import os
@@ -18,7 +19,8 @@ def get_gridlabd_csv_voltdump(casename):
     return os.path.join(DATA_DIR, casename, "result.csv")
 
 def execute_glm_case(filepath, settings):
-    powerflow = FilePowerFlow(filepath, settings)
+    network = NetworkLoader(settings).from_file(filepath)
+    powerflow = PowerFlow(network, settings)
     return powerflow.execute()
 
 def load_gridlabd_csv(casename):
