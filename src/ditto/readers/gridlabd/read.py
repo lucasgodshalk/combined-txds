@@ -877,10 +877,14 @@ class Reader(AbstractReader):
                     for api_wire in conductors:
                         cond_name = conductors[api_wire]
                         conductor = self.all_gld_objects[cond_name]
+
+                        api_wire.diameter = 0.5 #default TODO check if makes sense
                         try:
                             api_wire.diameter = float(conductor["diameter"])
                         except AttributeError:
                             pass
+
+
                         try:
                             if conductor["geometric_mean_radius"].find('cm') != -1:
                                 conductor["geometric_mean_radius"] = remove_nonnum.sub('', conductor["geometric_mean_radius"])
