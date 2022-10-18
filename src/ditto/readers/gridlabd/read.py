@@ -876,7 +876,7 @@ class Reader(AbstractReader):
                         cond_name = conductors[api_wire]
                         conductor = self.all_gld_objects[cond_name]
 
-                        api_wire.diameter = 0.5 #default TODO check if makes sense. This breaks kersting_example_4_1.
+                        api_wire.diameter = 0.5 #TODO check if this default makes sense.
                         try:
                             api_wire.diameter = float(conductor["diameter"])
                         except AttributeError:

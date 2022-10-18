@@ -10,7 +10,8 @@ class PowerFlowSettings:
         infeasibility_analysis = False,
         dump_matrix = False,
         device_control = True,
-        load_factor = None
+        load_factor = None,
+        enable_line_capacitance = True
         ) -> None:
         self.tolerance = tolerance
         self.max_iters = max_iters
@@ -22,3 +23,4 @@ class PowerFlowSettings:
         self.dump_matrix = dump_matrix
         self.device_control = device_control
         self.load_factor = load_factor
+        self.enable_line_capacitance = enable_line_capacitance

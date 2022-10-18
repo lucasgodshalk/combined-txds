@@ -72,8 +72,13 @@ class UnbalancedLine():
             raise Exception("np.linalg.inv was unable to find a good inverse to the impedance matrix")
         
         # Convert the per-meter shunt admittance values to absolute, based on line length (in meters)
-        self.shunt_admittances = np.array(shunt_admittances)
-        self.shunt_admittances *= length
+
+        if shunt_admittances is None:
+            self.shunt_admittances = None
+        else:
+            self.shunt_admittances = np.array(shunt_admittances)
+            self.shunt_admittances *= length
+
         self.from_element = from_element
         self.to_element = to_element
         self.length = length
@@ -165,11 +170,13 @@ class UnbalancedLine():
             for j in range(len(self.lines)):
                 g = np.real(self.admittances[i][j])
                 b = np.imag(self.admittances[i][j])
-                try:
-                    B = np.imag(self.shunt_admittances[i][j])
-                except IndexError:
-                    B = 0
 
+                B = 0
+                if self.shunt_admittances is not None:
+                    try:
+                        B = np.imag(self.shunt_admittances[i][j])
+                    except IndexError:
+                        pass
 
                 line2 = self.lines[j]
                 _, line2_to = line2.get_nodes(state)

@@ -314,36 +314,14 @@ class ThreePhaseParser:
                 simulation_state.switches.append(switch)
         else:
             impedances = np.array(model.impedance_matrix)
-            # if model.line_type == 'underground':
-            #     # Calculate shunt admittance
-            #     # Note: this assumes symmetrical spacing between lines. TODO update if testing with systems where this is not the case
-            #     # Note: this assumes an insulation material such as cross-linked polyethylene
-            #     # Note: this assumes all wires are identical
-            #     # See Kersting 2007 Section 5.4 for the derivation of the following equation
-            #     wire = model.wires[0]
-            #     R_b = (wire.outer_diameter - wire.conductor_diameter) / 2 # in inches # not concentric_neutral_diameter in denom?
-            #     conductor_radius = wire.conductor_diameter / 2 # in inches 
-            #     neutral_radius = wire.concentric_neutral_diameter / 2 # in inches 
-            #     k = wire.concentric_neutral_nstrand
-            #     y = complex(0,77.3619*1e-6/(math.log(R_b / conductor_radius)))# not - 1/k*math.log(k*neutral_radius/R_b))) # Siemens of admittance per mile
-            #     y = y / 1609.34 # per meter
-            #     shunt_admittances = [[0]*3 for i in range(3)]
-            #     for i in range(3):
-            #         shunt_admittances[i][i] = y
-            # else:
-            shunt_admittances = model.capacitance_matrix
+
+            if self.settings.enable_line_capacitance:
+                shunt_admittances = model.capacitance_matrix
+            else:
+                shunt_admittances = None
 
             phases = [wire.phase for wire in model.wires if wire.phase != 'N']
             
             transmission_line = UnbalancedLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
             simulation_state.lines.append(transmission_line)
 
-
-
-if __name__ == "__main__":
-    print("starting script")
-    glm_file_path = "test/data/ieee_4_node/node.glm"
-    test_parser = ThreePhaseParser(glm_file_path)
-    returned_generators = test_parser.parse()
-    print(returned_generators)
-    
