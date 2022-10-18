@@ -40,8 +40,7 @@ def test_ieee_four_bus_overhead_3_wire():
     ])
 
     #need to convert impedances to ohm/mile
-    #todo: tighten tolerance on this. still slightly off.
-    assert np.allclose(np.abs(branch.impedances / .3787879), np.abs(Z_expected), atol=2e-3)
+    assert np.allclose(np.abs(branch.impedances / .3787879), np.abs(Z_expected), atol=1e-3)
 
 class WireTest:
     def __init__(

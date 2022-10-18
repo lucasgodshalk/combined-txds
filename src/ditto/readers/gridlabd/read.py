@@ -210,11 +210,9 @@ def parse_line_length(line, name):
         return float(line["length"]) * 0.3048
 
 def convert_Z_matrix_per_mile_to_per_meter(z_matrix):
-    for i in range(len(z_matrix)):
-        for j in range(len(z_matrix[0])):
-            z_matrix[i][j] = z_matrix[i][j] / meters_per_mile
-    
-    return z_matrix
+    z_matrix = z_matrix / meters_per_mile
+
+    return z_matrix.tolist()
 
 class Reader(AbstractReader):
     """
@@ -878,7 +876,7 @@ class Reader(AbstractReader):
                         cond_name = conductors[api_wire]
                         conductor = self.all_gld_objects[cond_name]
 
-                        api_wire.diameter = 0.5 #default TODO check if makes sense
+                        api_wire.diameter = 0.5 #default TODO check if makes sense. This breaks kersting_example_4_1.
                         try:
                             api_wire.diameter = float(conductor["diameter"])
                         except AttributeError:
@@ -940,10 +938,10 @@ class Reader(AbstractReader):
 
                 capacitance_matrix = try_load_direct_line_capacitance(config)
 
-                if capacitance_matrix == None:
+                if capacitance_matrix is None:
                     capacitance_matrix = compute_overhead_capacitance(wire_list, distances)
                 
-                if capacitance_matrix != None:
+                if capacitance_matrix is not None:
                     api_line.capacitance_matrix = convert_Z_matrix_per_mile_to_per_meter(capacitance_matrix)
 
                 # Calculate the shunt admittance of the line, based on the capacitance matrix.
@@ -1063,7 +1061,7 @@ class Reader(AbstractReader):
 
                 impedance_matrix = try_load_direct_line_impedance(config)
 
-                if impedance_matrix == None:
+                if impedance_matrix is None:
                     impedance_matrix = compute_triplex_impedance(wire_list)
 
                 api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
@@ -1206,7 +1204,7 @@ class Reader(AbstractReader):
 
                 impedance_matrix = try_load_direct_line_impedance(config)
 
-                if impedance_matrix == None:
+                if impedance_matrix is None:
                     striped_distances = distances[:,~np.all(distances, axis=0, where=[-1])][~np.all(distances, axis=1, where=[-1]),:]
                     impedance_matrix = compute_underground_impedance(wire_list, striped_distances)
 
@@ -1214,7 +1212,7 @@ class Reader(AbstractReader):
 
                 capacitance_matrix = try_load_direct_line_capacitance(config)
 
-                if capacitance_matrix == None:
+                if capacitance_matrix is None:
                     capacitance_matrix = compute_underground_capacitance(wire_list)
                 
                 api_line.capacitance_matrix = convert_Z_matrix_per_mile_to_per_meter(capacitance_matrix)

@@ -165,6 +165,7 @@ def test_three_transformers():
     assert_glm_case_gridlabd_results("three_transformers")
     
 def test_kersting_example_4_1():
+    #Broken by adding a default wire diameter for overhead lines. See read.py overhead parsing section.
     assert_glm_case_gridlabd_results("kersting_example_4_1")
 
 def test_kersting_example_4_2():

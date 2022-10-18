@@ -12,13 +12,35 @@ num_dists = len(lookup)
 
 rev_lookup = {"A": 0, "B": 1, "C": 2, "N": 3, "E": 4}
 
+line_direct_lookup = {
+    "11": (0, 0),
+    "12": (0, 1), 
+    "13": (0, 2), 
+    "21": (1, 0), 
+    "22": (1, 1), 
+    "23": (1, 2), 
+    "31": (2, 0), 
+    "32": (2, 1), 
+    "33": (2, 2)
+}
+
+
 #####################
 #####################
 # All terms, eqns and figures are from Kersting 3rd Edition unless noted otherwise.
-# Chapter 4 - Series impednace
+# Chapter 4 - Series impedance
 # Chapter 5 - Shunt admittance
 #####################
 #####################
+
+default_ul_wire_depth = 6 #feet
+default_ul_wire_spacing = 0.5
+
+resistance_of_dirt_overhead = 0.09530 #ohms/mile
+resistance_of_dirt_underground = 0.09327 #ohms/mile
+
+conductor_dirt_distance_factor_overhead = 7.93402 #ohms/mile
+conductor_dirt_distance_factor_underground = 7.95153 #ohms/mile
 
 def compute_overhead_spacing(spacing_config, conductors, default_height=30):
     max_dist = -100
@@ -269,10 +291,6 @@ def compute_overhead_spacing(spacing_config, conductors, default_height=30):
     
     return np.array(distances)
 
-# Assume all wires are 6 feet under by default
-default_ul_wire_depth = 6
-default_ul_wire_spacing = 0.5
-
 def compute_underground_spacing(outer_diameters, spacing_config, conductors):
     distances = [[-1 for i in range(num_dists)] for j in range(num_dists)]
     for i in range(num_dists):
@@ -458,47 +476,6 @@ def compute_underground_spacing(outer_diameters, spacing_config, conductors):
 
     return np.array(distances)
 
-def compute_underground_capacitance(wire_list):
-    capacitance_matrix =[[0+0j for i in range(3)] for j in range(3)]
-
-    for index in range(len(wire_list)):
-        wire = wire_list[index]
-        if wire.phase == "N":
-            #No need to calculate shunt values for independent neutral wire.
-            continue
-
-        # Radius of circle passing through neutral strands (see figure 4.11 or 5.4).
-        R_b = (wire.outer_diameter - wire.concentric_neutral_diameter) / 2
-
-        #phase conductor radius
-        RD_c = wire.conductor_diameter / 2
-
-        if hasattr(wire, "_shield_gmr") and wire.shield_gmr != 0:
-            #Eqn 5.32
-            V_p1 = np.log(R_b / RD_c)
-        else:
-            #neutral conductor radius
-            RD_s = wire.concentric_neutral_diameter / 2
-
-            #number of neutral strands
-            k = wire.concentric_neutral_nstrand
-
-            #Eqn 5.30
-            V_p1 = np.log(R_b / RD_c) - (1 / k) * np.log(k * RD_s / R_b)
-
-        #Eqn 5.31 & 5.32
-        y_ag = 77.3619 * 1j * 1e-6 / V_p1
-
-        #Shunt values go down the diagonal in wire order.
-        capacitance_matrix[index][index] = y_ag
-    
-    #Shunt capacitance is applied on either side of the line.
-    for i in range(len(capacitance_matrix)):
-        for j in range(len(capacitance_matrix[0])):
-            capacitance_matrix[i][j] = capacitance_matrix[i][j] / 2
-
-    return capacitance_matrix
-
 def compute_overhead_capacitance(wire_list, distances, freq = 60):
     neutral_index = rev_lookup["N"]
     earth_index = rev_lookup["E"]
@@ -573,11 +550,52 @@ def compute_overhead_capacitance(wire_list, distances, freq = 60):
     #Shunt capacitance is applied on either side of the line.
     Y = Y / 2
 
-    return [[Y[i, j] for i in range(Y.shape[1])] for j in range(Y.shape[0])]
+    return Y
+
+def compute_underground_capacitance(wire_list):
+    capacitance_matrix = np.zeros((3,3)).astype(complex)
+
+    for index in range(len(wire_list)):
+        wire = wire_list[index]
+        if wire.phase == "N":
+            #No need to calculate shunt values for independent neutral wire.
+            continue
+
+        # Radius of circle passing through neutral strands (see figure 4.11 or 5.4).
+        R_b = (wire.outer_diameter - wire.concentric_neutral_diameter) / 2
+
+        #phase conductor radius
+        RD_c = wire.conductor_diameter / 2
+
+        if hasattr(wire, "_shield_gmr") and wire.shield_gmr != 0:
+            #Eqn 5.32
+            V_p1 = np.log(R_b / RD_c)
+        else:
+            #neutral conductor radius
+            RD_s = wire.concentric_neutral_diameter / 2
+
+            #number of neutral strands
+            k = wire.concentric_neutral_nstrand
+
+            #Eqn 5.30
+            V_p1 = np.log(R_b / RD_c) - (1 / k) * np.log(k * RD_s / R_b)
+
+        #Eqn 5.31 & 5.32
+        y_ag = 77.3619 * 1j * 1e-6 / V_p1
+
+        #Shunt values go down the diagonal in wire order.
+        capacitance_matrix[index, index] = y_ag
+    
+    #Shunt capacitance is applied on either side of the line.
+    capacitance_matrix = capacitance_matrix / 2
+
+    return capacitance_matrix
 
 def compute_overhead_impedance(wire_list, distances, freq=60, resistivity=100, kron_reduce=True):
-    matrix = [[0 for i in range(4)] for j in range(4)]
+    matrix = np.zeros((4,4)).astype(complex)
+
     for i in range(len(wire_list)):
+        index_i = rev_lookup[wire_list[i].phase]
         for j in range(len(wire_list)):
             if i == j:
                 z = 0  
@@ -590,12 +608,7 @@ def compute_overhead_impedance(wire_list, distances, freq=60, resistivity=100, k
                 else:
                     logger.debug("Warning: resistance or GMR is missing from wire")
 
-                if wire_list[i].phase is not None:
-                    index1 = index2 = rev_lookup[wire_list[i].phase]
-                    matrix[index1][index2] = z
-                else:
-                    logger.debug("Warning: phase missing from wire")
-
+                matrix[index_i, index_i] = z
             else:
                 z = 0
                 if distances[i][j] is not None:
@@ -604,32 +617,19 @@ def compute_overhead_impedance(wire_list, distances, freq=60, resistivity=100, k
                 else:
                     logger.debug("Warning X or Y values missing from wire")
                     
-                if (
-                    wire_list[i].phase is not None
-                    and wire_list[j].phase is not None
-                ):
-                    index1 = rev_lookup[wire_list[i].phase]
-                    index2 = rev_lookup[wire_list[j].phase]
-                    matrix[index1][index2] = z  # ohms per meter
-                else:
-                    logger.debug("Warning: phase missing from wire")
+                index_j = rev_lookup[wire_list[j].phase]
+                matrix[index_i, index_j] = z
         
-    # Let me try doing the Kron reduction using actual matrix calculations, see if I get something different
-
-    matrix = np.array(matrix)
-
     if set([wire.phase for wire in wire_list]) == set(["A", "B", "C"]):
-        return matrix[:3, :3].tolist()
+        return matrix[:3, :3]
 
     z_ij = matrix[:3, :3]
     z_in = matrix[:3, 3:]
     z_nj = matrix[3:, :3]
     z_nn = matrix[3:, 3:]
-    if hasattr(z_nn, "__len__"):
-        z_nn_inv = np.linalg.inv(z_nn)
-    else:
-        z_nn_inv = z_nn**-1
-    kron_matrix = z_ij - np.dot(np.dot(z_in, z_nn_inv), z_nj)
+
+    kron_matrix = kron_reduction(z_ij, z_in, z_nj, z_nn)
+
     wire_phases = [wire.phase for wire in wire_list]
     phase_list = [('C', 2), ('B', 1), ('A', 0)]
     for phase,ind in phase_list:
@@ -637,12 +637,8 @@ def compute_overhead_impedance(wire_list, distances, freq=60, resistivity=100, k
             kron_matrix = np.delete(kron_matrix, ind, 0)
             kron_matrix = np.delete(kron_matrix, ind, 1)
 
-            
-    matrix = kron_matrix.tolist()
+    return kron_matrix
 
-    return matrix
-
-# Calculating the impedance matrix for underground lines, assuming the presence of concentric neutrals
 def compute_underground_impedance(wire_list, distances, freq=60, resistivity=100):
     conductor_own_neutral_distances = []
     conductor_resistances = []
@@ -714,11 +710,10 @@ def compute_underground_impedance(wire_list, distances, freq=60, resistivity=100
     _Znn = _Z[len(_R)//2:, len(_R)//2:]
     return kron_reduction(_Zij, _Zin, _Znj, _Znn)
 
-def compute_triplex_impedance(
-    wire_list, freq=60, resistivity=100, kron_reduce=True
-):
+def compute_triplex_impedance(wire_list, freq=60, resistivity=100, kron_reduce=True):
+    matrix = np.zeros((3,3)).astype(complex)
+
     wire_map = {'1':0,'2':1,'N':2}
-    matrix = [[0 for i in range(3)] for j in range(3)]
     d12 = 0
     d1n = 0
     distances_mapped = False
@@ -730,6 +725,8 @@ def compute_triplex_impedance(
             break
 
     for i in range(len(wire_list)):
+        index_i = wire_map[wire_list[i].phase]
+
         for j in range(len(wire_list)):
             if i == j:
                 z = 0
@@ -741,36 +738,24 @@ def compute_triplex_impedance(
                 else:
                     logger.debug("Warning: resistance or GMR is missing from wire")
 
-                if wire_list[i].phase is not None:
-                    index = wire_map[wire_list[i].phase]
-                    matrix[index][index] = z
-                else:
-                    logger.debug("Warning: phase missing from wire")
-
+                matrix[index_i, index_i] = z
             else:
                 z = 0
-                if (
-                    wire_list[i].phase is not None
-                    and wire_list[j].phase is not None
-                    and distances_mapped
-                ):
+                index_j = wire_map[wire_list[j].phase]
+
+                if (distances_mapped):
                     if wire_list[i].phase == "N" or wire_list[j].phase == "N":
                         z = calc_Zij(d1n, False)
                     else:
                         z = calc_Zij(d12, False)
-                    index1 = wire_map[wire_list[i].phase]
-                    index2 = wire_map[wire_list[j].phase]
-                    matrix[index1][index2] = z# / 1609.344  # ohms per meter
+                    
+                    matrix[index_i, index_j] = z
 
                 else:
-                    # import pdb; pdb.set_trace()
-                    logger.debug(
-                        "Warning phase missing from wire, or Insulation_thickness/diameter not set"
-                    )
+                    logger.debug("Waring: Insulation_thickness/diameter not set")
     
     if kron_reduce:
         # Evaluate Zij, Zin, Znj, Znn
-        matrix = np.array(matrix)
         matrix_ij = matrix[:2, :2]
         matrix_in = matrix[:2, 2:]
         matrix_nj = matrix[2:, :2]
@@ -778,62 +763,6 @@ def compute_triplex_impedance(
         matrix = kron_reduction(matrix_ij, matrix_in, matrix_nj, matrix_nn)
 
     return matrix
-
-resistance_of_dirt_overhead = 0.09530 #ohms/mile
-resistance_of_dirt_underground = 0.09327 #ohms/mile
-
-resistivity_thing_overhead = 7.93402#ohms/mile
-resistivity_thing_underground = 7.95153#ohms/mile
-
-def calc_Zii(r_i, GMRi, is_underground, resistivity = 100, freq = 60):
-    #Kersting 4.4.1 pg82-83
-    # returns Zii in ohms/mile
-
-    if is_underground:
-        resistance_of_dirt = resistance_of_dirt_underground
-        resistivity_thing = resistivity_thing_underground
-    else:
-        resistance_of_dirt = resistance_of_dirt_overhead
-        resistivity_thing = resistivity_thing_overhead
-    
-    Zii = r_i + resistance_of_dirt + 1j * 0.12134 * (np.log(1 / GMRi) + resistivity_thing)
-    return Zii
-
-def calc_Zij(Dij, is_underground, resistivity = 100, freq = 60):
-    #Kersting 4.4.2 pg82-83
-    # returns Zij in ohms/mile
-
-    if is_underground:
-        resistance_of_dirt = resistance_of_dirt_underground
-        resistivity_thing = resistivity_thing_underground
-    else:
-        resistance_of_dirt = resistance_of_dirt_overhead
-        resistivity_thing = resistivity_thing_overhead
-
-    Zij = resistance_of_dirt + 1j * 0.12134 * (np.log(1 / Dij) + resistivity_thing)
-    return Zij
-
-def kron_reduction(Zij, Zin, Znj, Znn):
-    if hasattr(Znn, "__len__"):
-        Znn_inv = np.linalg.inv(Znn)
-    else:
-        Znn_inv = Znn ** -1
-    _tempZ = np.dot(np.dot(Zin, Znn_inv), Znj)
-    Zabc = Zij - _tempZ
-    matrix = Zabc.tolist()
-    return matrix
-
-line_direct_lookup = {
-    "11": (0, 0),
-    "12": (0, 1), 
-    "13": (0, 2), 
-    "21": (1, 0), 
-    "22": (1, 1), 
-    "23": (1, 2), 
-    "31": (2, 0), 
-    "32": (2, 1), 
-    "33": (2, 2)
-}
 
 def try_load_direct_line_impedance(line_config):
     #It is possible to specify the line impedance directly in Z matrix form:
@@ -846,7 +775,7 @@ def try_load_direct_line_impedance(line_config):
             continue
 
         if impedance_matrix == None:
-            impedance_matrix = [[0 for i in range(3)] for j in range(3)]
+            impedance_matrix = np.zeros((3,3)).astype(complex)
         
         i, j = line_direct_lookup[property_number]
 
@@ -865,10 +794,48 @@ def try_load_direct_line_capacitance(line_config):
             continue
 
         if capacitance_matrix == None:
-            capacitance_matrix = [[0 for i in range(3)] for j in range(3)]
+            capacitance_matrix = np.zeros((3,3)).astype(complex)
         
         i, j = line_direct_lookup[property_number]
 
         capacitance_matrix[i][j] = complex(line_config[prop_name])
     
     return capacitance_matrix
+
+def calc_Zii(r_i, GMRi, is_underground, resistivity = 100, freq = 60):
+    #Eqn 4.41
+    # returns Zii in ohms/mile
+
+    if is_underground:
+        resistance_of_dirt = resistance_of_dirt_underground
+        conductor_dirt_distance_factor = conductor_dirt_distance_factor_underground
+    else:
+        resistance_of_dirt = resistance_of_dirt_overhead
+        conductor_dirt_distance_factor = conductor_dirt_distance_factor_overhead
+    
+    Zii = r_i + resistance_of_dirt + 1j * 0.12134 * (np.log(1 / GMRi) + conductor_dirt_distance_factor)
+    return Zii
+
+def calc_Zij(Dij, is_underground, resistivity = 100, freq = 60):
+    #Eqn 4.42
+    # returns Zij in ohms/mile
+
+    if is_underground:
+        resistance_of_dirt = resistance_of_dirt_underground
+        conductor_dirt_distance_factor = conductor_dirt_distance_factor_underground
+    else:
+        resistance_of_dirt = resistance_of_dirt_overhead
+        conductor_dirt_distance_factor = conductor_dirt_distance_factor_overhead
+
+    Zij = resistance_of_dirt + 1j * 0.12134 * (np.log(1 / Dij) + conductor_dirt_distance_factor)
+    return Zij
+
+def kron_reduction(Zij, Zin, Znj, Znn):
+    if hasattr(Znn, "__len__"):
+        Znn_inv = np.linalg.inv(Znn)
+    else:
+        Znn_inv = Znn ** -1
+    _tempZ = np.dot(np.dot(Zin, Znn_inv), Znj)
+    Zabc = Zij - _tempZ
+    return Zabc
+
