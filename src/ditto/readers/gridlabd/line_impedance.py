@@ -467,15 +467,16 @@ def compute_underground_capacitance(wire_list):
             #No need to calculate shunt values for independent neutral wire.
             continue
 
-        if hasattr(wire, "_shield_gmr") and wire.shield_gmr != 0:
-            pass
-        else:
-            # Radius of circle passing through neutral strands (see figure 4.11 or 5.4).
-            R_b = (wire.outer_diameter - wire.concentric_neutral_diameter) / 2
+        # Radius of circle passing through neutral strands (see figure 4.11 or 5.4).
+        R_b = (wire.outer_diameter - wire.concentric_neutral_diameter) / 2
 
-            #phase conductor radius
-            RD_c = wire.conductor_diameter / 2
-            
+        #phase conductor radius
+        RD_c = wire.conductor_diameter / 2
+
+        if hasattr(wire, "_shield_gmr") and wire.shield_gmr != 0:
+            #Eqn 5.32
+            V_p1 = np.log(R_b / RD_c)
+        else:
             #neutral conductor radius
             RD_s = wire.concentric_neutral_diameter / 2
 
@@ -485,11 +486,11 @@ def compute_underground_capacitance(wire_list):
             #Eqn 5.30
             V_p1 = np.log(R_b / RD_c) - (1 / k) * np.log(k * RD_s / R_b)
 
-            #Eqn 5.31
-            y_ag = 77.3619 * 1j * 1e-6 / V_p1
+        #Eqn 5.31 & 5.32
+        y_ag = 77.3619 * 1j * 1e-6 / V_p1
 
-            #Shunt values go down the diagonal in wire order.
-            capacitance_matrix[index][index] = y_ag
+        #Shunt values go down the diagonal in wire order.
+        capacitance_matrix[index][index] = y_ag
     
     #Shunt capacitance is applied on either side of the line.
     for i in range(len(capacitance_matrix)):
