@@ -1,3 +1,6 @@
+// $Id: IEEE13-Feb27.glm
+//	Copyright (C) 2011 Battelle Memorial Institute
+
 #set iteration_limit=100000;
 
 clock {
@@ -101,19 +104,6 @@ object node { //632 {
      voltage_B -1200.8886-2080.000j;
      voltage_C -1200.8886+2080.000j;
      nominal_voltage 2401.7771;
-	//  object complex_assert {
-	// 	target voltage_A;
-	// 	value 2452.21-2.49d;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_B;
-	// 	value 2502.56-121.72d;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_C;
-	// 	value 2443.56+117.83d;
-	// 	within 5;
-	//  };
 }
 
 
@@ -150,19 +140,6 @@ object node { //650 {
       voltage_B -1200.8886-2080.000j;
       voltage_C -1200.8886+2080.000j;
       nominal_voltage 2401.7771;
-	//  object complex_assert {
-	// 	target voltage_A;
-	// 	value 2401.7771;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_B;
-	// 	value 2401.7771-120.0d;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_C;
-	// 	value 2401.7771+120.0d;
-	// 	within 5;
-	//  };
 } 
  
 object load { //671 {

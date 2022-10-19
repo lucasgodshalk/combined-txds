@@ -274,19 +274,6 @@ object node { //633 {
      voltage_B -1200.8886-2080.000j;
      voltage_C -1200.8886+2080.000j;
      nominal_voltage 2401.7771;
-	//  object complex_assert {
-	// 	target voltage_A;
-	// 	value 2445.01-2.56d;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_B;
-	// 	value 2498.09-121.77d;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_C;
-	// 	value 2437.32+117.82d;
-	// 	within 5;
-	//  };
 }
 
 object node { //630 {
@@ -305,19 +292,6 @@ object node { //632 {
      voltage_B -1200.8886-2080.000j;
      voltage_C -1200.8886+2080.000j;
      nominal_voltage 2401.7771;
-	//  object complex_assert {
-	// 	target voltage_A;
-	// 	value 2452.21-2.49d;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_B;
-	// 	value 2502.56-121.72d;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_C;
-	// 	value 2443.56+117.83d;
-	// 	within 5;
-	//  };
 }
 
 object node { //650 {
@@ -328,19 +302,6 @@ object node { //650 {
       voltage_B -1200.8886-2080.000j;
       voltage_C -1200.8886+2080.000j;
       nominal_voltage 2401.7771;
-	//  object complex_assert {
-	// 	target voltage_A;
-	// 	value 2401.7771;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_B;
-	// 	value 2401.7771-120.0d;
-	// 	within 5;
-	//  };	 object complex_assert {
-	// 	target voltage_C;
-	// 	value 2401.7771+120.0d;
-	// 	within 5;
-	//  };
 } 
  
 object node { //680 {
@@ -350,21 +311,6 @@ object node { //680 {
        voltage_B -1200.8886-2080.000j;
        voltage_C -1200.8886+2080.000j;
        nominal_voltage 2401.7771;
-		// object complex_assert {
-		// 	target voltage_A;
-		// 	value 2377.75-5.3d;
-		// 	within 5;
-		// };	 
-		// object complex_assert {
-		// 	target voltage_B;
-		// 	value 2528.82-122.34dd;
-		// 	within 5;
-		// };	
-		// object complex_assert {
-		// 	target voltage_C;
-		// 	value 2348.46+116.02d;
-		// 	within 10;  //@note: V_C not exactly matching with IEEE 13-node test feeder
-		// };
 }
  
  
@@ -375,19 +321,7 @@ object node { //684 {
       voltage_B -1200.8886-2080.000j;
       voltage_C -1200.8886+2080.000j;
       nominal_voltage 2401.7771;
-	// object complex_assert {
-	// 	target voltage_A;
-	// 	value 2373.65-5.32d;
-	// 	within 5;
-	// };	 
-	// object complex_assert {
-	// 	target voltage_C; 
-	// 	value 2343.65+115.78d;
-	// 	within 5;  
-	// };
 } 
- 
- 
  
 // Create load objects 
 
@@ -401,21 +335,6 @@ object load { //634 {
      constant_power_B 120000+90000j;
      constant_power_C 120000+90000j;
      nominal_voltage 480.000;
-	// object complex_assert {
-	// 	target voltage_A;
-	// 	within 5;
-	// 	value 275-3.23d;
-	// };
-	// object complex_assert {
-	// 	target voltage_B;
-	// 	within 5;
-	// 	value 283.16-122.22d;
-	// };
-	// object complex_assert {
-	// 	target voltage_C;
-	// 	within 5;
-	// 	value 276.02+117.34d;
-	// };
 }
  
 object load { //645 {
@@ -426,16 +345,6 @@ object load { //645 {
      voltage_C -1200.8886+2080.000j;
      constant_power_B 170000+125000j;
      nominal_voltage 2401.7771;
-	// object complex_assert {
-	// 	target voltage_B;
-	// 	within 5;
-	// 	value 2480.798-121.90d;
-	// };
-	// object complex_assert {
-	// 	target voltage_C;
-	// 	within 5;
-	// 	value 2439.00+117.86d;
-	// };
 }
  
 object load { //646 {
@@ -445,18 +354,7 @@ object load { //646 {
      voltage_C -1200.8886+2080.000j;
      constant_impedance_B 56.5993+32.4831j;
      nominal_voltage 2401.7771;
-    // 	object complex_assert {
-    // 		target voltage_B;
-    // 		within 5;
-    // 		value 2476.47-121.98d;
-    // 	};
-    // 	object complex_assert {
-    // 		target voltage_C;
-    // 		within 5;
-    // 		value 2433.96+117.90d;
-	// };
 }
- 
  
 object load { //652 {
      name l652;
@@ -466,11 +364,6 @@ object load { //652 {
      voltage_C -1200.8886+2080.000j;
      constant_impedance_A 31.0501+20.8618j;
      nominal_voltage 2401.7771;
-    	// object complex_assert {
-    	// 	target voltage_A;
-    	// 	within 5;
-    	// 	value 2359.74-5.25d;
-    	// };
 }
  
 object load { //671 {
@@ -513,21 +406,6 @@ object load { //675 {
      constant_impedance_B 0.00-28.8427j;
      constant_impedance_C 0.00-28.8427j;
      nominal_voltage 2401.7771;
-    // 	object complex_assert {
-    // 		target voltage_A;
-    // 		within 5;
-    // 		value 2362.15-5.56d;
-    // 	};
-    // 	object complex_assert {
-    // 		target voltage_B;
-    // 		within 5;
-    // 		value 2534.59-122.52d;
-    // 	};
-    // 	object complex_assert {
-    // 		target voltage_C;
-    // 		within 8;
-    // 		value 2343.65+116.03d;
-	// };
 }
  
 object load { //692 {
@@ -540,21 +418,6 @@ object load { //692 {
      constant_current_B 0+0j;
      constant_current_C -17.2414+51.8677j;
      nominal_voltage 2401.7771;
-	// object complex_assert {
-	// 	target voltage_A;
-	// 	within 5;
-	// 	value 2377.76-5.31d;
-	// };
-	// object complex_assert {
-	// 	target voltage_B;
-	// 	within 5;
-	// 	value 2526.67-122.34d;
-	// };
-	// object complex_assert {
-	// 	target voltage_C;
-	// 	within 8;
-	// 	value 2348.22+116.02d;
-	// };
 }
  
 object load { //611 {
@@ -566,11 +429,6 @@ object load { //611 {
      constant_current_C -6.5443+77.9524j;
      constant_impedance_C 0.00-57.6854j;
      nominal_voltage 2401.7771;
-	// object complex_assert {
-	// 	target voltage_C;
-	// 	within 8;
-	// 	value 2338.85+115.78d;
-	// };
 }
  
 // distributed load between node 632 and 671
@@ -599,8 +457,6 @@ object load { //6321 {
      constant_power_C 78000+45333.3333j;
      nominal_voltage 2401.7771;
 }
- 
-
  
 // Switch
 object switch {
