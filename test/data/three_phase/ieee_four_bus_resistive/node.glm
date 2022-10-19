@@ -132,9 +132,9 @@ object overhead_line:34 {
 object load {
     name load4;
     phases "ABCN";
-    constant_impedance_A +750+0j;
-    constant_impedance_B +750+0j;
-    constant_impedance_C +750+0j;
+    constant_impedance_A +750+100j;
+    constant_impedance_B +750+100j;
+    constant_impedance_C +750+100j;
     nominal_voltage 2400;
     // object recorder {
     //     file load4_voltages.csv;
