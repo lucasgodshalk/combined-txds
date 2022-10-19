@@ -1,29 +1,46 @@
 
+import itertools
 import math
+import os
 import numpy as np
 from logic.powerflow import PowerFlow
 from logic.networkloader import NetworkLoader
 from logic.powerflowsettings import PowerFlowSettings
-from test_threephase_basic import get_glm_case_file
+from test_threephase_basic import get_glm_case_file, DATA_DIR
 import cmath
 from ditto.readers.gridlabd.read import compute_triplex_impedance, compute_underground_capacitance
+import xml.etree.ElementTree as ET
 
-def test_ieee_four_bus_overhead_4_wire():
+def test_ieee_four_bus_impedances():
     glmpath = get_glm_case_file("ieee_four_bus")
     settings = PowerFlowSettings()
     network = NetworkLoader(settings).from_file(glmpath)
     powerflow = PowerFlow(network, settings)
 
-    branch = powerflow.network.lines[0]
+    lines = parse_gridlabd_impedance_xml("ieee_four_bus")
 
-    Z_expected = np.array([
-        [0.4576+1.0780j, 0.1559+0.5017j, 0.1535+0.3849j],
-        [0.1559+0.5017j, 0.4666+1.0482j, 0.1580+0.4236j],
-        [0.1535+0.3849j, 0.1580+0.4236j, 0.4615+1.0651j]
-    ])
+    compare_line_impedances(powerflow.network.lines, lines)
 
-    #need to convert impedances to ohm/mile
-    assert np.allclose(np.abs(branch.impedances / .3787879), np.abs(Z_expected), atol=1e-3)
+def test_ieee_thirteen_bus_overhead_impedances():
+    glmpath = get_glm_case_file("ieee_13_node_overhead_nr")
+    settings = PowerFlowSettings()
+    network = NetworkLoader(settings).from_file(glmpath)
+    powerflow = PowerFlow(network, settings)
+
+    lines = parse_gridlabd_impedance_xml("ieee_13_node_overhead_nr")
+
+    compare_line_impedances(powerflow.network.lines, lines)
+
+def test_gc_12_47_1_impedances():
+    glmpath = get_glm_case_file("gc_12_47_1")
+    settings = PowerFlowSettings()
+    network = NetworkLoader(settings).from_file(glmpath)
+    powerflow = PowerFlow(network, settings)
+
+    lines = parse_gridlabd_impedance_xml("gc_12_47_1")
+
+    compare_line_impedances(powerflow.network.lines, lines)
+
 
 def test_ieee_four_bus_overhead_3_wire():
     glmpath = get_glm_case_file("ieee_four_bus_delta_delta_transformer")
@@ -102,3 +119,48 @@ def test_computer_underground_capacitance():
     compare = [[9.2980664e-5j, 0j, 0j], [0j, 9.2980664e-5j, 0j], [0j, 0j, 9.2980664e-5j]]
 
     assert np.allclose(capacitance, compare, atol=1e-4)
+
+def parse_gridlabd_impedance_xml(casename):
+    impedance_xml = get_gridlabd_impedance_file(casename)
+    tree = ET.parse(impedance_xml)
+    root = tree.getroot()
+
+    lines = []
+
+    for overhead_line in itertools.chain(root.iter('overhead_line'), root.iter('underground_line')):
+        id = overhead_line.find("id").text
+        from_node = overhead_line.find("from_node").text.split(":")[1]
+        to_node = overhead_line.find("to_node").text.split(":")[1]
+        phases = overhead_line.find("phases").text
+        length = overhead_line.find("length").text
+
+        b_matrix_xml = overhead_line.find("b_matrix")
+
+        b_matrix = np.zeros((3, 3)).astype(complex)
+
+        for entry in b_matrix_xml:
+            tag = entry.tag
+            row = int(tag[1])
+            col = int(tag[2])
+            val_str = entry.text
+            val = complex(val_str)
+
+            b_matrix[row - 1, col - 1] = val
+        
+        b_matrix = b_matrix[~np.all(b_matrix == 0, axis=1), :]
+        b_matrix = b_matrix[:, ~np.all(b_matrix == 0, axis=0)]
+
+        lines.append((id, phases, length, from_node, to_node, b_matrix))
+    
+    return lines
+
+def get_gridlabd_impedance_file(casename, impedance_file_name = "impedance.xml"):
+    return os.path.join(DATA_DIR, casename, impedance_file_name)
+
+def compare_line_impedances(powerflow_lines, gridlabd_lines):
+    for gridlab_line in gridlabd_lines:
+        for line in powerflow_lines:
+            if gridlab_line[3] == line.from_element and gridlab_line[4] == line.to_element:
+                comparison = gridlab_line[5]
+                assert np.allclose(np.abs(line.impedances), np.abs(comparison), atol=1e-3)
+                break

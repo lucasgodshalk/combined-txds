@@ -49,7 +49,8 @@ skipped_objects = [
     "metrics",
     "eventgen",
     "fault_check",
-    "power_metrics"
+    "power_metrics",
+    "impedance_dump"
 ]
 
 #These objects are any shared configuration objects that are only consumed by others.

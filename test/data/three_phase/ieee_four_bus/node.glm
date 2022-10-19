@@ -150,3 +150,7 @@ object voltdump {
      filename result.csv;
      mode RECT;
 }
+
+object impedance_dump {
+	filename "impedance.xml";
+}

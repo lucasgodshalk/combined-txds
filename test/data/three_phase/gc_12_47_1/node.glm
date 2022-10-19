@@ -742,7 +742,9 @@ object underground_line_conductor:4 {
 // Recorders
 
  
-
+object impedance_dump {
+	filename "impedance.xml";
+}
  
 
 
