@@ -1,6 +1,8 @@
 # Positive Sequence Transmisison or Three-Phase Distribution Power Flow Analysis
 Perform steady state power flow analysis of electrical transmission & distribution systems.
 
+Project documentation can be found [here](https://github.com/lucasgodshalk/combined-txds/wiki).
+
 ## Get Started
 
 Assuming you are on the command line in the root of the repository, first install all of the python modules as listed in `requirements.txt`:
