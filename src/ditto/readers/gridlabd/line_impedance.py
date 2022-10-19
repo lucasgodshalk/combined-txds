@@ -591,7 +591,7 @@ def compute_underground_capacitance(wire_list):
 
     return capacitance_matrix
 
-def compute_overhead_impedance(wire_list, distances, freq=60, resistivity=100, kron_reduce=True):
+def compute_overhead_impedance(wire_list, distances, phases, has_neutral, freq=60, resistivity=100, kron_reduce=True):
     matrix = np.zeros((4,4)).astype(complex)
 
     for i in range(len(wire_list)):
@@ -619,25 +619,24 @@ def compute_overhead_impedance(wire_list, distances, freq=60, resistivity=100, k
                     
                 index_j = rev_lookup[wire_list[j].phase]
                 matrix[index_i, index_j] = z
-        
-    if set([wire.phase for wire in wire_list]) == set(["A", "B", "C"]):
-        return matrix[:3, :3]
 
-    z_ij = matrix[:3, :3]
-    z_in = matrix[:3, 3:]
-    z_nj = matrix[3:, :3]
-    z_nn = matrix[3:, 3:]
+    #We uses the phases list from the line itself, rather than the line configuration. 
+    if has_neutral:
+        z_ij = matrix[:3, :3]
+        z_in = matrix[:3, 3:]
+        z_nj = matrix[3:, :3]
+        z_nn = matrix[3:, 3:]
+        reduced_matrix = kron_reduction(z_ij, z_in, z_nj, z_nn)
+    else:
+        reduced_matrix = matrix[:3, :3]
 
-    kron_matrix = kron_reduction(z_ij, z_in, z_nj, z_nn)
-
-    wire_phases = [wire.phase for wire in wire_list]
     phase_list = [('C', 2), ('B', 1), ('A', 0)]
     for phase,ind in phase_list:
-        if phase not in wire_phases:
-            kron_matrix = np.delete(kron_matrix, ind, 0)
-            kron_matrix = np.delete(kron_matrix, ind, 1)
+        if phase not in phases:
+            reduced_matrix = np.delete(reduced_matrix, ind, 0)
+            reduced_matrix = np.delete(reduced_matrix, ind, 1)
 
-    return kron_matrix
+    return reduced_matrix
 
 def compute_underground_impedance(wire_list, distances, freq=60, resistivity=100):
     conductor_own_neutral_distances = []

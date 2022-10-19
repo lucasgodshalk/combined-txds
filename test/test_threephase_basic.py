@@ -39,8 +39,9 @@ def load_gridlabd_csv(casename):
         
         return lookup
 
-atol=1e-2
-rtol=1e-3
+#We have a fixed expectation that the voltage angle should always been at most 0.1 degrees away from expected.
+angle_atol=1e-1
+mag_rtol=1e-3
 
 def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
     variances = []
@@ -73,8 +74,8 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
         if diff_ang > 180:
             diff_ang = abs(diff_ang - 360)
 
-        tol_mag = atol + rtol * np.abs(expected_mag)
-        tol_ang = atol + rtol * np.abs(expected_ang)
+        tol_mag = mag_rtol * np.abs(expected_mag)
+        tol_ang = angle_atol
 
         variance_mag = diff_mag - tol_mag
         variance_ang = diff_ang - tol_ang
@@ -94,7 +95,7 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
     largest = sorted_variances[0]
 
     if largest[0] > 0:
-        assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" is at {largest[0] + 100}% of tolerance. (magnitude: {largest[2]:.5g}, {largest[3]:.5g}) (degrees: {largest[4]:.5g}, {largest[5]:.5g})"
+        assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" is at {largest[0] + 100}% of tolerance. magnitude: {largest[2]:.5g}[actual], {largest[3]:.5g}[expected], degrees: {largest[4]:.5g}[actual], {largest[5]:.5g}[expected]"
 
 def assert_glm_case_gridlabd_results(casename, settings = PowerFlowSettings()):
     filepath = get_glm_case_file(casename)
@@ -304,8 +305,11 @@ def test_ieee_thirteen_bus_overhead():
     assert_glm_case_gridlabd_results("ieee_13_node_overhead_nr")
 
 # Requires resistive loads, current loads, and IP loads
-def test_ieee_thirteen_bus():
+def test_ieee_thirteen_bus_node_nr():
     assert_glm_case_gridlabd_results("ieee_13_node_nr")
+
+def test_ieee_thirteen_bus():
+    assert_glm_case_gridlabd_results("ieee_13")
 
 def test_kersting_example_11_1():
     assert_glm_case_gridlabd_results("kersting_example_11_1")

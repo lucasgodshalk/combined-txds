@@ -244,7 +244,7 @@ class Reader(AbstractReader):
                 # Actually a triplex load. Change obj_type and skip "triplex_node" code, to pick up at "triplex_load" code
                 obj_type = "triplex_load"
 
-            phases, is_delta, is_triplex = parse_phases(obj["phases"], name)
+            phases, is_delta, is_triplex, has_neutral = parse_phases(obj["phases"], name)
 
             if obj_type == "node" or obj_type == "meter":
                 # Using "easier to ask for forgiveness than permission" (EAFP) rather than "look before you leap" (LBYL) which would use if has_attr(obj,'_name').
@@ -933,7 +933,7 @@ class Reader(AbstractReader):
 
                 if impedance_matrix == None:
                     striped_distances = distances[:,~np.all(distances, axis=0, where=[-1])][~np.all(distances, axis=1, where=[-1]),:]
-                    impedance_matrix = compute_overhead_impedance(wire_list, striped_distances)
+                    impedance_matrix = compute_overhead_impedance(wire_list, striped_distances, phases, has_neutral)
 
                 api_line.impedance_matrix = convert_Z_matrix_per_mile_to_per_meter(impedance_matrix)
 
@@ -1226,7 +1226,7 @@ class Reader(AbstractReader):
                 api_capacitor.name = name
 
                 try:
-                    connected_phases, is_delta, _ = parse_phases(str(obj["phases_connected"]), name)
+                    connected_phases, is_delta, _, _ = parse_phases(str(obj["phases_connected"]), name)
                 except AttributeError:
                     connected_phases = phases         
 

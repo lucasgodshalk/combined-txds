@@ -128,7 +128,7 @@ def parse_gridlabd_impedance_xml(casename):
     lines = []
 
     for overhead_line in itertools.chain(root.iter('overhead_line'), root.iter('underground_line')):
-        id = overhead_line.find("id").text
+        id = overhead_line.find("name").text
         from_node = overhead_line.find("from_node").text.split(":")[1]
         to_node = overhead_line.find("to_node").text.split(":")[1]
         phases = overhead_line.find("phases").text
@@ -158,9 +158,8 @@ def get_gridlabd_impedance_file(casename, impedance_file_name = "impedance.xml")
     return os.path.join(DATA_DIR, casename, impedance_file_name)
 
 def compare_line_impedances(powerflow_lines, gridlabd_lines):
-    for gridlab_line in gridlabd_lines:
+    for name, phases, length, from_node, to_node, b_matrix in gridlabd_lines:
         for line in powerflow_lines:
-            if gridlab_line[3] == line.from_element and gridlab_line[4] == line.to_element:
-                comparison = gridlab_line[5]
-                assert np.allclose(np.abs(line.impedances), np.abs(comparison), atol=1e-3)
+            if from_node == line.from_element and to_node == line.to_element:
+                assert np.allclose(np.abs(line.impedances), np.abs(b_matrix), atol=1e-3), f"Line impedance mismatch at {name} ({from_node}:{to_node})"
                 break

@@ -8,7 +8,7 @@ def parse_phases(phase_str: str, obj_name: str) -> Tuple[List[str], bool, bool]:
 
     #Lines are assumed delta by default,
     #see phases property docs: http://gridlab-d.shoutwiki.com/wiki/Power_Flow_User_Guide
-    is_neutral = False
+    has_neutral = False
     is_triplex = False
     #is_neutral and is_delta cannot both be true, but we explicitly handle both as an error check.
     is_delta = False
@@ -16,7 +16,7 @@ def parse_phases(phase_str: str, obj_name: str) -> Tuple[List[str], bool, bool]:
     for phase_char in phase_str.strip('"').strip('|'):
         # We strip out the non-phase characters and mark them separately.
         if phase_char == "N":
-            is_neutral = True
+            has_neutral = True
         elif phase_char == "S":
             is_triplex = True
         elif phase_char == "D":
@@ -28,7 +28,7 @@ def parse_phases(phase_str: str, obj_name: str) -> Tuple[List[str], bool, bool]:
         else:
             phases.append(phase_char)
     
-    if not is_neutral and not is_triplex:
+    if not has_neutral and not is_triplex:
         is_delta = True
 
     if len(phases) == 0:
@@ -36,4 +36,4 @@ def parse_phases(phase_str: str, obj_name: str) -> Tuple[List[str], bool, bool]:
     elif is_triplex and (len(phases) > 1 or is_delta):
         raise Exception(f"Invalid phase information (triplex info invalid) (obj: {obj_name}")
 
-    return (phases, is_delta, is_triplex)
+    return (phases, is_delta, is_triplex, has_neutral)
