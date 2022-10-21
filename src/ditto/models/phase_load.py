@@ -34,6 +34,10 @@ class PhaseLoad(DiTToHasTraits):
         help="""The fixed impedence of the load.""",
         default_value=None,
     )
+    i_const = Complex(
+        help="""The constant current of the load which is fixed. Positive values represent flow out of the node.""",
+        default_value=complex(0, 0),
+    )
 
     # Modification: Nicolas (August 2017)
     # OpenDSS has 8 different load models. Without this field there is no way to capture

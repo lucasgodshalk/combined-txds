@@ -148,12 +148,10 @@ class ThreePhaseParser:
             else:
                 to_bus = self.get_load_connection(model, simulation_state, phase_load.phase[1])
 
-            if phase_load.model == 1 and phase_load.p == 0 and phase_load.q == 0:
-                continue
-            elif phase_load.model == 2 and phase_load.z == 0:
-                continue
+            ip = phase_load.i_const.real
+            iq = phase_load.i_const.imag
 
-            pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, 0, 0, load_num, phase_load.phase, triplex_phase)
+            pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, ip, iq, load_num, phase_load.phase, triplex_phase)
             simulation_state.loads.append(pq_load)
 
     def get_load_connection(self, model, simulation_state, phase):

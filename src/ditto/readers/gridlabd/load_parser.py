@@ -96,7 +96,7 @@ class LoadParser:
             complex_power = complex(obj[f"power_{phase}"])
             p = complex_power.real
             q = complex_power.imag
-            if p != 0:
+            if p != 0 or q != 0:
                 phaseload.p = p
                 phaseload.q = q
                 phaseload.model = 1 # The opendss model number (specifying constant power)
@@ -109,7 +109,7 @@ class LoadParser:
             complex_power = complex(obj[f"constant_power_{phase}"])
             p = complex_power.real
             q = complex_power.imag
-            if p != 0:
+            if p != 0 or q != 0:
                 phaseload.p = p
                 phaseload.q = q
                 phaseload.model = 1 # The opendss model number (specifying constant power)
@@ -120,30 +120,28 @@ class LoadParser:
         try:
             phaseload = self.__create_phaseload(model, phase, is_delta)
             complex_impedance = complex(obj[f"impedance_{phase}"])
-            phaseload.z = complex_impedance
-            phaseload.model = 2  # The opendss model number (specifying constant impedance)
-            yield phaseload
+            if abs(complex_impedance) != 0:
+                phaseload.z = complex_impedance
+                phaseload.model = 2  # The opendss model number (specifying constant impedance)
+                yield phaseload
         except AttributeError:
             pass
 
         try:
             phaseload = self.__create_phaseload(model, phase, is_delta)
             complex_impedance = complex(obj[f"constant_impedance_{phase}"])
-            phaseload.z = complex_impedance
-            phaseload.model = 2  # The opendss model number (specifying constant impedance)
-            yield phaseload
+            if abs(complex_impedance) != 0:
+                phaseload.z = complex_impedance
+                phaseload.model = 2  # The opendss model number (specifying constant impedance)
+                yield phaseload
         except AttributeError:
             pass
 
         try:
             phaseload = self.__create_phaseload(model, phase, is_delta)
             complex_current = complex(obj[f"constant_current_{phase}"])
-            complex_voltage = complex(obj[f"voltage_{phase}"])  # Needed to compute the power
-            p = (complex_voltage * complex_current.conjugate()).real
-            q = (complex_voltage * complex_current.conjugate()).imag
-            if complex_current.real != 0:  
-                phaseload.p = p
-                phaseload.q = q
+            if abs(complex_current) != 0:  
+                phaseload.i_const = complex_current
                 phaseload.model = 5  # The opendss model number (specifying constant current)
                 yield phaseload
         except AttributeError:

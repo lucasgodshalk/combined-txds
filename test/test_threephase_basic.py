@@ -136,6 +136,9 @@ def test_swing_2lines_load():
 
 def test_ieee_four_bus_resistive():
     assert_glm_case_gridlabd_results("ieee_four_bus_resistive")
+
+def test_ieee_four_bus_constant_current():
+    assert_glm_case_gridlabd_results("ieee_four_bus_constant_current")
     
 def test_balanced_stepdown_grY_grY():
     assert_glm_case_gridlabd_results("balanced_stepdown_grY_grY")

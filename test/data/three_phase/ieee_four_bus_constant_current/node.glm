@@ -1,0 +1,135 @@
+// $id$
+//  Copyright (C) 2008 Battelle Memorial Institute
+
+// 4 Node Feeder: Balanced step-down grY-grY
+
+/////////////////////////////////////////////
+// BEGIN
+/////////////////////////////////////////////
+
+
+
+clock {
+	timezone EST+8EDT;
+	timestamp '2000-01-01 0:00:00';
+	stoptime '2000-01-01 0:00:01';
+}
+
+module powerflow {
+    solver_method NR;
+    NR_matrix_file "y_matrix_printout.txt";
+    NR_matrix_output_interval PER_CALL;
+    NR_matrix_output_references true;
+};
+
+object overhead_line_conductor:100 {
+    geometric_mean_radius 0.0244;
+    resistance 0.306;
+    // diameter 0.721;
+}
+
+object overhead_line_conductor:101 {
+    geometric_mean_radius 0.00814;
+    resistance 0.592;
+    // diameter 0.563;
+}
+
+object line_spacing:200 {
+    distance_AB 2.5;
+    distance_BC 4.5;
+    distance_AC 7.0;
+    distance_AN 5.656854;
+    distance_BN 4.272002;
+    distance_CN 5.0;
+}
+
+object line_configuration:300 {
+    conductor_A overhead_line_conductor:100;
+    conductor_B overhead_line_conductor:100;
+    conductor_C overhead_line_conductor:100;
+    conductor_N overhead_line_conductor:101;
+    spacing line_spacing:200;
+}
+
+object transformer_configuration:400 {
+    connect_type 1;
+    power_rating 6000;
+    powerA_rating 2000;
+    powerB_rating 2000;
+    powerC_rating 2000;
+    primary_voltage 12470;
+    secondary_voltage 4160;
+    resistance 0.01;
+    reactance 0.06;
+}
+
+object node {
+    name node1;
+    phases "ABCN";
+    voltage_A +7199.558+0.000j;
+    voltage_B -3599.779-6235.000j;
+    voltage_C -3599.779+6235.000j;
+    nominal_voltage 7200;
+    bustype SWING;
+}
+
+object overhead_line:12 {
+    phases "ABCN";
+    from node1;
+    to node2;
+    length 2000;
+    configuration line_configuration:300;
+}
+
+object node {
+    name node2;
+    phases "ABCN";
+    voltage_A +7199.558+0.000j;
+    voltage_B -3599.779-6235.000j;
+    voltage_C -3599.779+6235.000j;
+    nominal_voltage 7200;
+}
+
+object transformer:23 {
+    phases "ABCN";
+    from node2;
+    to node3;
+    configuration transformer_configuration:400;
+}
+
+object node {
+    name node3;
+    phases "ABCN";
+    voltage_A +2401.777+0.000j;
+    voltage_B -1200.889-2080.000j;
+    voltage_C -1200.889+2080.000j;
+    nominal_voltage 2400;
+}
+
+object overhead_line:34 {
+    phases "ABCN";
+    from node3;
+    to load4;
+    length 2500;
+    configuration line_configuration:300;
+}
+
+object load {
+    name load4;
+    phases "ABCN";
+     constant_current_A -17.2414+51.8677j;
+     constant_current_B -20.2414+50.8677j;
+     constant_current_C -24.2414+48.8677j;
+    nominal_voltage 2400;
+}
+
+
+///////////////////////////////
+// END
+///////////////////////////////
+
+
+object voltdump {
+     filename result.csv;
+     mode RECT;
+}

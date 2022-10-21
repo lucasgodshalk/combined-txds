@@ -39,7 +39,7 @@ lh_pq = LagrangeSegment(lagrange_pq, constants, primals, duals)
 #Constant current loads
 #Eqn 31 & 32, pg 47
 
-constants = Ic_mag, cos_Ipf, sin_Ipf = symbols('I_mag, cos_Ipf, sin_Ipf')
+constants = Ic_mag, cos_Ipf, sin_Ipf = symbols('Ic_mag, cos_Ipf, sin_Ipf')
 
 V_ratio = Vi/Vr
 cos_arctan_V = 1 / (V_ratio**2 + 1)**0.5
@@ -55,9 +55,9 @@ eqns = [
     -Fir_Ii
 ]
 
-lagrange_zip = np.dot(duals, eqns)
+lagrange_i = np.dot(duals, eqns)
 
-lh_zip = LagrangeSegment(lagrange_zip, constants, primals, duals)
+lh_i = LagrangeSegment(lagrange_i, constants, primals, duals)
 
 #Represents a two-terminal load. Can be used for positive sequence or three phase.
 class Load:
@@ -131,14 +131,14 @@ class Load:
             self.stamper_pq = LagrangeStamper(lh_pq, index_map, optimization_enabled)
 
         if self.Ic_mag == 0:
-            self.stamper_zip = None
+            self.stamper_i = None
         else:
-            self.stamper_zip = LagrangeStamper(lh_zip, index_map, optimization_enabled)
+            self.stamper_i = LagrangeStamper(lh_i, index_map, optimization_enabled)
 
         if self.Z == 0:
-            self.resistive_stamper = None
+            self.stamper_z = None
         else:
-            self.resistive_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
+            self.stamper_z = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
@@ -147,21 +147,21 @@ class Load:
         if self.stamper_pq != None:
             self.stamper_pq.stamp_primal(Y, J, [self.P, self.Q], v_previous)
 
-        if self.stamper_zip != None:
-            self.stamper_zip.stamp_primal(Y, J, [self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v_previous)
+        if self.stamper_i != None:
+            self.stamper_i.stamp_primal(Y, J, [self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v_previous)
 
-        if self.resistive_stamper != None:
-            self.resistive_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
+        if self.stamper_z != None:
+            self.stamper_z.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if self.stamper_pq != None:
             self.stamper_pq.stamp_dual(Y, J, [self.P, self.Q], v_previous)
 
-        if self.stamper_zip != None:
-            self.stamper_zip.stamp_dual(Y, J, [self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v_previous)
+        if self.stamper_i != None:
+            self.stamper_i.stamp_dual(Y, J, [self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v_previous)
 
-        if self.resistive_stamper != None:
-            self.resistive_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
+        if self.stamper_z != None:
+            self.stamper_z.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
 
     def calculate_residuals(self, network, v):
         if self.stamper_pq == None:
@@ -169,14 +169,14 @@ class Load:
         else:
             pq_residuals = self.stamper_pq.calc_residuals([self.P, self.Q], v)
 
-        if self.stamper_zip == None:
+        if self.stamper_i == None:
             zip_residuals = {}
         else:
-            zip_residuals = self.stamper_zip.calc_residuals([self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v)
+            zip_residuals = self.stamper_i.calc_residuals([self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v)
 
-        if self.resistive_stamper == None:
+        if self.stamper_z == None:
             resistive_residuals = {}
         else:
-            resistive_residuals = self.resistive_stamper.calc_residuals([self.G, self.B, 0], v)
+            resistive_residuals = self.stamper_z.calc_residuals([self.G, self.B, 0], v)
 
         return merge_residuals({}, pq_residuals, zip_residuals, resistive_residuals)
