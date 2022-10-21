@@ -95,10 +95,6 @@ class NetworkModel():
             self.matrix_map[switch.vs.Ir_index] = f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ir"
             self.matrix_map[switch.vs.Ii_index] = f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ii"
 
-        for load in self.loads:
-            self.matrix_map[load.node_Ir] = f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ir"
-            self.matrix_map[load.node_Ii] = f"load:{load.from_bus.NodeName}:{load.from_bus.NodePhase}:Ii"
-
         self.matrix_version += 1
 
 

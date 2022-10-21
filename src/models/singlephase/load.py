@@ -9,28 +9,55 @@ from models.helpers import merge_residuals
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus
 
-constants = P, Q = symbols('P Q')
-primals = Vr_from, Vi_from, Ir, Ii, Vr_to, Vi_to = symbols('Vr_from, Vi_from, Ir, Ii, Vr_to, Vi_to')
-duals = Lr_from, Li_from, Lir, Lii, Lr_to, Li_to = symbols('Lr_from, Li_from, Lir, Lii, Lr_to, Li_to')
+#Eqns reference:
+# Pandey, A. (2018). 
+# Robust Steady-State Analysis of Power Grid using Equivalent Circuit Formulation with Circuit Simulation Methods
+
+constants = P, Q = symbols('P, Q')
+primals = Vr_from, Vi_from, Vr_to, Vi_to = symbols('Vr_from, Vi_from, Vr_to, Vi_to')
+duals = Lr_from, Li_from, Lr_to, Li_to = symbols('Lr_from, Li_from, Lr_to, Li_to')
 
 Vr = Vr_from - Vr_to
 Vi = Vi_from - Vi_to
 
+#Constant real & reactive power loads
+#Eqn 25 & 26, pg 45
 Fir_pq = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
 Fii_pq = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
 
 eqns = [
-    Ir,
-    Ii,
-    Ir - Fir_pq,
-    Ii - Fii_pq,
-    -Ir,
-    -Ii
+    Fir_pq,
+    Fii_pq,
+    -Fir_pq,
+    -Fii_pq
 ]
 
-lagrange = np.dot(duals, eqns)
+lagrange_pq = np.dot(duals, eqns)
 
-lh = LagrangeSegment(lagrange, constants, primals, duals)
+lh_pq = LagrangeSegment(lagrange_pq, constants, primals, duals)
+
+#Constant current loads
+#Eqn 31 & 32, pg 47
+
+constants = Ic_mag, cos_Ipf, sin_Ipf = symbols('I_mag, cos_Ipf, sin_Ipf')
+
+V_ratio = Vi/Vr
+cos_arctan_V = 1 / (V_ratio**2 + 1)**0.5
+sin_arctan_V = V_ratio / (V_ratio**2 + 1)**0.5
+
+Fir_Ir = Ic_mag * (cos_arctan_V * cos_Ipf - sin_arctan_V * sin_Ipf)
+Fir_Ii = Ic_mag * (sin_arctan_V * cos_Ipf + cos_arctan_V * sin_Ipf)
+
+eqns = [
+    Fir_Ir,
+    Fir_Ii,
+    -Fir_Ir,
+    -Fir_Ii
+]
+
+lagrange_zip = np.dot(duals, eqns)
+
+lh_zip = LagrangeSegment(lagrange_zip, constants, primals, duals)
 
 #Represents a two-terminal load. Can be used for positive sequence or three phase.
 class Load:
@@ -44,8 +71,6 @@ class Load:
                  Z,
                  IP,
                  IQ,
-                 ZP,
-                 ZQ,
                  load_num=None,
                  phase=None,
                  triplex_phase=None
@@ -57,11 +82,10 @@ class Load:
             P (float): the active power of a constant power (PQ) load.
             Q (float): the reactive power of a constant power (PQ) load.
             Z (complex): the linear impedance of the load.
-            IP (float): the active power component of a constant current load. [Not implemented]
-            IQ (float): the reactive power component of a constant current load. [Not implemented]
-            ZP (float): the active power component of a constant admittance load. [Not implemented]
-            ZQ (float): the reactive power component of a constant admittance load. [Not implemented]
+            IP (float): the active power component of a constant current load.
+            IQ (float): the reactive power component of a constant current load.
         """
+
         self.id = Load._ids.__next__()
         self.load_num = load_num if load_num != None else str(self.id)
         self.phase = phase
@@ -73,6 +97,14 @@ class Load:
         self.Q = Q
         self.Z = Z
 
+        self.Ic_mag = np.sqrt(IP**2 + IQ**2)
+        if IP == 0:
+            self.cos_Ipf = 0
+            self.sin_Ipf = 1
+        else:
+            self.cos_Ipf = np.cos(np.arctan(IQ/IP))
+            self.sin_Ipf = np.sin(np.arctan(IQ/IP))
+
         if not self.Z == 0:
             r = np.real(self.Z)
             x = np.imag(self.Z)
@@ -83,9 +115,6 @@ class Load:
             self.B = 0
 
     def assign_nodes(self, node_index, optimization_enabled):
-        self.node_Ir = next(node_index)
-        self.node_Ii = next(node_index)
-
         index_map = {}
         index_map[Vr_from] = self.from_bus.node_Vr
         index_map[Vi_from] = self.from_bus.node_Vi
@@ -95,16 +124,16 @@ class Load:
         index_map[Vi_to] = self.to_bus.node_Vi
         index_map[Lr_to] = self.to_bus.node_lambda_Vr
         index_map[Li_to] = self.to_bus.node_lambda_Vi
-        index_map[Ir] = self.node_Ir
-        index_map[Ii] = self.node_Ii
-        if optimization_enabled:
-            index_map[Lir] = next(node_index)
-            index_map[Lii] = next(node_index)
-        else:
-            index_map[Lir] = SKIP
-            index_map[Lii] = SKIP
 
-        self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
+        if self.P == 0 and self.Q == 0:
+            self.stamper_pq = None
+        else:
+            self.stamper_pq = LagrangeStamper(lh_pq, index_map, optimization_enabled)
+
+        if self.Ic_mag == 0:
+            self.stamper_zip = None
+        else:
+            self.stamper_zip = LagrangeStamper(lh_zip, index_map, optimization_enabled)
 
         if self.Z == 0:
             self.resistive_stamper = None
@@ -115,23 +144,39 @@ class Load:
         return [(self.from_bus, self.to_bus)]
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_primal(Y, J, [self.P, self.Q], v_previous)
+        if self.stamper_pq != None:
+            self.stamper_pq.stamp_primal(Y, J, [self.P, self.Q], v_previous)
+
+        if self.stamper_zip != None:
+            self.stamper_zip.stamp_primal(Y, J, [self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v_previous)
 
         if self.resistive_stamper != None:
             self.resistive_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_dual(Y, J, [self.P, self.Q], v_previous)
+        if self.stamper_pq != None:
+            self.stamper_pq.stamp_dual(Y, J, [self.P, self.Q], v_previous)
+
+        if self.stamper_zip != None:
+            self.stamper_zip.stamp_dual(Y, J, [self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v_previous)
 
         if self.resistive_stamper != None:
             self.resistive_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
 
     def calculate_residuals(self, network, v):
-        pq_residuals = self.stamper.calc_residuals([self.P, self.Q], v)
+        if self.stamper_pq == None:
+            pq_residuals = {}
+        else:
+            pq_residuals = self.stamper_pq.calc_residuals([self.P, self.Q], v)
+
+        if self.stamper_zip == None:
+            zip_residuals = {}
+        else:
+            zip_residuals = self.stamper_zip.calc_residuals([self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v)
 
         if self.resistive_stamper == None:
             resistive_residuals = {}
         else:
             resistive_residuals = self.resistive_stamper.calc_residuals([self.G, self.B, 0], v)
 
-        return merge_residuals({}, pq_residuals, resistive_residuals)
+        return merge_residuals({}, pq_residuals, zip_residuals, resistive_residuals)

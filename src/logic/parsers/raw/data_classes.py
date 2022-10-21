@@ -91,7 +91,7 @@ class Load_data:
         self.scale = scale
 
     def integrate(self, all_bus_key: typing.Dict[int, Bus]):
-        new_load = Load(all_bus_key[self.i], GROUND, self.pl / 100, self.ql / 100, complex(0, 0), self.ip, self.iq, self.yp, self.yq)
+        new_load = Load(all_bus_key[self.i], GROUND, self.pl / 100, self.ql / 100, complex(0, 0), self.ip, self.iq)
         return (new_load)
 
 
@@ -228,7 +228,7 @@ class Generator_data:
         else:
             area = -1
             status = 1
-            new_obj = Load(all_bus_key[self.i], GROUND, -self.pg / 100, -self.qg / 100, complex(0, 0), 0.0, 0.0, 0.0, 0.0)
+            new_obj = Load(all_bus_key[self.i], GROUND, -self.pg / 100, -self.qg / 100, complex(0, 0), 0.0, 0.0)
 
         return new_obj
 

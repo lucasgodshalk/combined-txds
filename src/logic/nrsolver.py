@@ -27,10 +27,6 @@ class NRSolver:
            self.diff_mask[bus.node_Vr] = True
            self.diff_mask[bus.node_Vi] = True
 
-        for load in self.network.loads:
-            self.diff_mask[load.node_Ir] = True
-            self.diff_mask[load.node_Ii] = True
-        
         return self.diff_mask
 
     def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
