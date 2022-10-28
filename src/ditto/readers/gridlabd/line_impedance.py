@@ -54,6 +54,9 @@ def compute_overhead_spacing(spacing_config, conductors, default_height=30):
             try:
                 spacing_config[name] = remove_nonnum.sub('', spacing_config[name])
                 dist = float(spacing_config[name])
+                #If the distance is 0, we treat it as unspecified.
+                if dist == 0:
+                    continue
                 distances[i][j] = dist
                 distances[j][i] = dist
                 distances[i][i] = 0
