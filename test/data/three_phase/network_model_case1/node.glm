@@ -30370,4 +30370,6 @@ object voltdump {
      mode RECT;
 }
 
-
+object impedance_dump {
+	filename "impedance.xml";
+}

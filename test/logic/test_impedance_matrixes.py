@@ -41,6 +41,15 @@ def test_gc_12_47_1_impedances():
 
     compare_line_impedances(powerflow.network.lines, lines)
 
+def test_network_model_case1_impedances():
+    glmpath = get_glm_case_file("network_model_case1")
+    settings = PowerFlowSettings()
+    network = NetworkLoader(settings).from_file(glmpath)
+    powerflow = PowerFlow(network, settings)
+
+    lines = parse_gridlabd_impedance_xml("network_model_case1")
+
+    compare_line_impedances(powerflow.network.lines, lines)
 
 def test_ieee_four_bus_overhead_3_wire():
     glmpath = get_glm_case_file("ieee_four_bus_delta_delta_transformer")
