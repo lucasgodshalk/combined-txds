@@ -111,7 +111,8 @@ class TransformerParser:
 
         phase_shift = 0 if model.phase_shift is None else model.phase_shift # TODO is this in degrees or radians
         if hasattr(model, "shunt_impedance") and model.shunt_impedance != 0:
-            shunt_impedance = (model.shunt_impedance * (nominal_voltage_secondary ** 2))  / (secondary_coil.rated_power)
+            #Shunt impedance needs to be converted out of per-unit. Kersting Eqn 7.58
+            shunt_impedance = model.shunt_impedance * (secondary_coil.rated_power) / (nominal_voltage_primary ** 2)
             r_shunt, x_shunt = shunt_impedance.real, shunt_impedance.imag
             g_shunt = r_shunt / (r_shunt ** 2 + x_shunt ** 2)
             b_shunt = -x_shunt / (r_shunt ** 2 + x_shunt ** 2)
@@ -135,7 +136,7 @@ class TransformerParser:
             else:
                 to_bus_neg = secondary_coil.phase_connections[neg_phase_2]
 
-            # Values for the secondary coil stamps, converted out of per-unit
+            # Values for the secondary coil stamps, converted out of per-unit.  Kersting Eqn 7.50
             r = secondary_coil.resistance * nominal_voltage_secondary ** 2  / secondary_coil.rated_power
             x = secondary_coil.reactance * nominal_voltage_secondary ** 2  / secondary_coil.rated_power
 

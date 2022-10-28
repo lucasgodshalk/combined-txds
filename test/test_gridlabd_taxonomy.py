@@ -47,7 +47,7 @@ def test_r4_12_47_2():
     assert_glm_case_gridlabd_results("r4_12_47_2")
 
 def test_r4_25_00_1():
-    assert_glm_case_gridlabd_results("r4_25_00_1")
+    assert_glm_case_gridlabd_results("r4_25_00_1", settings=PowerFlowSettings(tolerance=1e-4))
 
 def test_r5_12_47_1():
     assert_glm_case_gridlabd_results("r5_12_47_1")

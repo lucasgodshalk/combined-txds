@@ -10,7 +10,7 @@ from logic.lagrangestamper import SKIP, LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 import math
 from models.singlephase.line import build_line_stamper
-from models.singlephase.bus import Bus
+from models.singlephase.bus import GROUND, Bus
 
 constants = tr, ang, tx_factor = symbols('tr ang tx_factor')
 primals = [Vr_pri_pos, Vi_pri_pos, Vr_pri_neg, Vi_pri_neg, Ir_prim, Ii_prim, Vr_sec_pos, Vi_sec_pos, Vr_sec_neg, Vi_sec_neg] = symbols('Vr_pri_pos Vi_pri_pos Vr_pri_neg Vi_pri_neg Ir_prim Ii_prim Vr_sec_pos Vi_sec_pos Vr_sec_neg Vi_sec_neg')
@@ -61,8 +61,8 @@ class Transformer:
                  status,
                  tr,
                  ang,
-                 Gsh_raw,
-                 Bsh_raw,
+                 G_shunt,
+                 B_shunt,
                  rating):
 
         self.id = self._ids.__next__()
@@ -71,10 +71,6 @@ class Transformer:
         self.from_bus_neg = from_bus_neg
         self.to_bus_pos = to_bus_pos
         self.to_bus_neg = to_bus_neg
-
-        self.Gsh_raw = Gsh_raw
-        self.Bsh_raw = Bsh_raw
-
         self.r = r
         self.x = x
 
@@ -83,6 +79,9 @@ class Transformer:
 
         self.G_loss = r / (r ** 2 + x ** 2)
         self.B_loss = -x / (r ** 2 + x ** 2)
+
+        self.G_shunt = G_shunt
+        self.B_shunt = B_shunt
 
         self.status = status
 
@@ -137,6 +136,18 @@ class Transformer:
             self.node_secondary_Lambda_Vi, 
             self.to_bus_pos.node_lambda_Vr, 
             self.to_bus_pos.node_lambda_Vi,
+            optimization_enabled
+            )
+        
+        self.shunt_stamper = build_line_stamper(
+            self.to_bus_pos.node_Vr, 
+            self.to_bus_pos.node_Vi,
+            GROUND, 
+            GROUND,
+            self.to_bus_pos.node_lambda_Vr, 
+            self.to_bus_pos.node_lambda_Vi,
+            GROUND, 
+            GROUND,
             optimization_enabled
             )
 

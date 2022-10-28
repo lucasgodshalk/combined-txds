@@ -61,7 +61,7 @@ def test_infeasibility_analysis_GS_4_prior_solution():
 def test_infeasibility_analysis_GS_4_stressed():
     results = execute_positiveseq_raw("GS-4_stressed", PowerFlowSettings(infeasibility_analysis=True, voltage_limiting=True))
     assert results.is_success
-    assert results.max_residual < 1e-8
+    assert results.max_residual < 1e-6
     P, Q = results.infeasibility_totals
     assert P > 0
     assert Q > 0

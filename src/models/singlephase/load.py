@@ -36,7 +36,21 @@ lagrange_pq = np.dot(duals, eqns)
 
 lh_pq = LagrangeSegment(lagrange_pq, constants, primals, duals)
 
-#Constant current loads
+#Constant Current loads
+constants = IP, IQ = symbols('IP, IQ')
+
+eqns = [
+    IP,
+    IQ,
+    -IP,
+    -IQ
+]
+
+lagrange_Ic = np.dot(duals, eqns)
+
+lh_Ic = LagrangeSegment(lagrange_Ic, constants, primals, duals)
+
+#Zip loads (partially implemented)
 #Eqn 31 & 32, pg 47
 
 constants = Ic_mag, cos_Ipf, sin_Ipf = symbols('Ic_mag, cos_Ipf, sin_Ipf')
@@ -45,19 +59,20 @@ V_ratio = Vi/Vr
 cos_arctan_V = 1 / (V_ratio**2 + 1)**0.5
 sin_arctan_V = V_ratio / (V_ratio**2 + 1)**0.5
 
-Fir_Ir = Ic_mag * (cos_arctan_V * cos_Ipf - sin_arctan_V * sin_Ipf)
-Fir_Ii = Ic_mag * (sin_arctan_V * cos_Ipf + cos_arctan_V * sin_Ipf)
+#Only have the constant current component for now.
+Fir_Zip = Ic_mag * (cos_arctan_V * cos_Ipf - sin_arctan_V * sin_Ipf)
+Fir_Zip = Ic_mag * (sin_arctan_V * cos_Ipf + cos_arctan_V * sin_Ipf)
 
 eqns = [
-    Fir_Ir,
-    Fir_Ii,
-    -Fir_Ir,
-    -Fir_Ii
+    Fir_Zip,
+    Fir_Zip,
+    -Fir_Zip,
+    -Fir_Zip
 ]
 
-lagrange_i = np.dot(duals, eqns)
+lagrange_zip = np.dot(duals, eqns)
 
-lh_i = LagrangeSegment(lagrange_i, constants, primals, duals)
+lh_zip = LagrangeSegment(lagrange_zip, constants, primals, duals)
 
 #Represents a two-terminal load. Can be used for positive sequence or three phase.
 class Load:
@@ -97,13 +112,16 @@ class Load:
         self.Q = Q
         self.Z = Z
 
-        self.Ic_mag = np.sqrt(IP**2 + IQ**2)
-        if IP == 0:
-            self.cos_Ipf = 0
-            self.sin_Ipf = 1
-        else:
-            self.cos_Ipf = np.cos(np.arctan(IQ/IP))
-            self.sin_Ipf = np.sin(np.arctan(IQ/IP))
+        self.IP = IP
+        self.IQ = IQ
+
+        # self.Ic_mag = np.sqrt(IP**2 + IQ**2)
+        # if IP == 0:
+        #     self.cos_Ipf = 0
+        #     self.sin_Ipf = 1
+        # else:
+        #     self.cos_Ipf = np.cos(np.arctan(IQ/IP))
+        #     self.sin_Ipf = np.sin(np.arctan(IQ/IP))
 
         if not self.Z == 0:
             r = np.real(self.Z)
@@ -130,10 +148,10 @@ class Load:
         else:
             self.stamper_pq = LagrangeStamper(lh_pq, index_map, optimization_enabled)
 
-        if self.Ic_mag == 0:
-            self.stamper_i = None
+        if self.IP == 0 and self.IQ == 0:
+            self.stamper_Ic = None
         else:
-            self.stamper_i = LagrangeStamper(lh_i, index_map, optimization_enabled)
+            self.stamper_Ic = LagrangeStamper(lh_Ic, index_map, optimization_enabled)
 
         if self.Z == 0:
             self.stamper_z = None
@@ -147,8 +165,8 @@ class Load:
         if self.stamper_pq != None:
             self.stamper_pq.stamp_primal(Y, J, [self.P, self.Q], v_previous)
 
-        if self.stamper_i != None:
-            self.stamper_i.stamp_primal(Y, J, [self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v_previous)
+        if self.stamper_Ic != None:
+            self.stamper_Ic.stamp_primal(Y, J, [self.IP, self.IQ], v_previous)
 
         if self.stamper_z != None:
             self.stamper_z.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
@@ -157,8 +175,8 @@ class Load:
         if self.stamper_pq != None:
             self.stamper_pq.stamp_dual(Y, J, [self.P, self.Q], v_previous)
 
-        if self.stamper_i != None:
-            self.stamper_i.stamp_dual(Y, J, [self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v_previous)
+        if self.stamper_Ic != None:
+            self.stamper_Ic.stamp_dual(Y, J, [self.IP, self.IQ], v_previous)
 
         if self.stamper_z != None:
             self.stamper_z.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
@@ -169,14 +187,14 @@ class Load:
         else:
             pq_residuals = self.stamper_pq.calc_residuals([self.P, self.Q], v)
 
-        if self.stamper_i == None:
-            zip_residuals = {}
+        if self.stamper_Ic == None:
+            Ic_residuals = {}
         else:
-            zip_residuals = self.stamper_i.calc_residuals([self.Ic_mag, self.cos_Ipf, self.sin_Ipf], v)
+            Ic_residuals = self.stamper_Ic.calc_residuals([self.IP, self.IQ], v)
 
         if self.stamper_z == None:
             resistive_residuals = {}
         else:
             resistive_residuals = self.stamper_z.calc_residuals([self.G, self.B, 0], v)
 
-        return merge_residuals({}, pq_residuals, zip_residuals, resistive_residuals)
+        return merge_residuals({}, pq_residuals, resistive_residuals, Ic_residuals)
