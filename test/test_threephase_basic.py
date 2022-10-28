@@ -305,13 +305,16 @@ def test_ieee_thirteen_bus_pq():
     assert_glm_case_gridlabd_results("ieee_13_pq_loads")
 
 def test_ieee_thirteen_bus_overhead():
+    #This fails due to the constant current on phase c on load "l611"
     assert_glm_case_gridlabd_results("ieee_13_node_overhead_nr")
 
 # Requires resistive loads, current loads, and IP loads
 def test_ieee_thirteen_bus_node_nr():
+    #This fails due to the constant current on phase c on load "l611"
     assert_glm_case_gridlabd_results("ieee_13_node_nr")
 
 def test_ieee_thirteen_bus():
+    #This fails due to the constant current on phase c on load "l611"
     assert_glm_case_gridlabd_results("ieee_13")
 
 def test_kersting_example_11_1():
