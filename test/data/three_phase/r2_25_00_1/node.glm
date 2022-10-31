@@ -27,7 +27,7 @@ object regulator:2048 {
 
 object regulator_configuration:2049 { 
      name feeder_reg_cfg; 
-     Control OUTPUT_VOLTAGE; 
+     Control MANUAL; 
      band_center 14975.0; 
      band_width 240; 
      connect_type WYE_WYE; 
@@ -46,7 +46,7 @@ object capacitor:2042 {
      pt_phase B; 
      parent R2-25-00-1_node_35; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 14500; 
      voltage_set_low 13500; 
      capacitor_A 0.4 MVAr; 
@@ -66,7 +66,7 @@ object capacitor:2043 {
      pt_phase B; 
      parent R2-25-00-1_node_104; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 14500; 
      voltage_set_low 13500; 
      capacitor_A 0.4 MVAr; 
@@ -85,7 +85,7 @@ object capacitor:2044 {
      pt_phase B; 
      parent R2-25-00-1_node_164; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 14500; 
      voltage_set_low 13500; 
      capacitor_A 0.4 MVAr; 
@@ -104,7 +104,7 @@ object capacitor:2045 {
      pt_phase B; 
      parent R2-25-00-1_node_265; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 14500; 
      voltage_set_low 13500; 
      capacitor_A 0.3 MVAr; 

@@ -27,7 +27,7 @@ object regulator:4491 {
 
 object regulator_configuration:4492 { 
      name feeder_reg_cfg; 
-     Control OUTPUT_VOLTAGE; 
+     Control MANUAL; 
      band_center 20748; 
      band_width 332.0; 
      connect_type WYE_WYE; 
@@ -46,7 +46,7 @@ object capacitor:4482 {
      pt_phase B; 
      parent R2-35-00-1_node_323; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 21000; 
      voltage_set_low 19500; 
      capacitor_A 0.4 MVAr; 
@@ -65,7 +65,7 @@ object capacitor:4483 {
      pt_phase B; 
      parent R2-35-00-1_node_82; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 21000; 
      voltage_set_low 19500; 
      capacitor_A 0.2 MVAr; 
@@ -84,7 +84,7 @@ object capacitor:4484 {
      pt_phase B; 
      parent R2-35-00-1_node_272; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 21000; 
      voltage_set_low 19500; 
      capacitor_A 0.2 MVAr; 
@@ -103,7 +103,7 @@ object capacitor:4485 {
      pt_phase B; 
      parent R2-35-00-1_node_599; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 21000; 
      voltage_set_low 19500; 
      capacitor_A 0.4 MVAr; 
@@ -122,7 +122,7 @@ object capacitor:4486 {
      pt_phase B; 
      parent R2-35-00-1_node_558; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 21000; 
      voltage_set_low 19500; 
      capacitor_A 0.4 MVAr; 
@@ -141,7 +141,7 @@ object capacitor:4487 {
      pt_phase B; 
      parent R2-35-00-1_node_32; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 21000; 
      voltage_set_low 19500; 
      capacitor_A 0.2 MVAr; 
@@ -160,7 +160,7 @@ object capacitor:4488 {
      pt_phase B; 
      parent R2-35-00-1_node_37; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 21000; 
      voltage_set_low 19500; 
      capacitor_A 0.2 MVAr; 
@@ -179,7 +179,7 @@ object capacitor:4489 {
      pt_phase B; 
      parent R2-35-00-1_node_10; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 21000; 
      voltage_set_low 19500; 
      capacitor_A 0.2 MVAr; 
@@ -238,7 +238,7 @@ object capacitor {
      pt_phase C; 
      parent R2-35-00-1_node_765; 
      phases_connected C; 
-     control VOLT; 
+     control MANUAL; 
      capacitor_A 0.75 MVAr; 
      capacitor_B 0.75 MVAr; 
      capacitor_C 0.75 MVAr; 
@@ -276,7 +276,7 @@ object capacitor {
      pt_phase A; 
      parent R2-35-00-1_node_970; 
      phases_connected A; 
-     control VOLT; 
+     control MANUAL; 
      capacitor_A 0.5 MVAr; 
      capacitor_B 0.5 MVAr; 
      capacitor_C 0.5 MVAr; 

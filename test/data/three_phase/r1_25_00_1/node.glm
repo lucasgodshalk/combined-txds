@@ -36,7 +36,7 @@ object regulator:2 {
 
 object regulator_configuration:1168 { 
      name feeder_reg_cfg; 
-     Control OUTPUT_VOLTAGE; 
+     Control MANUAL; 
      band_center 14975.0; 
      band_width 240; 
      connect_type WYE_WYE; 
@@ -51,7 +51,7 @@ object regulator_configuration:1168 {
 
 object regulator_configuration:9997 { 
      name votlage_reg_cfg; 
-     Control OUTPUT_VOLTAGE; 
+     Control MANUAL; 
      band_center 14975.0; 
      band_width 240; 
      connect_type WYE_WYE; 

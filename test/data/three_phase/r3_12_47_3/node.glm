@@ -36,7 +36,7 @@ object regulator:2 {
 object regulator_configuration:12602 { 
      name feeder_reg_cfg; 
      connect_type WYE_WYE; 
-     Control OUTPUT_VOLTAGE; 
+     Control MANUAL; 
      band_center 7500.0; 
      band_width 120; 
      time_delay 30; 
@@ -51,7 +51,7 @@ object regulator_configuration:12602 {
 object regulator_configuration:12603 { 
      name voltage_reg_cfg; 
      connect_type WYE_WYE; 
-     Control OUTPUT_VOLTAGE; 
+     Control MANUAL; 
      band_center 7500.0; 
      band_width 120; 
      time_delay 30; 
@@ -69,7 +69,7 @@ object capacitor:12598 {
      pt_phase A; 
      parent R3-12-47-3_node_518; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 7300; 
      voltage_set_low 7100; 
      capacitor_A 0.3 MVAr; 
@@ -88,7 +88,7 @@ object capacitor:12599 {
      pt_phase A; 
      parent R3-12-47-3_node_1988; 
      phases_connected ABC; 
-     control VOLT; 
+     control MANUAL; 
      voltage_set_high 7300; 
      voltage_set_low 7100; 
      capacitor_A 0.2 MVAr; 
