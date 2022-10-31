@@ -42,6 +42,7 @@ def load_gridlabd_csv(casename):
 #We have a fixed expectation that the voltage angle should always been at most 0.1 degrees away from expected.
 angle_atol=1e-1
 mag_rtol=1e-3
+mag_atol=1
 
 def build_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
     variances = []
@@ -74,7 +75,7 @@ def build_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
         if diff_ang > 180:
             diff_ang = abs(diff_ang - 360)
 
-        tol_mag = mag_rtol * np.abs(expected_mag)
+        tol_mag = mag_rtol * np.abs(expected_mag) + mag_atol
         tol_ang = angle_atol
 
         variance_mag = diff_mag - tol_mag
