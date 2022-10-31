@@ -26,7 +26,7 @@ class GraphAnalyzer:
             for (from_bus, to_bus) in element.get_connections():
                 if type(element) == Load:
                     self.node_color[from_bus.NodeName]="darkred"
-                elif from_bus == GROUND or to_bus == GROUND:
+                elif from_bus == GROUND or to_bus == GROUND or from_bus.NodeName == to_bus.NodeName:
                     continue
                 else:
                     self.G.add_edge(from_bus.NodeName, to_bus.NodeName, type="none")
