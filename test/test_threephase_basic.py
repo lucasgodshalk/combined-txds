@@ -1,6 +1,7 @@
 # import pytest as pt
 import cmath
 import math
+from typing import List
 from logic.powerflow import PowerFlow
 from logic.networkloader import NetworkLoader
 from logic.powerflowresults import PowerFlowResults
@@ -44,7 +45,46 @@ angle_atol=1e-1
 mag_rtol=1e-3
 mag_atol=1
 
+class DiffResult():
+    def __init__(
+        self,
+        bus,
+        result_mag,
+        expected_mag,
+        result_ang,
+        expected_ang
+        ):
+
+        self.bus = bus
+        self.result_mag = result_mag
+        self.expected_mag = expected_mag
+        self.result_ang = result_ang
+        self.expected_ang = expected_ang
+
+        self.diff_mag = abs(result_mag - expected_mag)
+        self.diff_ang = abs(result_ang - expected_ang)
+        if self.diff_ang > 180:
+            self.diff_ang = abs(self.diff_ang - 360)
+
+        self.tol_mag = mag_rtol * np.abs(expected_mag) + mag_atol
+        self.tol_ang = angle_atol
+
+        variance_mag = self.diff_mag - self.tol_mag
+        variance_ang = self.diff_ang - self.tol_ang
+
+        variance_mag_pct = math.ceil(100*variance_mag / self.tol_mag)
+        variance_ang_pct = math.ceil(100*variance_ang / self.tol_ang)
+
+        if variance_mag_pct >= variance_ang_pct:
+            self.is_mag_variance = True
+            self.largest_variance = variance_mag_pct
+        else:
+            self.is_mag_variance = False
+            self.largest_variance = variance_ang_pct
+        
+
 def build_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
+    variances: List[DiffResult]
     variances = []
 
     for busresult in results.bus_results:
@@ -67,41 +107,32 @@ def build_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
         else:
             raise Exception("Unknown phase")
         
-        result_mag, expected_mag = busresult.V_mag, abs(expected)
-        result_ang, expected_ang = busresult.V_deg, math.degrees(cmath.phase(expected))
+        variance = DiffResult(
+            busresult.bus, 
+            busresult.V_mag, 
+            abs(expected), 
+            busresult.V_deg, 
+            math.degrees(cmath.phase(expected))
+            )
 
-        diff_mag = abs(result_mag - expected_mag)
-        diff_ang = abs(result_ang - expected_ang)
-        if diff_ang > 180:
-            diff_ang = abs(diff_ang - 360)
-
-        tol_mag = mag_rtol * np.abs(expected_mag) + mag_atol
-        tol_ang = angle_atol
-
-        variance_mag = diff_mag - tol_mag
-        variance_ang = diff_ang - tol_ang
-
-        variance_mag_pct = math.ceil(100*variance_mag / tol_mag)
-        variance_ang_pct = math.ceil(100*variance_ang / tol_ang)
-
-        if variance_mag_pct >= variance_ang_pct:
-            largest_variance = variance_mag_pct
-        else:
-            largest_variance = variance_ang_pct
-
-        variances.append((largest_variance, busresult.bus, result_mag, expected_mag, result_ang, expected_ang, variance_mag_pct, variance_ang_pct))
+        variances.append(variance)
 
     return variances
 
 def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
     variances = build_busresults_gridlabdvoltdump(results, gridlab_vdump)
 
-    sorted_variances = sorted(variances, key=lambda x: x[0], reverse=True)
+    sorted_variances = sorted(variances, key=lambda x: x.largest_variance, reverse=True)
 
     largest = sorted_variances[0]
 
-    if largest[0] > 0:
-        assert False, f"Bus \"{largest[1].NodeName}:{largest[1].NodePhase}\" is at {largest[0] + 100}% of tolerance. magnitude: {largest[2]:.5g}[actual], {largest[3]:.5g}[expected], degrees: {largest[4]:.5g}[actual], {largest[5]:.5g}[expected]"
+    if largest.largest_variance > 0:
+        detailstr = f"mag: {largest.result_mag:.5g}[actual], {largest.expected_mag:.5g}[expected] || ang: {largest.result_ang:.5g}[actual], {largest.expected_ang:.5g}[expected]"
+
+        if largest.is_mag_variance:
+            assert False, f"Bus \"{largest.bus.NodeName}:{largest.bus.NodePhase}\" is at above magnitude tolerance. {detailstr}"
+        else:
+            assert False, f"Bus \"{largest.bus.NodeName}:{largest.bus.NodePhase}\" is at above angle tolerance. {detailstr}"
 
 def assert_glm_case_gridlabd_results(casename, settings = PowerFlowSettings()):
     filepath = get_glm_case_file(casename)
