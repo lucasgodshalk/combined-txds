@@ -27,6 +27,7 @@ class Bus:
         self.NodeName = NodeName if NodeName is not None else f"Bus:{self.Bus}"
         self.NodePhase = NodePhase if NodePhase is not None else f"NA"
         self.IsVirtual = IsVirtual
+        self.V_nominal = Vm_init
 
         # initialize all nodes
         self.node_Vr: int # real voltage node at a bus

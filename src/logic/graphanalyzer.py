@@ -1,5 +1,6 @@
 from collections import defaultdict
 import networkx as nx
+from logic.networkmodel import NetworkModel
 from models.singlephase.bus import GROUND
 from models.singlephase.load import Load
 from models.threephase.center_tap_transformer import CenterTapTransformer
@@ -7,7 +8,7 @@ from models.singlephase.switch import Switch
 
 class GraphAnalyzer:
     NODE_TYPE_COLOR_MAP = {0:"magenta", 1:"gray", 2:"darkred", 3:"orange"} # For Slack, Inf, PQ, and PV
-    def __init__(self, network):
+    def __init__(self, network: NetworkModel):
         self.network = network
         self.G = nx.Graph()
         self.node_labels = {}
@@ -19,7 +20,7 @@ class GraphAnalyzer:
             if bus.IsVirtual:
                 continue
             self.node_labels[bus.NodeName] = f"{bus.NodeName}"
-            self.G.add_node(bus.NodeName)
+            self.G.add_node(bus.NodeName, bus=bus)
             self.node_color[bus.NodeName] = self.NODE_TYPE_COLOR_MAP[bus.Type]
         
         for element in network.get_all_elements():
@@ -29,8 +30,10 @@ class GraphAnalyzer:
                 elif from_bus == GROUND or to_bus == GROUND or from_bus.NodeName == to_bus.NodeName:
                     continue
                 else:
-                    self.G.add_edge(from_bus.NodeName, to_bus.NodeName, type="none")
+                    self.G.add_edge(from_bus.NodeName, to_bus.NodeName, type="none", from_bus=from_bus, to_bus=to_bus, element=element)
+                    
                     self.edge_labels[(from_bus.NodeName, to_bus.NodeName)] += from_bus.NodePhase
+                    
                     if type(element) == CenterTapTransformer:
                         self.edge_color[(from_bus.NodeName, to_bus.NodeName)] = "green"
                     elif type(element) == Switch:
