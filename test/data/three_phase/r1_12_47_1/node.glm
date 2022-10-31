@@ -39369,7 +39369,9 @@ object underground_line_conductor:8 {
  
 
  
-
+object impedance_dump {
+	filename "impedance.xml";
+}
   
 
 object voltdump {

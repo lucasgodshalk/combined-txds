@@ -41,6 +41,17 @@ def test_gc_12_47_1_impedances():
 
     compare_line_impedances(powerflow.network.lines, lines)
 
+def test_r1_12_47_1_impedances():
+    glmpath = get_glm_case_file("r1_12_47_1")
+    settings = PowerFlowSettings()
+    network = NetworkLoader(settings).from_file(glmpath)
+    powerflow = PowerFlow(network, settings)
+
+    lines = parse_gridlabd_impedance_xml("r1_12_47_1")
+
+    compare_line_impedances(powerflow.network.lines, lines)
+
+
 def test_network_model_case1_impedances():
     glmpath = get_glm_case_file("network_model_case1")
     settings = PowerFlowSettings()
@@ -136,14 +147,14 @@ def parse_gridlabd_impedance_xml(casename):
 
     lines = []
 
-    for overhead_line in itertools.chain(root.iter('overhead_line'), root.iter('underground_line')):
-        id = overhead_line.find("name").text
-        from_node = overhead_line.find("from_node").text.split(":")[1]
-        to_node = overhead_line.find("to_node").text.split(":")[1]
-        phases = overhead_line.find("phases").text
-        length = overhead_line.find("length").text
+    for line in itertools.chain(root.iter('overhead_line'), root.iter('underground_line'), root.iter('triplex_line')):
+        id = line.find("name").text
+        from_node = line.find("from_node").text.split(":")[1]
+        to_node = line.find("to_node").text.split(":")[1]
+        phases = line.find("phases").text
+        length = line.find("length").text
 
-        b_matrix_xml = overhead_line.find("b_matrix")
+        b_matrix_xml = line.find("b_matrix")
 
         b_matrix = np.zeros((3, 3)).astype(complex)
 
