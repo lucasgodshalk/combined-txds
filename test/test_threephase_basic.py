@@ -43,7 +43,7 @@ def load_gridlabd_csv(casename):
 angle_atol=1e-1
 mag_rtol=1e-3
 
-def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
+def build_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
     variances = []
 
     for busresult in results.bus_results:
@@ -89,6 +89,11 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
             largest_variance = variance_ang_pct
 
         variances.append((largest_variance, busresult.bus, result_mag, expected_mag, result_ang, expected_ang, variance_mag_pct, variance_ang_pct))
+
+    return variances
+
+def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump):
+    variances = build_busresults_gridlabdvoltdump(results, gridlab_vdump)
 
     sorted_variances = sorted(variances, key=lambda x: x[0], reverse=True)
 
