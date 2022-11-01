@@ -287,12 +287,17 @@ class Reader(AbstractReader):
                 except AttributeError:
                     pass
 
-                has_parent = None
                 try:
                     api_node.parent = obj["parent"]
-                    has_parent = True
+
+                    #Meter nominal voltages are sometimes incorrect, so we use
+                    #the child's nominal voltage if it exists.
+                    for element in model.model_store:
+                        if type(element) == Node and element.name == api_node.parent:
+                            element.nominal_voltage = api_node.nominal_voltage
+                            break
                 except AttributeError:
-                    has_parent = False
+                    pass
 
             elif obj_type == "triplex_node" or obj_type == "triplex_meter":
                 api_node = Node(model)

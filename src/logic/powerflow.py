@@ -23,6 +23,8 @@ class PowerFlow:
         if island_count != 1:
             raise Exception(f"Detected multiple network islands. (Count: {island_count})")
 
+        ga.validate_voltage_islands()
+
         v_limiting = None
         if not self.network.is_three_phase and self.settings.voltage_limiting:
             v_limiting = PositiveSeqVoltageLimiting(self.network)
