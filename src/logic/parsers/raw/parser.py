@@ -11,7 +11,7 @@
 """
 
 import time
-from logic.global_vars import global_vars
+from logic.parsers.raw.global_vars import global_vars
 
 from models.singlephase.bus import Bus
 

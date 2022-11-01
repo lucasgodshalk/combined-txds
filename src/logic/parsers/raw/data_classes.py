@@ -13,7 +13,7 @@ import typing
 
 import numpy as np
 import math
-from logic.global_vars import global_vars
+from logic.parsers.raw.global_vars import global_vars
 
 from models.singlephase.line import Line
 from models.singlephase.bus import GROUND, Bus
