@@ -133,24 +133,28 @@ class UnbalancedLine():
             yield (from_bus, to_bus)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
-        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
+        for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
+            if not is_own_phase:
+                tx_factor = 0
             line_stamper.stamp_primal(Y, J, [g, b, tx_factor], v_previous)
-            shunt_stamper.stamp_primal(Y, J, [B/2, tx_factor], v_previous)
+            shunt_stamper.stamp_primal(Y, J, [B/2, 0], v_previous)
 
     def stamp_primal_symbols(self, Y: MatrixBuilder, J, state):
-        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
+        for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
             line_stamper.stamp_primal_symbols(Y, J)
             shunt_stamper.stamp_primal_symbols(Y, J)    
 
     def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(network):
+        for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(network):
+            if not is_own_phase:
+                tx_factor = 0
             line_stamper.stamp_dual(Y, J, [g, b, tx_factor], v_previous)
-            shunt_stamper.stamp_dual(Y, J, [B/2, tx_factor], v_previous)
+            shunt_stamper.stamp_dual(Y, J, [B/2, 0], v_previous)
 
     def calculate_residuals(self, state, v):
         residuals = {}
 
-        for (line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
+        for (_, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
             line_residuals = line_stamper.calc_residuals([g, b, 0], v)
             shunt_residuals = shunt_stamper.calc_residuals([B/2, 0], v)
             merge_residuals(residuals, line_residuals, shunt_residuals)
@@ -183,4 +187,6 @@ class UnbalancedLine():
 
                 (line_stamper, shunt_stamper) = self.stampers[(line1_from, line2_to)]
 
-                yield (line_stamper, shunt_stamper, g, b, B)
+                is_own_phase = i == j
+
+                yield (is_own_phase, line_stamper, shunt_stamper, g, b, B)

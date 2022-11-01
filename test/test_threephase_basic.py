@@ -19,11 +19,6 @@ def get_glm_case_file(casename, glm_file_name = "node.glm"):
 def get_gridlabd_csv_voltdump(casename):
     return os.path.join(DATA_DIR, casename, "result.csv")
 
-def execute_glm_case(filepath, settings):
-    network = NetworkLoader(settings).from_file(filepath)
-    powerflow = PowerFlow(network, settings)
-    return powerflow.execute()
-
 def load_gridlabd_csv(casename):
     filepath = get_gridlabd_csv_voltdump(casename)
     with open(filepath, newline=None) as csvfile:
@@ -136,11 +131,16 @@ def assert_busresults_gridlabdvoltdump(results: PowerFlowResults, gridlab_vdump)
 
 def assert_glm_case_gridlabd_results(casename, settings = PowerFlowSettings()):
     filepath = get_glm_case_file(casename)
-    results = execute_glm_case(filepath, settings)
+    network = NetworkLoader(settings).from_file(filepath)
+
+    powerflow = PowerFlow(network, settings)
+    results = powerflow.execute()
+
     if not results.is_success:
         raise Exception(f"Failed to converge (iterations: {results.iterations}, tx_percent: {results.tx_percent}")
     elif results.max_residual > 1e-4:
         raise Exception(f"Residual is unusually high, despite convergence.")
+
     comparison = load_gridlabd_csv(casename)
     assert_busresults_gridlabdvoltdump(results, comparison)
 
