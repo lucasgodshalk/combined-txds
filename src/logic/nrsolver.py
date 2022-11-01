@@ -37,7 +37,7 @@ class NRSolver:
             for element in self.network.get_NR_invariant_elements():
                 element.stamp_dual(Y, J, None, tx_factor, self.network)
             
-            if self.network.optimization != None and self.network.optimization.is_linear:
+            if self.network.optimization.is_linear:
                 self.network.optimization.stamp(Y, J, None, tx_factor, self.network)
 
     def stamp_nonlinear(self, Y: MatrixBuilder, J, v_previous, tx_factor):
@@ -48,7 +48,7 @@ class NRSolver:
             for element in self.network.get_NR_variable_elements():
                 element.stamp_dual(Y, J, v_previous, tx_factor, self.network)
 
-            if self.network.optimization != None and not self.network.optimization.is_linear:
+            if not self.network.optimization.is_linear:
                 self.network.optimization.stamp(Y, J, v_previous, tx_factor, self.network)
 
     def run_powerflow(self, v_init, tx_factor):
