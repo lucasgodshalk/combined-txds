@@ -52,7 +52,7 @@ class UnbalancedLinePhase():
 #Line where we have a collection of unbalanced phases (or a neutral wire) with admittance effects across wires.
 class UnbalancedLine():
     
-    def __init__(self, simulation_state, impedances, shunt_admittances, from_element, to_element, length, phases="ABC"):
+    def __init__(self, network_model, impedances, shunt_admittances, from_element, to_element, length, phases="ABC"):
         self.lines: typing.List[UnbalancedLinePhase]
         self.lines = []
 
@@ -82,7 +82,7 @@ class UnbalancedLine():
         self.from_element = from_element
         self.to_element = to_element
         self.length = length
-        self.simulation_state = simulation_state
+        self.network_model = network_model
 
         for phase in phases:
             self.lines.append(UnbalancedLinePhase(self.from_element, self.to_element, phase))
@@ -94,7 +94,7 @@ class UnbalancedLine():
         for i in range(len(self.lines)):
             # Get the line
             line1 = self.lines[i]
-            line1_from, line1_to = line1.get_nodes(self.simulation_state)
+            line1_from, line1_to = line1.get_nodes(self.network_model)
 
             eqn_map = {}
             eqn_map[Vr_from] = line1_from.node_Vr
@@ -109,7 +109,7 @@ class UnbalancedLine():
             # Go through all lines
             for j in range(len(self.lines)):
                 line2 = self.lines[j]
-                line2_from, line2_to = line2.get_nodes(self.simulation_state)
+                line2_from, line2_to = line2.get_nodes(self.network_model)
 
                 var_map = {}
                 var_map[Vr_from] = line2_from.node_Vr
@@ -129,7 +129,7 @@ class UnbalancedLine():
 
     def get_connections(self):
         for line in self.lines:
-            from_bus, to_bus = line.get_nodes(self.simulation_state)
+            from_bus, to_bus = line.get_nodes(self.network_model)
             yield (from_bus, to_bus)
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):

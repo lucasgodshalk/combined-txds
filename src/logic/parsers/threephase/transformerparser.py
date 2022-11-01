@@ -19,15 +19,15 @@ class TransformerParser:
     def __init__(self, parser) -> None:
         self.parser = parser
 
-    def create_transformer(self, model: PowerTransformer, simulation_state: DxNetworkModel):
+    def create_transformer(self, model: PowerTransformer, network_model: DxNetworkModel):
         if model.is_center_tap:
-            self.create_center_tap_transformer(model, simulation_state)
+            self.create_center_tap_transformer(model, network_model)
         elif len(model.windings) != 2:
             raise Exception("Only 2 winding or center-tap transformers currently supported")
         else:
-            self.create_three_phase_transformer(model, simulation_state)
+            self.create_three_phase_transformer(model, network_model)
 
-    def create_center_tap_transformer(self, model, simulation_state: DxNetworkModel):
+    def create_center_tap_transformer(self, model, network_model: DxNetworkModel):
         phase = model.phases[0]
         
         winding0 = model.windings[0]
@@ -51,37 +51,37 @@ class TransformerParser:
             b_shunt = 0
         
         # Add the transformer's from bus to the primary coil
-        from_bus = simulation_state.bus_name_map[model.from_element + '_' + phase]
+        from_bus = network_model.bus_name_map[model.from_element + '_' + phase]
         transformer_coil_0.from_node = from_bus
 
         # Create a new bus on the primary coil, for KCL
-        primary_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_primary", phase, True)
+        primary_bus = self.parser.create_bus(network_model, 0.1, 0.1, model.name + "_primary", phase, True)
         
         transformer_coil_0.primary_node = primary_bus
 
         # Create a new bus on the first triplex coil, for KCL
-        secondary1_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_sending_1", phase, True)
+        secondary1_bus = self.parser.create_bus(network_model, 0.1, 0.1, model.name + "_sending_1", phase, True)
         
         transformer_coil_1.sending_node = secondary1_bus
         
         # Add the transformer's first from node to the first triplex coil
-        to1_bus = simulation_state.bus_name_map[model.to_element + '_1']
+        to1_bus = network_model.bus_name_map[model.to_element + '_1']
         transformer_coil_1.to_node = to1_bus
 
         # Create a new bus on the second triplex coil, for KCL
-        secondary2_bus = self.parser.create_bus(simulation_state, 0.1, 0.1, model.name + "_sending_2", phase, True)
+        secondary2_bus = self.parser.create_bus(network_model, 0.1, 0.1, model.name + "_sending_2", phase, True)
         
         transformer_coil_2.sending_node = secondary2_bus
         
         # Add the transformer's second from node to the second triplex coil
-        to2_bus = simulation_state.bus_name_map[model.to_element + '_2']
+        to2_bus = network_model.bus_name_map[model.to_element + '_2']
         transformer_coil_2.to_node = to2_bus
 
         transformer = CenterTapTransformer(transformer_coil_0, transformer_coil_1, transformer_coil_2, phase, turn_ratio, winding0.rated_power, g_shunt, b_shunt)
 
-        simulation_state.transformers.append(transformer)
+        network_model.transformers.append(transformer)
 
-    def create_three_phase_transformer(self, model, simulation_state: DxNetworkModel):
+    def create_three_phase_transformer(self, model, network_model: DxNetworkModel):
         winding1 = model.windings[0]
         primary_coil = PrimaryTransformerCoil(winding1.nominal_voltage, winding1.rated_power, winding1.connection_type, winding1.voltage_limit)
         winding2 = model.windings[1]
@@ -103,10 +103,10 @@ class TransformerParser:
         for phase_winding in winding1.phase_windings:
             phases.append(phase_winding.phase)
             
-            from_bus = simulation_state.bus_name_map[model.from_element + '_' + phase_winding.phase]
+            from_bus = network_model.bus_name_map[model.from_element + '_' + phase_winding.phase]
             primary_coil.phase_connections[phase_winding.phase] = from_bus
 
-            to_bus = simulation_state.bus_name_map[model.to_element + '_' + phase_winding.phase]
+            to_bus = network_model.bus_name_map[model.to_element + '_' + phase_winding.phase]
             secondary_coil.phase_connections[phase_winding.phase] = to_bus
 
         phase_shift = 0 if model.phase_shift is None else model.phase_shift # TODO is this in degrees or radians
@@ -155,7 +155,7 @@ class TransformerParser:
                 None
                 )
             
-            simulation_state.transformers.append(xfmr)
+            network_model.transformers.append(xfmr)
 
 def get_phase_list(primary_coil, secondary_coil, phases):
     rotated_phases = phases[1:] + phases[:1]

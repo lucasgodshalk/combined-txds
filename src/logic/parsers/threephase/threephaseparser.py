@@ -45,28 +45,28 @@ class ThreePhaseParser:
         self.all_gld_objects = gld_reader.all_gld_objects
 
         # Create a SimulationState object to populate and return
-        simulation_state = DxNetworkModel()
+        network_model = DxNetworkModel()
         transformerhandler = TransformerParser(self)
 
-        self.create_buses(simulation_state)
+        self.create_buses(network_model)
         
         for model in self.ditto_store.models:
             if isinstance(model, ditto.models.powertransformer.PowerTransformer):
-                transformerhandler.create_transformer(model, simulation_state)
+                transformerhandler.create_transformer(model, network_model)
             elif isinstance(model, ditto.models.capacitor.Capacitor):
-                self.create_capacitor(model, simulation_state)
+                self.create_capacitor(model, network_model)
             elif isinstance(model, ditto.models.regulator.Regulator):
-                self.create_regulator(model, simulation_state)
+                self.create_regulator(model, network_model)
             elif isinstance(model, ditto.models.line.Line):
-                self.create_transmission_line(model, simulation_state)
+                self.create_transmission_line(model, network_model)
             elif isinstance(model, ditto.models.load.Load):
-                self.create_load(model, simulation_state)
+                self.create_load(model, network_model)
             elif self.ignoremodel(model):
                 continue
             else:
                 raise Exception(f"Unknown model type {model}")
 
-        return simulation_state
+        return network_model
     
     def ignoremodel(self, model):
         ignored_models = [
@@ -87,7 +87,7 @@ class ThreePhaseParser:
 
     # GridlabD buses default to being "PQ" constant power buses (aka loads)
     # They could also be "PV" voltage-controlled magnitude buses (aka generators)
-    def create_buses(self, simulation_state: DxNetworkModel):
+    def create_buses(self, network_model: DxNetworkModel):
         for model in self.ditto_store.models:
 
             if isinstance(model, ditto.models.node.Node) or isinstance(model, ditto.models.power_source.PowerSource):
@@ -99,10 +99,10 @@ class ThreePhaseParser:
                     if phase.default_value in self._phase_to_angle:
                         if hasattr(model, "parent"):
                             #For now, just map any child nodes back to their parent.
-                            bus = simulation_state.bus_name_map[model.parent + "_" + phase.default_value]
-                            simulation_state.bus_name_map[model.name + "_" + phase.default_value] = bus
+                            bus = network_model.bus_name_map[model.parent + "_" + phase.default_value]
+                            network_model.bus_name_map[model.name + "_" + phase.default_value] = bus
                         elif hasattr(model, "_connecting_element"):
-                            bus = simulation_state.bus_name_map[model._connecting_element + "_" + phase]
+                            bus = network_model.bus_name_map[model._connecting_element + "_" + phase]
                         else:
                             v_mag = model.nominal_voltage
                             v_ang = self._phase_to_angle[phase.default_value]
@@ -116,7 +116,7 @@ class ThreePhaseParser:
                             except:
                                 pass
 
-                            bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase.default_value, False)
+                            bus = self.create_bus(network_model, v_mag, v_ang, model.name, phase.default_value, False)
 
                             if phase.default_value == "1":
                                 bus.Vr_init = -60.0
@@ -128,38 +128,38 @@ class ThreePhaseParser:
                         if isSlack:
                             # Create this phase of the slack bus
                             slack = Slack(bus, v_mag, v_ang, 0, 0)
-                            simulation_state.slack.append(slack)
+                            network_model.slack.append(slack)
 
-    def create_bus(self, simulation_state, v_mag, v_ang, node_name, node_phase, is_virtual):
+    def create_bus(self, network_model, v_mag, v_ang, node_name, node_phase, is_virtual):
         bus_id = next(self._bus_index)
         bus = Bus(bus_id, 1, v_mag, v_ang, None, node_name, node_phase, is_virtual)
-        simulation_state.bus_name_map[node_name + "_" + node_phase] = bus
-        simulation_state.buses.append(bus)
+        network_model.bus_name_map[node_name + "_" + node_phase] = bus
+        network_model.buses.append(bus)
         return bus            
 
-    def create_load(self, model, simulation_state: DxNetworkModel):
+    def create_load(self, model, network_model: DxNetworkModel):
         load_num = model.name.split("_")[-1]
         triplex_phase = model.triplex_phase.default_value if hasattr(model, "triplex_phase") else None
         for phase_load in model.phase_loads:
-            from_bus = self.get_load_connection(model, simulation_state, phase_load.phase[0])
+            from_bus = self.get_load_connection(model, network_model, phase_load.phase[0])
 
             if len(phase_load.phase) == 1:
                 to_bus = GROUND
             else:
-                to_bus = self.get_load_connection(model, simulation_state, phase_load.phase[1])
+                to_bus = self.get_load_connection(model, network_model, phase_load.phase[1])
 
             ip = phase_load.i_const.real
             iq = phase_load.i_const.imag
 
             pq_load = Load(from_bus, to_bus, phase_load.p, phase_load.q, phase_load.z, ip, iq, load_num, phase_load.phase, triplex_phase)
-            simulation_state.loads.append(pq_load)
+            network_model.loads.append(pq_load)
 
-    def get_load_connection(self, model, simulation_state, phase):
+    def get_load_connection(self, model, network_model, phase):
         # Get the existing bus id for each phase load of this PQ load
         if hasattr(model, "connecting_element"):
-            bus = simulation_state.bus_name_map[model.connecting_element + "_" + phase]
+            bus = network_model.bus_name_map[model.connecting_element + "_" + phase]
         elif hasattr(model, "_parent"):
-            bus = simulation_state.bus_name_map[model._parent + "_" + phase]
+            bus = network_model.bus_name_map[model._parent + "_" + phase]
         else:
             # Get relevant attributes, create and save an object
             # Get the initial voltage values for this 
@@ -181,12 +181,12 @@ class ThreePhaseParser:
                         v_mag = abs(v_complex)
                         v_ang = cmath.phase(v_complex)
 
-                        bus = self.create_bus(simulation_state, v_mag, v_ang, model.name, phase, False)
+                        bus = self.create_bus(network_model, v_mag, v_ang, model.name, phase, False)
 
         return bus
 
 
-    def create_capacitor(self, model: ditto.models.capacitor.Capacitor, simulation_state: DxNetworkModel):
+    def create_capacitor(self, model: ditto.models.capacitor.Capacitor, network_model: DxNetworkModel):
         gld_cap = self.all_gld_objects[model.name]
         for phase_capacitor in model.phase_capacitors:
             if not phase_capacitor.phase in model.connected_phases:
@@ -197,7 +197,7 @@ class ThreePhaseParser:
                 #https://github.com/gridlab-d/gridlab-d/blob/9f0a09853280bb3515f8236b8af3192304759650/powerflow/capacitor.cpp#L320-L325
                 mode = CapacitorMode.MANUAL
 
-            parent_bus = simulation_state.bus_name_map[gld_cap._parent + '_' + phase_capacitor.phase]
+            parent_bus = network_model.bus_name_map[gld_cap._parent + '_' + phase_capacitor.phase]
             nominal_voltage = float(gld_cap._cap_nominal_voltage) #Or could use model.nominal_voltage?
             voltage_angle = self._phase_to_angle[phase_capacitor.phase]
             v_r_nom = abs(nominal_voltage)*math.cos(voltage_angle)
@@ -219,9 +219,9 @@ class ThreePhaseParser:
                 elif phase_capacitor.phase == "C" and hasattr(gld_cap, "_switchC"):
                     capacitor.switch = CapSwitchState[gld_cap._switchC]
             
-            simulation_state.capacitors.append(capacitor)
+            network_model.capacitors.append(capacitor)
 
-    def create_regulator(self, model: ditto.models.regulator.Regulator, simulation_state: DxNetworkModel):
+    def create_regulator(self, model: ditto.models.regulator.Regulator, network_model: DxNetworkModel):
         if len(model.windings) != 2:
             raise Exception("Only 2 windings currently supported")
         if not (len(model.windings[0].phase_windings) == len(model.windings[1].phase_windings) == 3):
@@ -250,12 +250,12 @@ class ThreePhaseParser:
         v_tap_change = band_center * tap_change_per
 
         for winding in model.windings[0].phase_windings:
-            from_bus = simulation_state.bus_name_map[model.high_from + '_' + winding.phase]
-            to_bus = simulation_state.bus_name_map[model.low_to + '_' + winding.phase]
+            from_bus = network_model.bus_name_map[model.high_from + '_' + winding.phase]
+            to_bus = network_model.bus_name_map[model.low_to + '_' + winding.phase]
 
             tap_position = int(getattr(reg_config, '_tap_pos_' + winding.phase))
 
-            current_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Reg", winding.phase, True)
+            current_bus = self.create_bus(network_model, 0.1, 0.1, f"{from_bus.NodeName}-Reg", winding.phase, True)
 
             regulator = Regulator(
                 from_bus, 
@@ -276,14 +276,14 @@ class ThreePhaseParser:
             tap_guess = math.ceil((band_center - v_mag)/v_tap_change)
             #regulator.try_increment_tap_position(tap_guess)
 
-            simulation_state.regulators.append(regulator)
+            network_model.regulators.append(regulator)
     
-    def create_transmission_line(self, model: ditto.models.line.Line, simulation_state: DxNetworkModel):
+    def create_transmission_line(self, model: ditto.models.line.Line, network_model: DxNetworkModel):
         # Check for fuses, some are encoded as zero-length lines with no features
         if model.is_fuse:
             for wire in model.wires:
-                from_bus = simulation_state.bus_name_map[model.from_element + "_" + wire.phase]
-                to_bus = simulation_state.bus_name_map[model.to_element + "_" + wire.phase]
+                from_bus = network_model.bus_name_map[model.from_element + "_" + wire.phase]
+                to_bus = network_model.bus_name_map[model.to_element + "_" + wire.phase]
 
                 current_limit = float(model._current_limit)
 
@@ -291,25 +291,25 @@ class ThreePhaseParser:
                 if hasattr(model, "phase_" + wire.phase + "_status"):
                     fuse_status = FuseStatus[getattr(model, "phase_" + wire.phase + "_status")]
 
-                fuse_bus = self.create_bus(simulation_state, 0.1, 0.1, f"{from_bus.NodeName}-Fuse", wire.phase, True)
+                fuse_bus = self.create_bus(network_model, 0.1, 0.1, f"{from_bus.NodeName}-Fuse", wire.phase, True)
 
                 fuse = Fuse(from_bus, to_bus, fuse_bus, current_limit, fuse_status, wire.phase)
 
-                simulation_state.fuses.append(fuse)
+                network_model.fuses.append(fuse)
         # Check for switches, some are encoded as 1-length lines with no features
         elif model.is_switch:
             for wire in model.wires:
                 if not wire.phase in model.phases:
                     continue
 
-                from_bus = simulation_state.bus_name_map[model.from_element + "_" + wire.phase]
-                to_bus = simulation_state.bus_name_map[model.to_element + "_" + wire.phase]
+                from_bus = network_model.bus_name_map[model.from_element + "_" + wire.phase]
+                to_bus = network_model.bus_name_map[model.to_element + "_" + wire.phase]
 
                 status = SwitchStatus[("OPEN" if (hasattr(wire, "is_open") and wire.is_open) else "CLOSED")]
 
                 switch = Switch(from_bus, to_bus, status, wire.phase)
                 
-                simulation_state.switches.append(switch)
+                network_model.switches.append(switch)
         else:
             impedances = np.array(model.impedance_matrix)
 
@@ -320,6 +320,6 @@ class ThreePhaseParser:
 
             phases = [wire.phase for wire in model.wires if wire.phase != 'N']
             
-            transmission_line = UnbalancedLine(simulation_state, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
-            simulation_state.lines.append(transmission_line)
+            transmission_line = UnbalancedLine(network_model, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
+            network_model.lines.append(transmission_line)
 
