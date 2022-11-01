@@ -1,10 +1,9 @@
-from logic.networkpostprocessor import NetworkPostProcessor
+from logic.scenarios.timeseriesprocessor import TimeSeriesProcessor
 from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflow import PowerFlow
 from logic.networkloader import NetworkLoader
 import argparse
-
-from logic.postprocessingsettings import PostProcessingSettings
+from logic.scenarios.timeseriessettings import TimeSeriesSettings
 
 from colorama import init
 from termcolor import colored
@@ -64,14 +63,14 @@ results.display(verbose=verbose)
 results.output(outputfile)
 
 try:
-    postprocessingsettings = PostProcessingSettings(
+    postprocessingsettings = TimeSeriesSettings(
         loadfile_name = loadfile,
         loadfile_start = loadstart,
         loadfile_end = loadend,
         artificialswingbus = artificialswingbus,
         negativeload = negativeload
     )
-    postprocessor = NetworkPostProcessor(postprocessingsettings, powerflow)
+    postprocessor = TimeSeriesProcessor(postprocessingsettings, powerflow)
     results = postprocessor.execute()
 
     if results is not None:

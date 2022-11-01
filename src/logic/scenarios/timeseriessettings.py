@@ -1,4 +1,4 @@
-class PostProcessingSettings:
+class TimeSeriesSettings:
     def __init__(
         self,
         loadfile_name = None,

@@ -4,15 +4,13 @@ import typing
 from logic.networkmodel import DxNetworkModel
 from pandas import read_csv
 
-from logic.postprocessingsettings import PostProcessingSettings
+from logic.scenarios.timeseriessettings import TimeSeriesSettings
 from logic.powerflow import PowerFlow
 from logic.powerflowresults import PowerFlowResults, QuasiTimeSeriesResults
 
-
-
-class NetworkPostProcessor:
+class TimeSeriesProcessor:
     THRESHOLD = 1e-1
-    def __init__(self, settings: PostProcessingSettings, powerflow: PowerFlow):
+    def __init__(self, settings: TimeSeriesSettings, powerflow: PowerFlow):
         self.settings = settings
         self.powerflow = powerflow
         if self.settings.loadfile_name is not None:
