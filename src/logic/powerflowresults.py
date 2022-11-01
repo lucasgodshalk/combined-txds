@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List
 import numpy as np
 import pandas as pd
-from logic.networkmodel import NetworkModel
+from logic.network.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
 from models.optimization.L2infeasibility import L2InfeasibilityOptimization
 from models.singlephase.bus import Bus

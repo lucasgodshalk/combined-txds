@@ -1,9 +1,9 @@
-from logic.scenarios.timeseriesprocessor import TimeSeriesProcessor
+from logic.network.timeseriesprocessor import TimeSeriesProcessor
 from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflow import PowerFlow
-from logic.networkloader import NetworkLoader
+from logic.network.networkloader import NetworkLoader
 import argparse
-from logic.scenarios.timeseriessettings import TimeSeriesSettings
+from logic.network.timeseriessettings import TimeSeriesSettings
 
 from colorama import init
 from termcolor import colored

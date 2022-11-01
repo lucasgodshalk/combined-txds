@@ -1,11 +1,11 @@
 from itertools import count
 import os
-from logic.networkmodel import TxNetworkModel
+from logic.network.networkmodel import TxNetworkModel
 from logic.powerflow import PowerFlow
 from logic.powerflowresults import PowerFlowResults
 from scipy.io import loadmat
 from logic.powerflowsettings import PowerFlowSettings
-from logic.networkloader import NetworkLoader
+from logic.network.networkloader import NetworkLoader
 
 from models.singlephase.bus import GROUND, Bus
 from models.singlephase.transformer import Transformer

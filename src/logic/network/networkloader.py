@@ -1,8 +1,8 @@
 import os
-from logic.networkmodel import NetworkModel, TxNetworkModel
-from logic.parsers.raw.parser import parse_raw
+from logic.network.networkmodel import NetworkModel, TxNetworkModel
+from logic.network.parsers.raw.parser import parse_raw
 from logic.powerflowsettings import PowerFlowSettings
-from logic.parsers.threephase.threephaseparser import ThreePhaseParser
+from logic.network.parsers.threephase.threephaseparser import ThreePhaseParser
 from models.optimization.L2infeasibility import L2InfeasibilityCurrent, L2InfeasibilityOptimization
 import urllib.request
 import tempfile

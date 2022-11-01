@@ -3,12 +3,12 @@ import os
 from itertools import count
 import math
 import numpy as np
-from logic.networkmodel import DxNetworkModel
+from logic.network.networkmodel import DxNetworkModel
 
 from ditto.readers.gridlabd.read import Reader
 from ditto.store import Store
 import ditto.models.load
-from logic.parsers.threephase.transformerparser import TransformerParser
+from logic.network.parsers.threephase.transformerparser import TransformerParser
 from logic.powerflowsettings import PowerFlowSettings
 from models.singlephase.capacitor import Capacitor, CapacitorMode, CapSwitchState
 from models.singlephase.slack import Slack

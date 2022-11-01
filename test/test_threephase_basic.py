@@ -3,7 +3,7 @@ import cmath
 import math
 from typing import List
 from logic.powerflow import PowerFlow
-from logic.networkloader import NetworkLoader
+from logic.network.networkloader import NetworkLoader
 from logic.powerflowresults import PowerFlowResults
 from logic.powerflowsettings import PowerFlowSettings
 import os

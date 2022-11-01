@@ -1,6 +1,6 @@
 from typing import List
 import numpy as np
-from logic.networkmodel import NetworkModel
+from logic.network.networkmodel import NetworkModel
 
 V_DIFF_MAX = 1
 V_MAX = 2

@@ -2,7 +2,7 @@ import os
 import numpy as np
 from scipy.sparse.linalg import spsolve
 from logic.matrixbuilder import MatrixBuilder
-from logic.networkmodel import NetworkModel
+from logic.network.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
 from pathlib import Path
 from colorama import init

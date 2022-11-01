@@ -1,10 +1,10 @@
 import math
 import os
 import typing
-from logic.networkmodel import DxNetworkModel
+from logic.network.networkmodel import DxNetworkModel
 from pandas import read_csv
 
-from logic.scenarios.timeseriessettings import TimeSeriesSettings
+from logic.network.timeseriessettings import TimeSeriesSettings
 from logic.powerflow import PowerFlow
 from logic.powerflowresults import PowerFlowResults, QuasiTimeSeriesResults
 

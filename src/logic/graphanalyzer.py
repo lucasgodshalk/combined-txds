@@ -1,6 +1,6 @@
 from collections import defaultdict
 import networkx as nx
-from logic.networkmodel import NetworkModel
+from logic.network.networkmodel import NetworkModel
 from models.singlephase.bus import GROUND
 from models.singlephase.load import Load
 from models.threephase.center_tap_transformer import CenterTapTransformer

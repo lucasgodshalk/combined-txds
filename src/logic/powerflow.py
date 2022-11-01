@@ -3,8 +3,8 @@ import time
 from logic.devicecontroller import DeviceController
 from logic.graphanalyzer import GraphAnalyzer
 from logic.homotopycontroller import HomotopyController
-from logic.networkloader import NetworkLoader
-from logic.networkmodel import NetworkModel
+from logic.network.networkloader import NetworkLoader
+from logic.network.networkmodel import NetworkModel
 from logic.nrsolver import NRSolver
 from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflowresults import PowerFlowResults

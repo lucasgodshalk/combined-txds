@@ -11,13 +11,13 @@
 """
 
 import time
-from logic.parsers.raw.global_vars import global_vars
+from logic.network.parsers.raw.global_vars import global_vars
 
 from models.singlephase.bus import Bus
 
-import logic.parsers.raw.data_classes as data_classes
+import logic.network.parsers.raw.data_classes as data_classes
 
-import logic.parsers.raw.Data as Data  # pared down/modified version of data.py from
+import logic.network.parsers.raw.Data as Data  # pared down/modified version of data.py from
 # https://github.com/GOCompetition/Evaluation/blob/master/data.py
 
 

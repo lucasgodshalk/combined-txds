@@ -5,7 +5,7 @@ from logic.lagrangestamper import LagrangeStamper
 from logic.matrixbuilder import MatrixBuilder
 from models.singlephase.line import line_lh
 from models.singlephase.line import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
-from logic.networkmodel import DxNetworkModel
+from logic.network.networkmodel import DxNetworkModel
 from models.helpers import merge_residuals
 
 def calcInverse(Zmatrix):

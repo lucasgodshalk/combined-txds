@@ -4,7 +4,7 @@ import math
 import os
 import numpy as np
 from logic.powerflow import PowerFlow
-from logic.networkloader import NetworkLoader
+from logic.network.networkloader import NetworkLoader
 from logic.powerflowsettings import PowerFlowSettings
 from test_threephase_basic import get_glm_case_file, DATA_DIR
 import cmath
