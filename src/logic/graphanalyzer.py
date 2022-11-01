@@ -8,6 +8,9 @@ from models.singlephase.switch import Switch
 from models.singlephase.transformer import Transformer
 from models.singlephase.regulator import Regulator
 
+#Class for performing graph-based analysis of the network, generally
+#as a set of validations before attempting to solve power flow or
+#in order to provide visualizations.
 class GraphAnalyzer:
     NODE_TYPE_COLOR_MAP = {0:"magenta", 1:"gray", 2:"darkred", 3:"orange"} # For Slack, Inf, PQ, and PV
     def __init__(self, network: NetworkModel):

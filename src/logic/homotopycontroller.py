@@ -5,6 +5,8 @@ from logic.powerflowsettings import PowerFlowSettings
 TX_ITERATIONS = 1000
 TX_SCALE = 1.0 / TX_ITERATIONS
 
+#Simplistic homotopy process, where we just linearly modify the homotopy factor
+#(referred to as the 'tx_factor') until we hit the original solution.
 class HomotopyController:
     def __init__(self, settings: PowerFlowSettings, solver: NRSolver) -> None:
         self.settings = settings
