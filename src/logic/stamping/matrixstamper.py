@@ -18,7 +18,6 @@ def build_stamp_instances(stamper: LagrangeStamper, constant_vals):
     input = StampInput(constant_vals, primal_indexes, dual_indexes)
 
     for derivative in stamper.lsegment.get_derivatives().values():
-
         for (variable, func, expr) in derivative.get_evals():
 
             expression = StampExpression(
@@ -27,7 +26,7 @@ def build_stamp_instances(stamper: LagrangeStamper, constant_vals):
                 stamper.lsegment.parameters,
                 derivative.variable in stamper.lsegment.primals,
                 any([(x in expr.free_symbols) for x in stamper.lsegment.variables]),
-                True,
+                variable == None,
                 tx_factor in stamper.lsegment.constants
                 )
 
@@ -67,24 +66,24 @@ class StampExpression():
         self,
         expression,
         evalf,
-        variables,
+        parameters,
         is_primal_expr: bool,
-        is_nr_invariant: bool,
+        is_linear: bool,
         is_constant_expr: bool,
         tx_factor_index: int
         ):
 
         self.expression = expression
         self.evalf = evalf
-        self.variables = variables
-        self.arg_count = len(variables)
+        self.parameters = parameters
+        self.param_count = len(parameters)
         self.is_primal_expr = is_primal_expr
-        self.is_nr_invariant = is_nr_invariant
+        self.is_linear = is_linear
         self.is_constant_expr = is_constant_expr
         self.tx_factor_index = tx_factor_index
 
-        self.variables_key = str(variables)
-        self.key = str(expression) + self.variables_key + str(is_primal_expr) + str(is_nr_invariant) + str(is_constant_expr) + str(tx_factor_index)
+        self.parameters_key = str(parameters)
+        self.key = str(expression) + self.parameters_key + str(is_primal_expr) + str(is_linear) + str(is_constant_expr) + str(tx_factor_index)
 
 # Multiple stamp instances exist for every single model instance, based on the number of expressions to compute,
 # e.g. each load instance will share the expressions/equations being computed with all other loads, 
@@ -187,8 +186,8 @@ class StampSet():
         
         self.output_indexes.append((stamp.row_index, stamp.col_index))
 
-    def stamp(self, Y: MatrixBuilder, J, tx_factor):
-        args = self.input_builder.build(tx_factor)
+    def stamp(self, Y: MatrixBuilder, J, v_prev, tx_factor):
+        args = self.input_builder.build(v_prev, tx_factor)
 
         output_v = self.expression.evalf(args)
 
@@ -210,51 +209,37 @@ class MatrixStamper():
         self.optimization_enabled = optimization_enabled
 
     def register_stamps(self, stamps: List[StampInstance]):
-        self.input_builders = {}
-        self.input_builders: Dict[str, InputBuilder]
+        input_builders = {}
+        input_builders: Dict[str, InputBuilder]
 
         stamp_sets = {}
         stamp_sets: Dict[str, StampSet]
 
         for stamp in stamps:
-            if stamp.expression.variables_key not in self.input_builders:
-                self.input_builders[stamp.expression.variables_key] = InputBuilder(stamp.expression.variables, self.optimization_enabled)
-            self.input_builders[stamp.expression.variables_key].add_input(stamp.input)
+            if stamp.expression.parameters_key not in input_builders:
+                self.input_builders[stamp.expression.parameters_key] = InputBuilder(stamp.expression.parameters, self.optimization_enabled)
+            self.input_builders[stamp.expression.parameters_key].add_input(stamp.input)
 
             if stamp.expression.key not in self.stamp_sets:
-                self.stamp_sets[stamp.expression.key] = StampSet(stamp.expression, self.input_builders[stamp.expression.variables_key])
+                self.stamp_sets[stamp.expression.key] = StampSet(stamp.expression, input_builders[stamp.expression.parameters_key])
             
             stamp_sets[stamp.expression.key].add_stamp(stamp)
 
-        self.linear_primals = []
-        self.linear_duals = []
-        self.nonlinear_primals = []
-        self.nonlinear_duals = []
+        self.linear_sets = []
+        self.nonlinear_sets = []
 
         for stamp_set in stamp_sets.values():
-            if stamp_set.expression.is_primal_expr:
-                if stamp_set.expression.is_nr_invariant:
-                    self.linear_primals.append(stamp_set)
-                else:
-                    self.linear_duals.append(stamp_set)
+            if stamp_set.expression.is_linear:
+                if self.optimization_enabled or stamp_set.expression.is_primal_expr:
+                    self.linear_sets.append(stamp_set)
             else:
-                if stamp_set.expression.is_nr_invariant:
-                    self.nonlinear_primals.append(stamp_set)
-                else:
-                    self.nonlinear_duals.append(stamp_set)
+                if self.optimization_enabled or stamp_set.expression.is_primal_expr:
+                    self.nonlinear_sets.append(stamp_set)
 
-    def stamp_linear_primal(self, Y: MatrixBuilder, J, v_prev, tx_factor):
-        for set in self.linear_primals:
-            set.stamp(Y, J, tx_factor)
+    def stamp_linear(self, Y: MatrixBuilder, J, v_prev, tx_factor):
+        for stamp_set in self.linear_sets:
+            stamp_set.stamp(Y, J, v_prev, tx_factor)
 
-    def stamp_linear_dual(self, Y: MatrixBuilder, J, v_prev, tx_factor):
-        for set in self.linear_duals:
-            set.stamp(Y, J, tx_factor)
-
-    def stamp_nonlinear_primal(self, Y: MatrixBuilder, J, v_prev, tx_factor):
-        for set in self.nonlinear_primals:
-            set.stamp(Y, J, tx_factor)
-
-    def stamp_nonlinear_dual(self, Y: MatrixBuilder, J, v_prev, tx_factor):
-        for set in self.nonlinear_duals:
-            set.stamp(Y, J, tx_factor)
+    def stamp_nonlinear(self, Y: MatrixBuilder, J, v_prev, tx_factor):
+        for stamp_set in self.nonlinear_sets:
+            stamp_set.stamp(Y, J, v_prev, tx_factor)
