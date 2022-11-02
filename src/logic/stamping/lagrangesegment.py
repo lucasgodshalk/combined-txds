@@ -79,11 +79,14 @@ class DerivativeEntry:
         self.variable = variable
         self.expr = expr
         
+        #The constant expression will end up in the J vector
         self.constant_expr = constant_expr
+        #Any variable expressions will end up in the Y matrix, based on the variable the expression is for.
         self.variable_exprs = variable_exprs
+
+        #All variables that need to be supplied to the evaluation functions. We assume all expressions take the same inputs.
         self.lambda_inputs = lambda_inputs
 
-        #separate step so that we can pickle this object beforehand.
         self.eqn_eval = lambdify(self.lambda_inputs, self.expr)
         self.constant_eval = lambdify(self.lambda_inputs, self.constant_expr)
         self.variable_evals = {}
@@ -102,8 +105,8 @@ class DerivativeEntry:
         return f"Entry {self.variable}: {self.expr}"
 
 #This class manages individual segments of the lagrange equation that is supplied by different models.
-#algebraically, you can think of all the segments as summing together to make the full Lagrange equation,
-#but in reality we map individual components straight onto the matrix (see: LagrangeStamper)
+#You can think of all the segments as summing together to make the full Lagrange equation,
+#but in reality we map individual segments straight onto the matrix (see: LagrangeStamper)
 class LagrangeSegment:
     VERSION = 1 #Increment if changes have been made to bust the derivative cache.
     _pickler = LagrangePickler()
@@ -113,7 +116,6 @@ class LagrangeSegment:
         self.constants = constant_symbols
         self.primals = primal_symbols
         self.duals = dual_symbols
-        self.lagrange = lagrange
         self.lagrange_key = f"{LagrangeSegment.VERSION},{lagrange},{constant_symbols},{primal_symbols},{dual_symbols}"
 
         self.variables = self.primals + self.duals
@@ -129,13 +131,13 @@ class LagrangeSegment:
             try:
                 self._derivatives = LagrangeSegment._pickler.try_unpickle(self.lagrange_key)
             except:
-                self._generated_derivatives()
+                self._generate_derivatives()
         else:
-            self._generated_derivatives()
+            self._generate_derivatives()
 
         return self._derivatives
     
-    def _generated_derivatives(self):
+    def _generate_derivatives(self):
         self._derivatives = {}
 
         lambda_inputs = self.constants + self.variables

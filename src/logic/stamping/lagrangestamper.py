@@ -4,12 +4,6 @@ from logic.stamping.matrixbuilder import MatrixBuilder
 
 SKIP = None
 
-class StampEntry:
-    def __init__(self, row_index, col_index, eval_func) -> None:
-        self.row_index = row_index
-        self.col_index = col_index
-        self.eval_func = eval_func
-
 class LagrangeStamper:
     def __init__(self, handler: LagrangeSegment, var_map: dict, optimization_enabled: bool, eqn_map: dict = None) -> None:
         self.handler = handler
