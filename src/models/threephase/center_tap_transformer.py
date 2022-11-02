@@ -2,8 +2,8 @@ from collections import defaultdict
 from typing import List
 import numpy as np
 from sympy import symbols
-from logic.lagrangesegment import LagrangeSegment
-from logic.lagrangestamper import SKIP, LagrangeStamper
+from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
 from models.singlephase.bus import GROUND
 from models.singlephase.line import build_line_stamper_bus
 from models.helpers import merge_residuals

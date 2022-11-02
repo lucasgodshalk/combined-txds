@@ -2,9 +2,9 @@ from __future__ import division
 from itertools import count
 import numpy as np
 from sympy import symbols
-from logic.lagrangesegment import LagrangeSegment
-from logic.lagrangestamper import SKIP, LagrangeStamper
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
+from logic.stamping.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus

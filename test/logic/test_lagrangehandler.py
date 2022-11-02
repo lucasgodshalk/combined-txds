@@ -1,6 +1,6 @@
 import numpy as np
 from sympy import symbols
-from logic.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangesegment import LagrangeSegment
 
 def test_linear_eqn():
     constants = a, b = symbols("a b")

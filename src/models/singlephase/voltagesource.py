@@ -1,8 +1,8 @@
 import numpy as np
 from sympy import symbols
-from logic.lagrangesegment import LagrangeSegment
-from logic.lagrangestamper import SKIP, LagrangeStamper
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
+from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
 
 constants = Vr_set, Vi_set = symbols("Vr_set Vi_set")

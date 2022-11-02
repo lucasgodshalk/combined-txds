@@ -5,9 +5,9 @@ import numpy as np
 from sympy import symbols
 from sympy import cos
 from sympy import sin
-from logic.lagrangesegment import LagrangeSegment
-from logic.lagrangestamper import SKIP, LagrangeStamper
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
+from logic.stamping.matrixbuilder import MatrixBuilder
 import math
 from models.singlephase.line import build_line_stamper
 from models.singlephase.bus import GROUND, Bus

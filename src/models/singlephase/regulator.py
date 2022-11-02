@@ -1,5 +1,5 @@
 from enum import Enum
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
 from models.singlephase.bus import GROUND, Bus
 from models.singlephase.transformer import Transformer

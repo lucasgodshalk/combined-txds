@@ -1,9 +1,9 @@
 from __future__ import division
 import numpy as np
 from sympy import symbols
-from logic.lagrangesegment import LagrangeSegment
-from logic.lagrangestamper import SKIP, LagrangeStamper
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
+from logic.stamping.matrixbuilder import MatrixBuilder
 import math
 from models.singlephase.bus import GROUND, Bus
 

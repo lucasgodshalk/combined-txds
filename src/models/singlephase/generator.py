@@ -1,9 +1,9 @@
 from __future__ import division
 from itertools import count
 from sympy import symbols
-from logic.lagrangesegment import LagrangeSegment
-from logic.lagrangestamper import LagrangeStamper
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangestamper import LagrangeStamper
+from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
 
 constants = P, Vset = symbols('P V_set')

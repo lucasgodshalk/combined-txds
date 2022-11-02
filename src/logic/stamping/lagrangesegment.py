@@ -1,7 +1,7 @@
 from collections import defaultdict
 import typing
 from sympy import Add, diff, lambdify, expand, Pow, Symbol
-from logic.lagrangepickler import LagrangePickler
+from logic.stamping.lagrangepickler import LagrangePickler
 
 def is_constant(expr, vars):
     for symbol in expr.free_symbols:

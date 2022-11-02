@@ -2,10 +2,10 @@ import numpy as np
 from sympy import symbols
 from collections import defaultdict
 from itertools import count
-from logic.lagrangesegment import LagrangeSegment
-from logic.lagrangestamper import LagrangeStamper
+from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangestamper import LagrangeStamper
 from models.singlephase.bus import Bus
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.matrixbuilder import MatrixBuilder
 
 TX_LARGE_G = 20
 TX_LARGE_B = 20

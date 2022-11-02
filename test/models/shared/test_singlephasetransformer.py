@@ -1,7 +1,7 @@
 
 from itertools import count
-from logic.lagrangestamper import LagrangeStamper
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangestamper import LagrangeStamper
+from logic.stamping.matrixbuilder import MatrixBuilder
 from logic.powerflowsettings import PowerFlowSettings
 from models.singlephase.bus import GROUND, Bus
 from models.singlephase.transformer import xfrmr_lh, tx_factor

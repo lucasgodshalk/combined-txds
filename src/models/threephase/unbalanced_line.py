@@ -1,8 +1,8 @@
 from collections import defaultdict
 import typing
 import numpy as np
-from logic.lagrangestamper import LagrangeStamper
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangestamper import LagrangeStamper
+from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.line import line_lh
 from models.singlephase.line import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 from logic.network.networkmodel import DxNetworkModel

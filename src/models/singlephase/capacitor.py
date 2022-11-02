@@ -1,6 +1,6 @@
 from enum import Enum
 import math
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus
 

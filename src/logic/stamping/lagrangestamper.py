@@ -1,6 +1,6 @@
 from collections import defaultdict
-from logic.lagrangesegment import LagrangeSegment
-from logic.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.matrixbuilder import MatrixBuilder
 
 SKIP = None
 
