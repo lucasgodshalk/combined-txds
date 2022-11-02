@@ -120,6 +120,8 @@ class LagrangeSegment:
 
         self.variables = self.primals + self.duals
 
+        self.parameters = self.constants + self.variables
+
         self._derivatives = None
         self._derivatives: typing.Dict[Symbol, DerivativeEntry]
 
@@ -140,14 +142,12 @@ class LagrangeSegment:
     def _generate_derivatives(self):
         self._derivatives = {}
 
-        lambda_inputs = self.constants + self.variables
-
         for first_order in self.variables:
             derivative = diff(self.lagrange, first_order)
 
             constant_expr, variable_exprs = split_expr(derivative, self.variables)
 
-            self._derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, lambda_inputs)
+            self._derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, self.parameters)
 
         LagrangeSegment._pickler.try_pickle(self.lagrange_key, self._derivatives)
 

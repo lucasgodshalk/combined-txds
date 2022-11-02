@@ -5,8 +5,8 @@ from logic.stamping.matrixbuilder import MatrixBuilder
 SKIP = None
 
 class LagrangeStamper:
-    def __init__(self, handler: LagrangeSegment, var_map: dict, optimization_enabled: bool, eqn_map: dict = None) -> None:
-        self.handler = handler
+    def __init__(self, lsegment: LagrangeSegment, var_map: dict, optimization_enabled: bool, eqn_map: dict = None) -> None:
+        self.lsegment = lsegment
 
         #The equation map is really the row index lookup, and the variable map is really the column index lookup.
         self.var_map = var_map
@@ -17,14 +17,14 @@ class LagrangeStamper:
 
         self.optimization_enabled = optimization_enabled
 
-        self.empty_primals = [None] * len(self.handler.primals)
-        self.empty_duals = [None] * len(self.handler.duals)
+        self.empty_primals = [None] * len(self.lsegment.primals)
+        self.empty_duals = [None] * len(self.lsegment.duals)
 
         #The 'primal' contributions are really the first derivative of the dual variables.
-        self.primal_components = self.build_component_set(self.handler.duals)
+        self.primal_components = self.build_component_set(self.lsegment.duals)
 
         if self.optimization_enabled:
-            self.dual_components = self.build_component_set(self.handler.primals)
+            self.dual_components = self.build_component_set(self.lsegment.primals)
 
     def build_component_set(self, variables):
         components = []
@@ -33,7 +33,7 @@ class LagrangeStamper:
             if row_index == SKIP:
                 continue
 
-            entry = self.handler.get_derivatives()[variable]
+            entry = self.lsegment.get_derivatives()[variable]
 
             for (yth_variable, eval, expr) in entry.get_evals():
 
@@ -53,7 +53,7 @@ class LagrangeStamper:
         else:
             #For the optimization disabled case, we can't use the dual variable's index
             #for the matrix row. Instead, we commandeer the index of it's corresponding primal variable.
-            return self.eqn_map[self.handler.primals[self.handler.duals.index(variable)]]
+            return self.eqn_map[self.lsegment.primals[self.lsegment.duals.index(variable)]]
 
     def stamp_primal(self, Y: MatrixBuilder, J, constant_vals, v_prev):
         primal_vals, dual_vals = self.__extract_kth_primals_duals(v_prev)
@@ -71,16 +71,16 @@ class LagrangeStamper:
         primal_vals, dual_vals = self.__extract_kth_primals_duals(v_result)
         args = constant_vals + primal_vals + dual_vals
 
-        for dual in self.handler.duals:
-            derivative = self.handler.get_derivatives()[dual]
+        for dual in self.lsegment.duals:
+            derivative = self.lsegment.get_derivatives()[dual]
             row_idx = self.get_variable_row_index(dual)
             if row_idx == SKIP:
                 continue
             residuals[row_idx] += derivative.eqn_eval(*args)
 
         if self.optimization_enabled:
-            for primal in self.handler.primals:
-                derivative = self.handler.get_derivatives()[primal]
+            for primal in self.lsegment.primals:
+                derivative = self.lsegment.get_derivatives()[primal]
                 row_idx = self.get_variable_row_index(primal)
                 if row_idx == SKIP:
                     continue
@@ -93,7 +93,7 @@ class LagrangeStamper:
             return (self.empty_primals, self.empty_duals)
 
         primal_vals = []
-        for primal in self.handler.primals:
+        for primal in self.lsegment.primals:
             index = self.var_map[primal]
             if index == SKIP:
                 primal_vals.append(0)
@@ -102,7 +102,7 @@ class LagrangeStamper:
 
         if self.optimization_enabled:
             dual_vals = []
-            for dual in self.handler.duals:
+            for dual in self.lsegment.duals:
                 index = self.var_map[dual]
                 if index == SKIP:
                     dual_vals.append(0)
@@ -132,3 +132,4 @@ class LagrangeStamper:
                 J[row_index] += expr
             else:
                 Y.stamp(row_index, col_index, expr)
+    

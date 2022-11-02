@@ -8,10 +8,12 @@ from models.singlephase.bus import GROUND
 from models.singlephase.line import build_line_stamper_bus
 from models.helpers import merge_residuals
 from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
+from models.wellknownvariables import tx_factor
 
-constants = tr_orig, tx_factor = symbols('tr tx_factor')
-primals = [Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2] = symbols('Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2')
-duals = [Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2] = symbols('Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2')
+tr_orig = symbols('tr')
+constants = tr_orig, tx_factor
+primals = Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2 = symbols('Vr_pri, Vi_pri, Ir_L1, Ii_L1, Vr_L1, Vi_L1, Ir_L2, Ii_L2, Vr_L2, Vi_L2')
+duals = Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2 = symbols('Lr_pri, Li_pri, Lir_L1, Lii_L1, Lr_L1, Li_L1, Lir_L2, Lii_L2, Lr_L2, Li_L2')
 
 tr = tr_orig + (1 - tr_orig) * tx_factor 
 

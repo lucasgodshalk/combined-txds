@@ -6,13 +6,15 @@ from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestamper import LagrangeStamper
 from models.singlephase.bus import Bus
 from logic.stamping.matrixbuilder import MatrixBuilder
+from models.wellknownvariables import tx_factor
 
 TX_LARGE_G = 20
 TX_LARGE_B = 20
 
-constants = G_orig, B_orig, tx_factor = symbols('G B tx_factor')
-primals = [Vr_from, Vi_from, Vr_to, Vi_to] = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
-duals = [Lr_from, Li_from, Lr_to, Li_to] = symbols('lambda_from\,r lambda_from\,i lambda_to\,r lambda_to\,i')
+G_orig, B_orig = symbols('G B')
+constants = G_orig, B_orig, tx_factor
+primals = Vr_from, Vi_from, Vr_to, Vi_to = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
+duals = Lr_from, Li_from, Lr_to, Li_to = symbols('lambda_from\,r lambda_from\,i lambda_to\,r lambda_to\,i')
 
 G = G_orig + TX_LARGE_G * G_orig * tx_factor
 B = B_orig + TX_LARGE_B * B_orig * tx_factor

@@ -1,12 +1,52 @@
 from typing import List, Dict
-from logic.stamping.matrixbuilder import MatrixBuilder
 import numpy as np
+from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
+from logic.stamping.matrixbuilder import MatrixBuilder
+from models.wellknownvariables import tx_factor
 
-#All of the constants and variables that will be used to calculate an expression. The set of parameters
-#will be different for each instance of a model, but the shape will be the same.
+def build_stamp_instances(stamper: LagrangeStamper, constant_vals):
+    stamps = []
+
+    primal_indexes = []
+    for primal in stamper.lsegment.primals:
+        primal_indexes.append(stamper.var_map[primal])
+
+    dual_indexes = []
+    for dual in stamper.lsegment.duals:
+        dual_indexes.append(stamper.var_map[dual])
+
+    input = StampInput(constant_vals, primal_indexes, dual_indexes)
+
+    for derivative in stamper.lsegment.get_derivatives().values():
+
+        for (variable, func, expr) in derivative.get_evals():
+
+            expression = StampExpression(
+                expr,
+                func,
+                stamper.lsegment.parameters,
+                derivative.variable in stamper.lsegment.primals,
+                any([(x in expr.free_symbols) for x in stamper.lsegment.variables]),
+                True,
+                tx_factor in stamper.lsegment.constants
+                )
+
+            stamp = StampInstance(
+                expression,
+                input,
+                stamper.get_variable_row_index(derivative.variable),
+                stamper.var_map[variable]
+                )
+            
+            stamps.append(stamp)
+        
+    return stamps
+
+#All of the constants and variables that will be used to calculate a stamp. The set of parameters
+#will be different for each instance of a model, but the shape will be the same based on the expression.
 #If multiple expressions are all derived from the same underlying equation, then
 #the expressions can utilize the same set of inputs (because they will share constants and variables).
-class ExpressionInput():
+class StampInput():
     def __init__(
         self,
         constant_vals: List,
@@ -53,7 +93,7 @@ class StampInstance():
     def __init__(
         self,
         expression: StampExpression,
-        input: ExpressionInput,
+        input: StampInput,
         row_index: int,
         col_index: int
         ):
@@ -80,9 +120,9 @@ class InputBuilder():
         self.arg_count = len(variables)
 
         self.inputs = {}
-        self.inputs: Dict[str, ExpressionInput]
+        self.inputs: Dict[str, StampInput]
     
-    def add_input(self, input: ExpressionInput):
+    def add_input(self, input: StampInput):
         if input.key not in self.inputs:
             self.inputs[input.key] = input
 
@@ -112,6 +152,8 @@ class InputBuilder():
                     self.arg_matrix[input_row, input_col] = None
                 input_col += 1
             
+            self.input_fills = [x for x in self.input_fills if (SKIP not in x)]
+
             if input_col + 1 != self.arg_count:
                 raise Exception("Length mismatch in parameter inputs for stamp")
         

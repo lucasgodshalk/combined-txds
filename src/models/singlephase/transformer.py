@@ -11,10 +11,12 @@ from logic.stamping.matrixbuilder import MatrixBuilder
 import math
 from models.singlephase.line import build_line_stamper
 from models.singlephase.bus import GROUND, Bus
+from models.wellknownvariables import tx_factor
 
-constants = tr, ang, tx_factor = symbols('tr ang tx_factor')
-primals = [Vr_pri_pos, Vi_pri_pos, Vr_pri_neg, Vi_pri_neg, Ir_prim, Ii_prim, Vr_sec_pos, Vi_sec_pos, Vr_sec_neg, Vi_sec_neg] = symbols('Vr_pri_pos Vi_pri_pos Vr_pri_neg Vi_pri_neg Ir_prim Ii_prim Vr_sec_pos Vi_sec_pos Vr_sec_neg Vi_sec_neg')
-duals = [Lr_pri_pos, Li_pri_pos, Lr_pri_neg, Li_pri_neg, Lir_prim, Lii_prim, Lr_sec_pos, Li_sec_pos, Lr_sec_neg, Li_sec_neg] = symbols('Lr_pri_pos Li_pri_pos Lr_pri_neg Li_pri_neg Lir_prim Lii_prim Lr_sec_pos Li_sec_pos Lr_sec_neg Li_sec_neg')
+tr, ang = symbols('tr ang')
+constants = tr, ang, tx_factor
+primals = Vr_pri_pos, Vi_pri_pos, Vr_pri_neg, Vi_pri_neg, Ir_prim, Ii_prim, Vr_sec_pos, Vi_sec_pos, Vr_sec_neg, Vi_sec_neg = symbols('Vr_pri_pos Vi_pri_pos Vr_pri_neg Vi_pri_neg Ir_prim Ii_prim Vr_sec_pos Vi_sec_pos Vr_sec_neg Vi_sec_neg')
+duals = Lr_pri_pos, Li_pri_pos, Lr_pri_neg, Li_pri_neg, Lir_prim, Lii_prim, Lr_sec_pos, Li_sec_pos, Lr_sec_neg, Li_sec_neg = symbols('Lr_pri_pos Li_pri_pos Lr_pri_neg Li_pri_neg Lir_prim Lii_prim Lr_sec_pos Li_sec_pos Lr_sec_neg Li_sec_neg')
 
 scaled_tr = tr + (1 - tr) * tx_factor 
 scaled_angle = ang - ang * tx_factor
