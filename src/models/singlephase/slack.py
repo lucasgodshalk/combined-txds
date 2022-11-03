@@ -6,6 +6,7 @@ from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
 from logic.stamping.matrixbuilder import MatrixBuilder
 import math
 from models.singlephase.bus import GROUND, Bus
+from logic.stamping.matrixstamper import build_stamps_from_stampers
 
 constants = [Vrset, Viset] = symbols("Vrset Viset")
 
@@ -75,6 +76,11 @@ class Slack:
         index_map[Lsi] = self.slack_lambda_Ii
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
+
+    def get_stamps(self):
+        return build_stamps_from_stampers(
+            (self.stamper, [self.Vr_set, self.Vi_set])
+            )
 
     def get_connections(self):
         return [(self.bus, GROUND)]

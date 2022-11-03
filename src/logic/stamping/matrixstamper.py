@@ -4,7 +4,14 @@ from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.wellknownvariables import tx_factor
 
-def build_stamp_instances(stamper: LagrangeStamper, constant_vals):
+def build_stamps_from_stampers(*args):
+    stamps = []
+    for (stamper, constantvals) in args:
+        stamps += build_stamps_from_stamper(stamper, constantvals)
+    
+    return stamps
+
+def build_stamps_from_stamper(stamper: LagrangeStamper, constant_vals):
     stamps = []
 
     primal_indexes = []
@@ -17,24 +24,44 @@ def build_stamp_instances(stamper: LagrangeStamper, constant_vals):
 
     input = StampInput(constant_vals, primal_indexes, dual_indexes)
 
-    for derivative in stamper.lsegment.get_derivatives().values():
-        for (variable, func, expr) in derivative.get_evals():
+    if stamper.optimization_enabled:
+        first_order_variables = stamper.lsegment.variables
+    else:
+        first_order_variables = stamper.lsegment.duals
+
+    for variable in first_order_variables:
+
+        row_index = stamper.get_variable_row_index(variable)
+        if row_index == SKIP:
+            continue
+
+        derivative = stamper.lsegment.get_derivatives()[variable]
+
+        for (yth_variable, func, expr) in derivative.get_evals():
+            if yth_variable == None:
+                col_index = None
+            else:
+                col_index = stamper.var_map[yth_variable]
+                if col_index == SKIP:
+                    continue
+
+            is_linear = not any([(x in expr.free_symbols) for x in stamper.lsegment.variables])
+            tx_factor_index = stamper.lsegment.constants.index(tx_factor) if tx_factor in stamper.lsegment.constants else SKIP
 
             expression = StampExpression(
                 expr,
                 func,
                 stamper.lsegment.parameters,
-                derivative.variable in stamper.lsegment.primals,
-                any([(x in expr.free_symbols) for x in stamper.lsegment.variables]),
-                variable == None,
-                tx_factor in stamper.lsegment.constants
+                is_linear,
+                yth_variable == None,
+                tx_factor_index
                 )
 
             stamp = StampInstance(
                 expression,
                 input,
-                stamper.get_variable_row_index(derivative.variable),
-                stamper.var_map[variable]
+                row_index,
+                col_index
                 )
             
             stamps.append(stamp)
@@ -67,7 +94,6 @@ class StampExpression():
         expression,
         evalf,
         parameters,
-        is_primal_expr: bool,
         is_linear: bool,
         is_constant_expr: bool,
         tx_factor_index: int
@@ -77,13 +103,12 @@ class StampExpression():
         self.evalf = evalf
         self.parameters = parameters
         self.param_count = len(parameters)
-        self.is_primal_expr = is_primal_expr
         self.is_linear = is_linear
         self.is_constant_expr = is_constant_expr
         self.tx_factor_index = tx_factor_index
 
         self.parameters_key = str(parameters)
-        self.key = str(expression) + self.parameters_key + str(is_primal_expr) + str(is_linear) + str(is_constant_expr) + str(tx_factor_index)
+        self.key = str(expression) + self.parameters_key + str(is_linear) + str(is_constant_expr) + str(tx_factor_index)
 
 # Multiple stamp instances exist for every single model instance, based on the number of expressions to compute,
 # e.g. each load instance will share the expressions/equations being computed with all other loads, 
@@ -107,7 +132,7 @@ class StampInstance():
 class InputBuilder():
     def __init__(
         self, 
-        variables: int,
+        variables,
         tx_factor_index: int,
         optimization_enabled: bool
         ):
@@ -120,50 +145,63 @@ class InputBuilder():
 
         self.inputs = {}
         self.inputs: Dict[str, StampInput]
+
+        self.input_indexes = []
     
     def add_input(self, input: StampInput):
         if input.key not in self.inputs:
             self.inputs[input.key] = input
+            self.input_indexes.append(input.key)
+        
+        return self.input_indexes.index(input.key)
 
-    def load_input(self):
-        self.arg_matrix = np.zeros((len(self.inputs), self.arg_count))
+    def freeze_inputs(self, is_linear_only: bool):
+        #Somewhat counter-intuitively, the row is the argument index
+        #and the column is the stamp instance's index.
+        self.args = [np.zeros(len(self.inputs)) for x in range(self.arg_count)]
         self.input_fills = []
 
-        for input_row in range(len(self.inputs)):
-            input = self.inputs[input_row]
-
-            input_col = 0
+        instance_idx = 0
+        for input_key in self.input_indexes:
+            input = self.inputs[input_key]
+            arg_index = 0
 
             for constant_val in input.constant_vals:
-                self.arg_matrix[input_row, input_col] = constant_val
-
-                input_col += 1
+                self.args[arg_index][instance_idx] = constant_val
+                arg_index += 1
             
-            #The row and column to use for the input array, not to be confused with the row and column of the Y matrix
-            for v_idx in input.primal_indexes:
-                self.input_fills.append((input_row, input_col, v_idx))
-                input_col += 1
+            #If the inputs are only used for linear expressions, then we don't need to touch it at all
+            #after the the inputs are formed during the linear step.
+            if not is_linear_only:
+                #The row and column to use for the input array, not to be confused with the row and column of the Y matrix
+                for v_idx in input.primal_indexes:
+                    self.input_fills.append((arg_index, instance_idx, v_idx))
+                    arg_index += 1
 
-            for v_idx in input.dual_indexes:
-                if self.optimization_enabled:
-                    self.input_fills.append((input_row, input_col, v_idx))
-                else:
-                    self.arg_matrix[input_row, input_col] = None
-                input_col += 1
-            
-            self.input_fills = [x for x in self.input_fills if (SKIP not in x)]
+                for v_idx in input.dual_indexes:
+                    if self.optimization_enabled:
+                        self.input_fills.append((arg_index, instance_idx, v_idx))
+                    else:
+                        self.args[arg_index][instance_idx] = None
+                    arg_index += 1
+                
+                self.input_fills = [x for x in self.input_fills if (SKIP not in x)]
 
-            if input_col + 1 != self.arg_count:
-                raise Exception("Length mismatch in parameter inputs for stamp")
+                if arg_index != self.arg_count:
+                    raise Exception("Length mismatch in parameter inputs for stamp")
+                
+            instance_idx += 1
+
+    def update_vprev(self, v_prev):
+        for arg_index, instance_idx, v_idx in self.input_fills:
+            self.args[arg_index][instance_idx] = v_prev[v_idx]
         
-    def build(self, v_prev, tx_factor):
-        for input_row, input_col, v_idx in self.input_fills:
-            self.arg_matrix[input_row, input_col] = v_prev[v_idx]
-        
-        if self.tx_factor_index != None:
-            self.arg_matrix[:, self.tx_factor_index] = tx_factor
+    def update_txfactor(self, tx_factor):
+        if self.tx_factor_index != SKIP:
+            self.args[self.tx_factor_index][:] = tx_factor
 
-        return self.arg_matrix
+    def get_args(self):
+        return self.args
 
 #Responsible for stamping a set of stamp instances that share an expression
 class StampSet():
@@ -177,28 +215,24 @@ class StampSet():
         self.input_builder = input_builder
 
         self.stamps = []
-        self.stamps: List[StampInstance]
+        self.stamps: List[(StampInstance, int, int, int)]
 
-        self.output_indexes = []
+    def add_stamp(self, stamp: StampInstance, output_index: int):
+        self.stamps.append((stamp, stamp.row_index, stamp.col_index, output_index))
 
-    def add_stamp(self, stamp: StampInstance):
-        self.stamps.append(stamp)
-        
-        self.output_indexes.append((stamp.row_index, stamp.col_index))
+    def stamp(self, Y: MatrixBuilder, J):
+        args = self.input_builder.get_args()
 
-    def stamp(self, Y: MatrixBuilder, J, v_prev, tx_factor):
-        args = self.input_builder.build(v_prev, tx_factor)
-
-        output_v = self.expression.evalf(args)
+        output_v = self.expression.evalf(*args)
+        if type(output_v) != np.ndarray:
+            output_v = np.full(args[0].shape[0], output_v)
 
         if self.expression.is_constant_expr:
-            for i in range(len(self.output_indexes)):
-                (row_idx, _) = self.output_indexes[i]
-                J[row_idx] += output_v[i]
+            for _, row_idx, _, output_idx in self.stamps:
+                J[row_idx] += output_v[output_idx]
         else:
-            for i in range(len(self.output_indexes)):
-                (row_idx, col_idx) = self.output_indexes[i]
-                Y.stamp(row_idx, col_idx, output_v[i])
+            for _, row_idx, col_idx, output_idx in self.stamps:
+                Y.stamp(row_idx, col_idx, output_v[output_idx])
 
 class MatrixStamper():
     def __init__(
@@ -212,34 +246,47 @@ class MatrixStamper():
         input_builders = {}
         input_builders: Dict[str, InputBuilder]
 
+        nonlinear_inputs = set()
+
         stamp_sets = {}
         stamp_sets: Dict[str, StampSet]
 
         for stamp in stamps:
             if stamp.expression.parameters_key not in input_builders:
-                self.input_builders[stamp.expression.parameters_key] = InputBuilder(stamp.expression.parameters, self.optimization_enabled)
-            self.input_builders[stamp.expression.parameters_key].add_input(stamp.input)
+                input_builders[stamp.expression.parameters_key] = InputBuilder(stamp.expression.parameters, stamp.expression.tx_factor_index, self.optimization_enabled)
+            output_index = input_builders[stamp.expression.parameters_key].add_input(stamp.input)
 
-            if stamp.expression.key not in self.stamp_sets:
-                self.stamp_sets[stamp.expression.key] = StampSet(stamp.expression, input_builders[stamp.expression.parameters_key])
+            if not stamp.expression.is_linear:
+                nonlinear_inputs.add(stamp.expression.parameters_key)
+
+            if stamp.expression.key not in stamp_sets:
+                stamp_sets[stamp.expression.key] = StampSet(stamp.expression, input_builders[stamp.expression.parameters_key])
             
-            stamp_sets[stamp.expression.key].add_stamp(stamp)
+            stamp_sets[stamp.expression.key].add_stamp(stamp, output_index)
 
+        for key, input_builder in input_builders.items():
+            input_builder.freeze_inputs(key not in nonlinear_inputs)
+
+        self.input_builders = input_builders.values()
         self.linear_sets = []
         self.nonlinear_sets = []
 
         for stamp_set in stamp_sets.values():
             if stamp_set.expression.is_linear:
-                if self.optimization_enabled or stamp_set.expression.is_primal_expr:
-                    self.linear_sets.append(stamp_set)
+                self.linear_sets.append(stamp_set)
             else:
-                if self.optimization_enabled or stamp_set.expression.is_primal_expr:
-                    self.nonlinear_sets.append(stamp_set)
+                self.nonlinear_sets.append(stamp_set)
 
-    def stamp_linear(self, Y: MatrixBuilder, J, v_prev, tx_factor):
+    def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
+        for input_builder in self.input_builders:
+            input_builder.update_txfactor(tx_factor)
+
         for stamp_set in self.linear_sets:
-            stamp_set.stamp(Y, J, v_prev, tx_factor)
+            stamp_set.stamp(Y, J)
 
-    def stamp_nonlinear(self, Y: MatrixBuilder, J, v_prev, tx_factor):
+    def stamp_nonlinear(self, Y: MatrixBuilder, J, v_prev):
+        for input_builder in self.input_builders:
+            input_builder.update_vprev(v_prev)
+        
         for stamp_set in self.nonlinear_sets:
-            stamp_set.stamp(Y, J, v_prev, tx_factor)
+            stamp_set.stamp(Y, J,)

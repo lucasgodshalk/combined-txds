@@ -7,6 +7,8 @@ from logic.powerflowsettings import PowerFlowSettings
 from pathlib import Path
 from colorama import init
 from termcolor import colored
+from logic.stamping.matrixstamper import MatrixStamper
+from models.singlephase.bus import Bus
 # use Colorama to make Termcolor work on Windows too
 init()
 
@@ -30,28 +32,23 @@ class NRSolver:
         return self.diff_mask
 
     def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
-        for element in self.network.get_NR_invariant_elements():
-            element.stamp_primal(Y, J, None, tx_factor, self.network)
-
-        if self.network.optimization != None:
-            for element in self.network.get_NR_invariant_elements():
-                element.stamp_dual(Y, J, None, tx_factor, self.network)
-            
-            if self.network.optimization.is_linear:
-                self.network.optimization.stamp(Y, J, None, tx_factor, self.network)
+        self.matrix_stamper.stamp_linear(Y, J, tx_factor)
 
     def stamp_nonlinear(self, Y: MatrixBuilder, J, v_previous, tx_factor):
-        for element in self.network.get_NR_variable_elements():
-            element.stamp_primal(Y, J, v_previous, tx_factor, self.network)
-
-        if self.network.optimization != None:
-            for element in self.network.get_NR_variable_elements():
-                element.stamp_dual(Y, J, v_previous, tx_factor, self.network)
-
-            if not self.network.optimization.is_linear:
-                self.network.optimization.stamp(Y, J, v_previous, tx_factor, self.network)
+        self.matrix_stamper.stamp_nonlinear(Y, J, v_previous)
 
     def run_powerflow(self, v_init, tx_factor):
+        self.matrix_stamper = MatrixStamper(self.settings.infeasibility_analysis)
+
+        stamps = []
+        for element in self.network.get_all_elements():
+            if type(element) == Bus:
+                continue
+            
+            stamps += element.get_stamps()
+        
+        self.matrix_stamper.register_stamps(stamps)
+
         if self.settings.dump_matrix:
             dump_matrix_map(self.network.matrix_map)
 

@@ -4,6 +4,7 @@ from collections import defaultdict
 from itertools import count
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestamper import LagrangeStamper
+from logic.stamping.matrixstamper import build_stamps_from_stampers
 from models.singlephase.bus import Bus
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.wellknownvariables import tx_factor
@@ -124,6 +125,12 @@ class Line:
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
+
+    def get_stamps(self):
+        return build_stamps_from_stampers(
+            (self.line_stamper, [self.G, self.B, 0]), 
+            (self.shunt_stamper, [self.B_line, 0])
+            )
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         if not self.status:

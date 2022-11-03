@@ -87,12 +87,12 @@ class DerivativeEntry:
         #All variables that need to be supplied to the evaluation functions. We assume all expressions take the same inputs.
         self.lambda_inputs = lambda_inputs
 
-        self.eqn_eval = lambdify(self.lambda_inputs, self.expr)
-        self.constant_eval = lambdify(self.lambda_inputs, self.constant_expr)
+        self.eqn_eval = lambdify(self.lambda_inputs, self.expr, "numpy")
+        self.constant_eval = lambdify(self.lambda_inputs, self.constant_expr, "numpy")
         self.variable_evals = {}
         for var, variable_eqn in self.variable_exprs.items():
             if variable_eqn != 0:
-                self.variable_evals[var] = lambdify(self.lambda_inputs, variable_eqn)
+                self.variable_evals[var] = lambdify(self.lambda_inputs, variable_eqn, "numpy")
 
     def get_evals(self):
         if self.constant_expr != 0:

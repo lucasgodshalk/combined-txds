@@ -7,6 +7,7 @@ from models.singlephase.line import line_lh
 from models.singlephase.line import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 from logic.network.networkmodel import DxNetworkModel
 from models.helpers import merge_residuals
+from logic.stamping.matrixstamper import build_stamps_from_stampers
 
 def calcInverse(Zmatrix):
     num_nnz = np.count_nonzero(Zmatrix)
@@ -131,6 +132,16 @@ class UnbalancedLine():
         for line in self.lines:
             from_bus, to_bus = line.get_nodes(self.network_model)
             yield (from_bus, to_bus)
+
+    def get_stamps(self):
+        stamps = []
+        for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(self.network_model):
+            stamps += build_stamps_from_stampers(
+                (line_stamper, [g, b, 0]),
+                (shunt_stamper, [B/2, 0]),
+                )
+        
+        return stamps
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
         for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):

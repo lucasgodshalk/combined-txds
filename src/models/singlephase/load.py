@@ -8,6 +8,7 @@ from logic.stamping.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus
+from logic.stamping.matrixstamper import build_stamps_from_stampers
 
 #Eqns reference:
 # Pandey, A. (2018). 
@@ -157,6 +158,11 @@ class Load:
             self.stamper_z = None
         else:
             self.stamper_z = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
+
+    def get_stamps(self):
+        return build_stamps_from_stampers(
+            (self.stamper_pq, [self.P, self.Q])
+            )
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]

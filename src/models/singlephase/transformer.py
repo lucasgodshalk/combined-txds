@@ -12,6 +12,7 @@ import math
 from models.singlephase.line import build_line_stamper
 from models.singlephase.bus import GROUND, Bus
 from models.wellknownvariables import tx_factor
+from logic.stamping.matrixstamper import build_stamps_from_stampers
 
 tr, ang = symbols('tr ang')
 constants = tr, ang, tx_factor
@@ -151,6 +152,12 @@ class Transformer:
             GROUND, 
             GROUND,
             optimization_enabled
+            )
+
+    def get_stamps(self):
+        return build_stamps_from_stampers(
+            (self.xfrmr_stamper, [self.tr, self.ang_rad, 0]), 
+            (self.losses_stamper, [self.G_loss, self.B_loss, 0])
             )
 
     def get_connections(self):
