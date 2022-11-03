@@ -4,6 +4,7 @@ from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
+from logic.stamping.matrixstamper import build_stamps_from_stampers
 
 constants = Vr_set, Vi_set = symbols("Vr_set Vi_set")
 primals = Vr_from, Vi_from, Vr_to, Vi_to, Ir, Ii = symbols('Vr_from Vi_from Vr_to Vi_to Ir Ii')
@@ -60,6 +61,11 @@ class VoltageSource:
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
+
+    def get_stamps(self):
+        return build_stamps_from_stampers(
+            (self.stamper, [self.Vr_set, self.Vi_set]) 
+            )
 
     def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
         self.stamper.stamp_primal(Y, J, [self.Vr_set, self.Vi_set], v_previous)

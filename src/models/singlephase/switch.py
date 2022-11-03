@@ -27,6 +27,9 @@ class Switch():
 
         self.vs.assign_nodes(node_index, optimization_enabled)
 
+    def get_stamps(self):
+        return self.vs.get_stamps()
+
     def get_connections(self):
         if self.status == SwitchStatus.OPEN:
             return []

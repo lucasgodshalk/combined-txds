@@ -3,6 +3,7 @@ import math
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus
+from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 class CapSwitchState(Enum):
     OPEN = "OPEN"
@@ -33,6 +34,9 @@ class Capacitor:
     
     def assign_nodes(self, node_index, optimization_enabled):
         self.line_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
+
+    def get_stamps(self):
+        return build_stamps_from_stamper(self.line_stamper, [self.G, self.B, 0])
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]

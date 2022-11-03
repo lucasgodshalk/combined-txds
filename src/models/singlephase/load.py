@@ -161,7 +161,9 @@ class Load:
 
     def get_stamps(self):
         return build_stamps_from_stampers(
-            (self.stamper_pq, [self.P, self.Q])
+            (self.stamper_pq, [self.P, self.Q]),
+            (self.stamper_Ic, [self.IP, self.IQ]),
+            (self.stamper_z, [self.G, self.B, 0]),
             )
 
     def get_connections(self):

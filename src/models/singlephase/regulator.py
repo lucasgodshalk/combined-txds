@@ -118,6 +118,9 @@ class Regulator():
         self.transformer.assign_nodes(node_index, optimization_enabled)
         self.current_sensor.assign_nodes(node_index, optimization_enabled)
 
+    def get_stamps(self):
+        return self.transformer.get_stamps() + self.current_sensor.get_stamps()
+
     def get_connections(self):
         return [(self.from_node, self.to_node)]
 

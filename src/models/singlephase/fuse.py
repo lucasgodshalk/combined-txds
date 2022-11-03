@@ -5,6 +5,7 @@ from models.helpers import merge_residuals
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus
 from models.singlephase.voltagesource import CurrentSensor
+from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 import numpy as np
 
@@ -42,6 +43,9 @@ class Fuse():
             return []
 
         return [(self.from_node, self.to_node)]
+
+    def get_stamps(self):
+        return build_stamps_from_stamper(self.line_stamper, [self.G, self.B, 0]) + self.current_sensor.get_stamps()
 
     def get_current(self, v):
         if self.status == FuseStatus.BLOWN:

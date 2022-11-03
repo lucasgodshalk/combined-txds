@@ -7,6 +7,8 @@ from models.wellknownvariables import tx_factor
 def build_stamps_from_stampers(*args):
     stamps = []
     for (stamper, constantvals) in args:
+        if stamper == None:
+            continue
         stamps += build_stamps_from_stamper(stamper, constantvals)
     
     return stamps

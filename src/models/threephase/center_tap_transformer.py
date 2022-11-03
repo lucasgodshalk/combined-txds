@@ -9,6 +9,7 @@ from models.singlephase.line import build_line_stamper_bus
 from models.helpers import merge_residuals
 from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
 from models.wellknownvariables import tx_factor
+from logic.stamping.matrixstamper import build_stamps_from_stampers
 
 tr_orig = symbols('tr')
 constants = tr_orig, tx_factor
@@ -129,6 +130,14 @@ class CenterTapTransformer():
             index_map[Li_L2] = SKIP
 
         self.center_tap_xfmr_stamper = LagrangeStamper(center_tap_xfmr_lh, index_map, optimization_enabled)
+
+    def get_stamps(self):
+        return build_stamps_from_stampers(
+            (self.center_tap_xfmr_stamper, [self.turn_ratio, 0]), 
+            (self.primary_impedance_stamper, [self.g0, self.b0, 0]),
+            (self.L1_impedance_stamper, [self.g1, self.b1, 0]),
+            (self.L2_impedance_stamper, [self.g2, self.b2, 0])
+            )
 
     def get_connections(self):
         return [
