@@ -58,7 +58,7 @@ class NRSolver:
         v_previous = np.copy(v_init)
 
         Y = MatrixBuilder(self.settings)
-        J_linear = [0] * len(v_init)
+        J_linear = np.zeros(len(v_init))
 
         self.stamp_linear(Y, J_linear, tx_factor)
 
