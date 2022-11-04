@@ -7,7 +7,7 @@ from logic.powerflowsettings import PowerFlowSettings
 from pathlib import Path
 from colorama import init
 from termcolor import colored
-from logic.stamping.matrixstamper import MatrixStamper
+from logic.stamping.matrixstamper import build_matrix_stamper
 from models.singlephase.bus import Bus
 # use Colorama to make Termcolor work on Windows too
 init()
@@ -38,19 +38,7 @@ class NRSolver:
         self.matrix_stamper.stamp_nonlinear(Y, J, v_previous)
 
     def run_powerflow(self, v_init, tx_factor):
-        self.matrix_stamper = MatrixStamper(self.settings.infeasibility_analysis)
-
-        stamps = []
-        for element in self.network.get_all_elements():
-            if type(element) == Bus:
-                continue
-            
-            stamps += element.get_stamps()
-        
-        if self.network.optimization != None:
-            stamps += self.network.optimization.get_stamps()
-
-        self.matrix_stamper.register_stamps(stamps)
+        self.matrix_stamper = build_matrix_stamper(self.network, self.settings.infeasibility_analysis)
 
         if self.settings.dump_matrix:
             dump_matrix_map(self.network.matrix_map)

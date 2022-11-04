@@ -1,9 +1,28 @@
+from collections import defaultdict
 from typing import List, Dict
 import numpy as np
 from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.wellknownvariables import tx_factor
+from models.singlephase.bus import Bus
+
+def build_matrix_stamper(network, optimization_enabled: bool):
+    matrix_stamper = MatrixStamper(optimization_enabled)
+
+    stamps = []
+    for element in network.get_all_elements():
+        if type(element) == Bus:
+            continue
+        
+        stamps += element.get_stamps()
+    
+    if network.optimization != None:
+        stamps += network.optimization.get_stamps()
+
+    matrix_stamper.register_stamps(stamps)
+
+    return matrix_stamper
 
 def build_stamps_from_stampers(model, *args):
     stamps = []
@@ -18,44 +37,55 @@ lagrange_cache = {}
 
 def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabled):
     key = lsegment.lagrange_key + str(optimization_enabled)
-    
+
     if key in lagrange_cache:
         return lagrange_cache[key]
 
+    residuals = []
     expressions = []
     if optimization_enabled:
         first_order_variables = lsegment.variables
     else:
         first_order_variables = lsegment.duals
 
+    tx_factor_index = lsegment.constants.index(tx_factor) if tx_factor in lsegment.constants else SKIP
+
     for first_order in first_order_variables:
         derivative = lsegment.get_derivatives()[first_order]
+
+        residuals.append((first_order, derivative.expr, derivative.expr_eval))
+
         for (yth_variable, func, expr) in derivative.get_evals():
             is_linear = not any([(x in expr.free_symbols) for x in lsegment.variables])
-            tx_factor_index = lsegment.constants.index(tx_factor) if tx_factor in lsegment.constants else SKIP
 
             expression = StampExpression(
+                lsegment,
+                first_order,
                 expr,
                 func,
-                lsegment.parameters,
+                yth_variable,
                 is_linear,
-                yth_variable == None,
                 tx_factor_index
                 )
             
             expressions.append((first_order, yth_variable, expression))
     
-    lagrange_cache[key] = expressions
+    lagrange_cache[key] = (expressions, residuals)
     
-    return expressions
+    return expressions, residuals
 
 def build_stamps_from_stamper(model, stamper: LagrangeStamper, constant_vals):
     primal_indexes = [stamper.var_map[primal] for primal in stamper.lsegment.primals]
     dual_indexes = [stamper.var_map[dual] for dual in stamper.lsegment.duals]
 
-    input = StampInput(constant_vals, primal_indexes, dual_indexes)
+    expressions, _ = get_or_build_stamp_expressions(stamper.lsegment, stamper.optimization_enabled)
 
-    expressions = get_or_build_stamp_expressions(stamper.lsegment, stamper.optimization_enabled)
+    input = StampInput(
+        model,
+        constant_vals, 
+        primal_indexes, 
+        dual_indexes
+        )
 
     stamps = []
     for first_order, yth_variable, expression in expressions:
@@ -71,7 +101,6 @@ def build_stamps_from_stamper(model, stamper: LagrangeStamper, constant_vals):
                 continue
 
         stamp = StampInstance(
-            model,
             expression,
             input,
             row_index,
@@ -89,10 +118,13 @@ def build_stamps_from_stamper(model, stamper: LagrangeStamper, constant_vals):
 class StampInput():
     def __init__(
         self,
+        model,
         constant_vals: List,
         primal_indexes: List[int],
         dual_indexes: List[int]
         ):
+
+        self.model = model
 
         #Inputs are assumed to be ordered as: constants | primals | duals in list order supplied.
         self.constant_vals = constant_vals
@@ -105,24 +137,28 @@ class StampInput():
 class StampExpression():
     def __init__(
         self,
+        lsegment: LagrangeSegment,
+        first_order,
         expression,
         evalf,
-        parameters,
+        yth_variable,
         is_linear: bool,
-        is_constant_expr: bool,
         tx_factor_index: int
         ):
 
+        self.lsegment = lsegment
+        self.first_order = first_order
         self.expression = expression
         self.evalf = evalf
-        self.parameters = parameters
-        self.param_count = len(parameters)
+        self.parameters = lsegment.parameters
+        self.param_count = len(self.parameters)
         self.is_linear = is_linear
-        self.is_constant_expr = is_constant_expr
+        self.yth_variable = yth_variable
         self.tx_factor_index = tx_factor_index
 
-        self.parameters_key = str(parameters)
-        self.key = str(expression) + self.parameters_key + str(is_linear) + str(is_constant_expr) + str(tx_factor_index)
+        self.parameters_key = str(self.parameters)
+
+        self.key = lsegment.lagrange_key + str(first_order) + str(expression) + str(yth_variable) + str(is_linear) + str(tx_factor_index)
 
 # Multiple stamp instances exist for every single model instance, based on the number of expressions to compute,
 # e.g. each load instance will share the expressions/equations being computed with all other loads, 
@@ -130,14 +166,12 @@ class StampExpression():
 class StampInstance():
     def __init__(
         self,
-        model,
         expression: StampExpression,
         input: StampInput,
         row_index: int,
         col_index: int
         ):
 
-        self.model = model
         self.expression = expression
         self.input = input
         self.row_index = row_index
@@ -233,7 +267,8 @@ class StampSet():
         self.stamps = []
         self.stamps: List[(StampInstance, int, int, int)]
 
-    def add_stamp(self, stamp: StampInstance, output_index: int):
+    def add_stamp(self, stamp: StampInstance):
+        output_index = self.input_builder.add_input(stamp.input)
         self.stamps.append((stamp, stamp.row_index, stamp.col_index, output_index))
 
     def stamp(self, Y: MatrixBuilder, J):
@@ -243,12 +278,35 @@ class StampSet():
         if type(output_v) != np.ndarray:
             output_v = np.full(args[0].shape[0], output_v)
 
-        if self.expression.is_constant_expr:
+        if self.expression.yth_variable == None:
             for _, row_idx, _, output_idx in self.stamps:
                 J[row_idx] += output_v[output_idx]
         else:
             for _, row_idx, col_idx, output_idx in self.stamps:
                 Y.stamp(row_idx, col_idx, output_v[output_idx])
+
+class ResidualSet():
+    def __init__(self, residual_expr, residual_eval, input_builder: InputBuilder) -> None:
+        self.residual_expr = residual_expr
+        self.residual_eval = residual_eval
+        self.input_builder = input_builder
+
+        self.residuals = {}
+    
+    def add_residual(self, input: StampInput, row_index: int):
+        if row_index not in self.residuals:
+            output_index = self.input_builder.add_input(input)
+            self.residuals[row_index] = (output_index, input.model)
+
+    def calc_residuals(self, residual_contributions):
+        args = self.input_builder.get_args()
+
+        output_v = self.residual_eval(*args)
+        if type(output_v) != np.ndarray:
+            output_v = np.full(args[0].shape[0], output_v)
+
+        for row_idx, (output_idx, model) in self.residuals.items():
+            residual_contributions.append((model, row_idx, output_v[output_idx]))
 
 class MatrixStamper():
     def __init__(
@@ -267,10 +325,12 @@ class MatrixStamper():
         stamp_sets = {}
         stamp_sets: Dict[str, StampSet]
 
+        residual_sets = {}
+        residual_sets: Dict[str, ResidualSet]
+
         for stamp in stamps:
             if stamp.expression.parameters_key not in input_builders:
                 input_builders[stamp.expression.parameters_key] = InputBuilder(stamp.expression.parameters, stamp.expression.tx_factor_index, self.optimization_enabled)
-            output_index = input_builders[stamp.expression.parameters_key].add_input(stamp.input)
 
             if not stamp.expression.is_linear:
                 nonlinear_inputs.add(stamp.expression.parameters_key)
@@ -278,7 +338,18 @@ class MatrixStamper():
             if stamp.expression.key not in stamp_sets:
                 stamp_sets[stamp.expression.key] = StampSet(stamp.expression, input_builders[stamp.expression.parameters_key])
             
-            stamp_sets[stamp.expression.key].add_stamp(stamp, output_index)
+            stamp_sets[stamp.expression.key].add_stamp(stamp)
+
+            residual_key = stamp.expression.lsegment.lagrange_key + str(stamp.expression.first_order)
+            if not residual_key in residual_sets:
+                derivative = stamp.expression.lsegment.get_derivatives()[stamp.expression.first_order]
+                residual_sets[residual_key] = ResidualSet(
+                    derivative.expr,
+                    derivative.expr_eval,
+                    input_builders[stamp.expression.parameters_key]
+                    )
+            
+            residual_sets[residual_key].add_residual(stamp.input, stamp.row_index)
 
         for key, input_builder in input_builders.items():
             input_builder.freeze_inputs(key not in nonlinear_inputs)
@@ -294,6 +365,9 @@ class MatrixStamper():
                 self.linear_sets.append(stamp_set)
             else:
                 self.nonlinear_sets.append(stamp_set)
+        
+        self.residual_sets = list(residual_sets.values())
+        self.residual_sets: List[ResidualSet]
 
     def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
         for input_builder in self.input_builders:
@@ -307,4 +381,17 @@ class MatrixStamper():
             input_builder.update_vprev(v_prev)
         
         for stamp_set in self.nonlinear_sets:
-            stamp_set.stamp(Y, J,)
+            stamp_set.stamp(Y, J)
+
+    def calc_residuals(self, tx_factor, v_result):
+        for input_builder in self.input_builders:
+            input_builder.update_vprev(v_result)
+        
+        for input_builder in self.input_builders:
+            input_builder.update_txfactor(tx_factor)
+        
+        residual_contributions = []
+        for residual_set in self.residual_sets:
+            residual_set.calc_residuals(residual_contributions)
+        
+        return residual_contributions

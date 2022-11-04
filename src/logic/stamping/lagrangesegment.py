@@ -87,7 +87,7 @@ class DerivativeEntry:
         #All variables that need to be supplied to the evaluation functions. We assume all expressions take the same inputs.
         self.lambda_inputs = lambda_inputs
 
-        self.eqn_eval = lambdify(self.lambda_inputs, self.expr, "numpy")
+        self.expr_eval = lambdify(self.lambda_inputs, self.expr, "numpy")
         self.constant_eval = lambdify(self.lambda_inputs, self.constant_expr, "numpy")
         self.variable_evals = {}
         for var, variable_eqn in self.variable_exprs.items():
@@ -112,7 +112,7 @@ class DerivativeEntry:
 #You can think of all the segments as summing together to make the full Lagrange equation,
 #but in reality we map individual segments straight onto the matrix (see: LagrangeStamper)
 class LagrangeSegment:
-    VERSION = 2 #Increment if changes have been made to bust the derivative cache.
+    VERSION = 3 #Increment if changes have been made to bust the derivative cache.
     _pickler = LagrangePickler()
 
     def __init__(self, lagrange, constant_symbols, primal_symbols, dual_symbols) -> None:

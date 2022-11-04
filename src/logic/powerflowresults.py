@@ -8,6 +8,7 @@ from logic.network.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
 from models.optimization.L2infeasibility import L2InfeasibilityOptimization
 from models.singlephase.bus import Bus
+from logic.stamping.matrixstamper import build_matrix_stamper
 
 class GENTYPE:
     PV = "PV"
@@ -212,22 +213,30 @@ class PowerFlowResults:
             print(load)
 
     def calculate_residuals(self):
-        all_elements = self.network.get_NR_invariant_elements() + self.network.get_NR_variable_elements()
+        stamper = build_matrix_stamper(self.network, self.settings.infeasibility_analysis)
 
-        residual_contributions = []
-        for element in all_elements:
-            element_residuals = element.calculate_residuals(self.network, self.v_final)
-            for (index, value) in element_residuals.items():
-                residual_contributions.append((element, index, value))
-
-        if self.network.optimization != None:
-            element_residuals = self.network.optimization.calculate_residuals(self.network, self.v_final)
-            for (index, value) in element_residuals.items():
-                residual_contributions.append((self.network.optimization, index, value))
+        residual_contributions = stamper.calc_residuals(0, self.v_final)
 
         residuals = np.zeros(len(self.v_final))
         for (element, index, value) in residual_contributions:
             residuals[index] += value
+
+        all_elements = self.network.get_NR_invariant_elements() + self.network.get_NR_variable_elements()
+
+        residual_contributions2 = []
+        for element in all_elements:
+            element_residuals = element.calculate_residuals(self.network, self.v_final)
+            for (index, value) in element_residuals.items():
+                residual_contributions2.append((element, index, value))
+
+        if self.network.optimization != None:
+            element_residuals = self.network.optimization.calculate_residuals(self.network, self.v_final)
+            for (index, value) in element_residuals.items():
+                residual_contributions2.append((self.network.optimization, index, value))
+
+        residuals2 = np.zeros(len(self.v_final))
+        for (element, index, value) in residual_contributions2:
+            residuals2[index] += value
 
         max_residual = np.amax(np.abs(residuals))
         max_residual_idx = int(np.argmax(np.abs(residuals)))

@@ -19,33 +19,6 @@ class LagrangeStamper:
 
         self.empty_primals = [None] * len(self.lsegment.primals)
         self.empty_duals = [None] * len(self.lsegment.duals)
-
-        # #The 'primal' contributions are really the first derivative of the dual variables.
-        # self.primal_components = self.build_component_set(self.lsegment.duals)
-
-        # if self.optimization_enabled:
-        #     self.dual_components = self.build_component_set(self.lsegment.primals)
-
-    def build_component_set(self, variables):
-        components = []
-        for variable in variables:
-            row_index = self.get_variable_row_index(variable)
-            if row_index == SKIP:
-                continue
-
-            entry = self.lsegment.get_derivatives()[variable]
-
-            for (yth_variable, eval, expr) in entry.get_evals():
-
-                if yth_variable == None:
-                    components.append((row_index, None, eval, expr))
-                else:
-                    col_index = self.var_map[yth_variable]
-                    if col_index == SKIP:
-                        continue
-                    components.append((row_index, col_index, eval, expr))
-        
-        return components
     
     def get_variable_row_index(self, variable):
         if self.optimization_enabled:
@@ -54,16 +27,6 @@ class LagrangeStamper:
             #For the optimization disabled case, we can't use the dual variable's index
             #for the matrix row. Instead, we commandeer the index of it's corresponding primal variable.
             return self.eqn_map[self.lsegment.primals[self.lsegment.duals.index(variable)]]
-
-    def stamp_primal(self, Y: MatrixBuilder, J, constant_vals, v_prev):
-        primal_vals, dual_vals = self.__extract_kth_primals_duals(v_prev)
-        args = constant_vals + primal_vals + dual_vals
-        self.__stamp_set(Y, J, self.primal_components, args)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, constant_vals, v_prev):
-        primal_vals, dual_vals = self.__extract_kth_primals_duals(v_prev)
-        args = constant_vals + primal_vals + dual_vals
-        self.__stamp_set(Y, J, self.dual_components, args)
 
     def calc_residuals(self, constant_vals, v_result):
         residuals = defaultdict(lambda: 0)
@@ -76,7 +39,7 @@ class LagrangeStamper:
             row_idx = self.get_variable_row_index(dual)
             if row_idx == SKIP:
                 continue
-            residuals[row_idx] += derivative.eqn_eval(*args)
+            residuals[row_idx] += derivative.expr_eval(*args)
 
         if self.optimization_enabled:
             for primal in self.lsegment.primals:
@@ -84,7 +47,7 @@ class LagrangeStamper:
                 row_idx = self.get_variable_row_index(primal)
                 if row_idx == SKIP:
                     continue
-                residuals[row_idx] += derivative.eqn_eval(*args)
+                residuals[row_idx] += derivative.expr_eval(*args)
 
         return residuals
 
@@ -112,24 +75,4 @@ class LagrangeStamper:
             dual_vals = self.empty_duals
 
         return (primal_vals, dual_vals)
-
-    def __stamp_set(self, Y: MatrixBuilder, J, components, args):
-        for (row_index, col_index, eval_func, _) in components:
-            if col_index == None:
-                J[row_index] += eval_func(*args)
-            else:
-                Y.stamp(row_index, col_index, eval_func(*args))
-
-    def stamp_primal_symbols(self, Y: MatrixBuilder, J):
-        self.__stamp_symbol_set(Y, J, self.primal_components)
-
-    def stamp_dual_symbols(self, Y: MatrixBuilder, J):
-        self.__stamp_symbol_set(Y, J, self.dual_components)
-
-    def __stamp_symbol_set(self, Y: MatrixBuilder, J, components):
-        for (row_index, col_index, _, expr) in components:
-            if col_index == None:
-                J[row_index] += expr
-            else:
-                Y.stamp(row_index, col_index, expr)
     
