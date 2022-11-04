@@ -1,6 +1,7 @@
 from typing import List, Dict
 import numpy as np
 from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
+from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.wellknownvariables import tx_factor
 
@@ -13,62 +14,72 @@ def build_stamps_from_stampers(model, *args):
     
     return stamps
 
-def build_stamps_from_stamper(model, stamper: LagrangeStamper, constant_vals):
-    stamps = []
+lagrange_cache = {}
 
-    primal_indexes = []
-    for primal in stamper.lsegment.primals:
-        primal_indexes.append(stamper.var_map[primal])
+def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabled):
+    key = lsegment.lagrange_key + str(optimization_enabled)
+    
+    if key in lagrange_cache:
+        return lagrange_cache[key]
 
-    dual_indexes = []
-    for dual in stamper.lsegment.duals:
-        dual_indexes.append(stamper.var_map[dual])
-
-    input = StampInput(constant_vals, primal_indexes, dual_indexes)
-
-    if stamper.optimization_enabled:
-        first_order_variables = stamper.lsegment.variables
+    expressions = []
+    if optimization_enabled:
+        first_order_variables = lsegment.variables
     else:
-        first_order_variables = stamper.lsegment.duals
+        first_order_variables = lsegment.duals
 
-    for variable in first_order_variables:
-
-        row_index = stamper.get_variable_row_index(variable)
-        if row_index == SKIP:
-            continue
-
-        derivative = stamper.lsegment.get_derivatives()[variable]
-
+    for first_order in first_order_variables:
+        derivative = lsegment.get_derivatives()[first_order]
         for (yth_variable, func, expr) in derivative.get_evals():
-            if yth_variable == None:
-                col_index = None
-            else:
-                col_index = stamper.var_map[yth_variable]
-                if col_index == SKIP:
-                    continue
-
-            is_linear = not any([(x in expr.free_symbols) for x in stamper.lsegment.variables])
-            tx_factor_index = stamper.lsegment.constants.index(tx_factor) if tx_factor in stamper.lsegment.constants else SKIP
+            is_linear = not any([(x in expr.free_symbols) for x in lsegment.variables])
+            tx_factor_index = lsegment.constants.index(tx_factor) if tx_factor in lsegment.constants else SKIP
 
             expression = StampExpression(
                 expr,
                 func,
-                stamper.lsegment.parameters,
+                lsegment.parameters,
                 is_linear,
                 yth_variable == None,
                 tx_factor_index
                 )
-
-            stamp = StampInstance(
-                model,
-                expression,
-                input,
-                row_index,
-                col_index
-                )
             
-            stamps.append(stamp)
+            expressions.append((first_order, yth_variable, expression))
+    
+    lagrange_cache[key] = expressions
+    
+    return expressions
+
+def build_stamps_from_stamper(model, stamper: LagrangeStamper, constant_vals):
+    primal_indexes = [stamper.var_map[primal] for primal in stamper.lsegment.primals]
+    dual_indexes = [stamper.var_map[dual] for dual in stamper.lsegment.duals]
+
+    input = StampInput(constant_vals, primal_indexes, dual_indexes)
+
+    expressions = get_or_build_stamp_expressions(stamper.lsegment, stamper.optimization_enabled)
+
+    stamps = []
+    for first_order, yth_variable, expression in expressions:
+        row_index = stamper.get_variable_row_index(first_order)
+        if row_index == SKIP:
+            continue
         
+        if yth_variable == None:
+            col_index = None
+        else:
+            col_index = stamper.var_map[yth_variable]
+            if col_index == SKIP:
+                continue
+
+        stamp = StampInstance(
+            model,
+            expression,
+            input,
+            row_index,
+            col_index
+            )
+        
+        stamps.append(stamp)
+
     return stamps
 
 #All of the constants and variables that will be used to calculate a stamp. The set of parameters

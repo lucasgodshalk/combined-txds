@@ -20,11 +20,11 @@ class LagrangeStamper:
         self.empty_primals = [None] * len(self.lsegment.primals)
         self.empty_duals = [None] * len(self.lsegment.duals)
 
-        #The 'primal' contributions are really the first derivative of the dual variables.
-        self.primal_components = self.build_component_set(self.lsegment.duals)
+        # #The 'primal' contributions are really the first derivative of the dual variables.
+        # self.primal_components = self.build_component_set(self.lsegment.duals)
 
-        if self.optimization_enabled:
-            self.dual_components = self.build_component_set(self.lsegment.primals)
+        # if self.optimization_enabled:
+        #     self.dual_components = self.build_component_set(self.lsegment.primals)
 
     def build_component_set(self, variables):
         components = []

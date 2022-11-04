@@ -94,12 +94,16 @@ class DerivativeEntry:
             if variable_eqn != 0:
                 self.variable_evals[var] = lambdify(self.lambda_inputs, variable_eqn, "numpy")
 
-    def get_evals(self):
+        self.evals = []
+
         if self.constant_expr != 0:
-            yield (None, self.constant_eval, self.constant_expr)
+            self.evals.append((None, self.constant_eval, self.constant_expr))
 
         for (variable, func) in self.variable_evals.items():
-            yield(variable, func, self.variable_exprs[variable])
+            self.evals.append((variable, func, self.variable_exprs[variable]))
+
+    def get_evals(self):
+        return self.evals
 
     def __repr__(self) -> str:
         return f"Entry {self.variable}: {self.expr}"
@@ -108,7 +112,7 @@ class DerivativeEntry:
 #You can think of all the segments as summing together to make the full Lagrange equation,
 #but in reality we map individual segments straight onto the matrix (see: LagrangeStamper)
 class LagrangeSegment:
-    VERSION = 1 #Increment if changes have been made to bust the derivative cache.
+    VERSION = 2 #Increment if changes have been made to bust the derivative cache.
     _pickler = LagrangePickler()
 
     def __init__(self, lagrange, constant_symbols, primal_symbols, dual_symbols) -> None:

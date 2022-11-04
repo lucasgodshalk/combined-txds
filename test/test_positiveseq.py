@@ -53,7 +53,7 @@ def test_GS_4_prior_solution():
     assert_mat_comparison(mat_result, results)
 
 def test_infeasibility_analysis_GS_4_prior_solution():
-    results = execute_positiveseq_raw("GS-4_prior_solution", PowerFlowSettings(infeasibility_analysis=True))
+    results = execute_positiveseq_raw("GS-4_prior_solution", PowerFlowSettings(infeasibility_analysis=True, debug=True))
     assert results.is_success
     assert results.max_residual < 1e-8
     assert results.infeasibility_totals == (0, 0)
