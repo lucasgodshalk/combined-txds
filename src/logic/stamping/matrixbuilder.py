@@ -22,7 +22,7 @@ class MatrixBuilder:
                 raise Exception("Invalid row index")
             elif type(column) != int or column < 0:
                 raise Exception("Invalid column index")
-            elif math.isnan(value) or value == None or (type(value) != int and type(value) != float and type(value) != np.float64):
+            elif math.isnan(value) or value == None or not np.issubdtype(type(value), np.number):
                 raise Exception("Invalid value")
 
         if self._index == self._max_index:

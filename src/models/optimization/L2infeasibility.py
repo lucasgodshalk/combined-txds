@@ -5,11 +5,13 @@ from logic.stamping.lagrangestamper import LagrangeStamper
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.helpers import merge_residuals
 from models.singlephase.bus import Bus
+from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 class L2InfeasibilityOptimization:
     def __init__(self, buses: List[Bus]) -> None:
         self.is_linear = True
         self.infeasibility_currents = []
+        self.infeasibility_currents: List[L2InfeasibilityCurrent]
 
         for bus in buses:
             current = L2InfeasibilityCurrent(bus)
@@ -19,6 +21,12 @@ class L2InfeasibilityOptimization:
         for infeas_current in self.infeasibility_currents:
             infeas_current.assign_nodes(node_index, optimization_enabled)
 
+    def get_stamps(self):
+        stamps = []
+        for infeas_current in self.infeasibility_currents:
+            stamps += infeas_current.get_stamps()
+        return stamps
+        
     def stamp(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
         for inf_current in self.infeasibility_currents:
             inf_current.stamp_primal(Y, J, v_previous, tx_factor, network)
@@ -57,6 +65,9 @@ class L2InfeasibilityCurrent:
         index_map[Li] = self.bus.node_lambda_Vi
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled=True)
+
+    def get_stamps(self):
+        return build_stamps_from_stamper(self, self.stamper, [])
 
     def get_connections(self):
         return []

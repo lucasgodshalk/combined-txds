@@ -5,6 +5,7 @@ from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestamper import LagrangeStamper
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
+from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 constants = P, Vset = symbols('P V_set')
 primals = Vr, Vi, Q = symbols('V_r V_i Q')
@@ -70,6 +71,9 @@ class Generator:
         index_map[LQ] = self.bus.node_lambda_Q
 
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
+
+    def get_stamps(self):
+        return build_stamps_from_stamper(self, self.stamper, [self.P, self.Vset])
 
     def get_connections(self):
         return []

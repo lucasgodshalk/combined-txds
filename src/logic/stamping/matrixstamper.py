@@ -274,7 +274,9 @@ class MatrixStamper():
 
         self.input_builders = input_builders.values()
         self.linear_sets = []
+        self.linear_sets: List[StampSet]
         self.nonlinear_sets = []
+        self.nonlinear_sets: List[StampSet]
 
         for stamp_set in stamp_sets.values():
             if stamp_set.expression.is_linear:

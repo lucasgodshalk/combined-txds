@@ -7,6 +7,7 @@ from logic.stamping.lagrangestamper import LagrangeStamper
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import GROUND, Bus
 from models.singlephase.line import build_line_stamper_bus
+from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 #Todo: this should be unified with the capacitor class.
 class Shunt:
@@ -55,6 +56,9 @@ class Shunt:
             GROUND, 
             optimization_enabled
             )
+
+    def get_stamps(self):
+        return build_stamps_from_stamper(self, self.stamper, [self.G, self.B, 0])
 
     def get_connections(self):
         return []

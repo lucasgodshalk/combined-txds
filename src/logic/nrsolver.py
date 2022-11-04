@@ -47,6 +47,9 @@ class NRSolver:
             
             stamps += element.get_stamps()
         
+        if self.network.optimization != None:
+            stamps += self.network.optimization.get_stamps()
+
         self.matrix_stamper.register_stamps(stamps)
 
         if self.settings.dump_matrix:
