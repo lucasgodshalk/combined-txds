@@ -132,7 +132,7 @@ class CenterTapTransformer():
         self.center_tap_xfmr_stamper = LagrangeStamper(center_tap_xfmr_lh, index_map, optimization_enabled)
 
     def get_stamps(self):
-        return build_stamps_from_stampers(
+        return build_stamps_from_stampers(self, 
             (self.center_tap_xfmr_stamper, [self.turn_ratio, 0]), 
             (self.primary_impedance_stamper, [self.g0, self.b0, 0]),
             (self.L1_impedance_stamper, [self.g1, self.b1, 0]),

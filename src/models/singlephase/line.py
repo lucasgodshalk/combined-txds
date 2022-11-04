@@ -127,7 +127,7 @@ class Line:
         return [(self.from_bus, self.to_bus)]
 
     def get_stamps(self):
-        return build_stamps_from_stampers(
+        return build_stamps_from_stampers(self, 
             (self.line_stamper, [self.G, self.B, 0]), 
             (self.shunt_stamper, [self.B_line, 0])
             )

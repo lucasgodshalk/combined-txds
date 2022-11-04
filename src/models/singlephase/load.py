@@ -160,7 +160,7 @@ class Load:
             self.stamper_z = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
 
     def get_stamps(self):
-        return build_stamps_from_stampers(
+        return build_stamps_from_stampers(self, 
             (self.stamper_pq, [self.P, self.Q]),
             (self.stamper_Ic, [self.IP, self.IQ]),
             (self.stamper_z, [self.G, self.B, 0]),

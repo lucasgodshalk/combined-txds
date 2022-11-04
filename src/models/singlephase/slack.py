@@ -78,7 +78,7 @@ class Slack:
         self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
 
     def get_stamps(self):
-        return build_stamps_from_stampers(
+        return build_stamps_from_stampers(self, 
             (self.stamper, [self.Vr_set, self.Vi_set])
             )
 

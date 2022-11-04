@@ -45,7 +45,10 @@ class Fuse():
         return [(self.from_node, self.to_node)]
 
     def get_stamps(self):
-        return build_stamps_from_stamper(self.line_stamper, [self.G, self.B, 0]) + self.current_sensor.get_stamps()
+        if self.status == FuseStatus.BLOWN:
+            raise Exception("Blown fuses are not supported")
+
+        return build_stamps_from_stamper(self, self.line_stamper, [self.G, self.B, 0]) + self.current_sensor.get_stamps()
 
     def get_current(self, v):
         if self.status == FuseStatus.BLOWN:

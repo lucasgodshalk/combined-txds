@@ -155,7 +155,7 @@ class Transformer:
             )
 
     def get_stamps(self):
-        return build_stamps_from_stampers(
+        return build_stamps_from_stampers(self, 
             (self.xfrmr_stamper, [self.tr, self.ang_rad, 0]), 
             (self.losses_stamper, [self.G_loss, self.B_loss, 0])
             )

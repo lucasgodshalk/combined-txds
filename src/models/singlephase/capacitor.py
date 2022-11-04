@@ -36,7 +36,10 @@ class Capacitor:
         self.line_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled)
 
     def get_stamps(self):
-        return build_stamps_from_stamper(self.line_stamper, [self.G, self.B, 0])
+        if self.switch == CapSwitchState.OPEN:
+            return []
+
+        return build_stamps_from_stamper(self, self.line_stamper, [self.G, self.B, 0])
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]

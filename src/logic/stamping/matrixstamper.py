@@ -4,16 +4,16 @@ from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.wellknownvariables import tx_factor
 
-def build_stamps_from_stampers(*args):
+def build_stamps_from_stampers(model, *args):
     stamps = []
     for (stamper, constantvals) in args:
         if stamper == None:
             continue
-        stamps += build_stamps_from_stamper(stamper, constantvals)
+        stamps += build_stamps_from_stamper(model, stamper, constantvals)
     
     return stamps
 
-def build_stamps_from_stamper(stamper: LagrangeStamper, constant_vals):
+def build_stamps_from_stamper(model, stamper: LagrangeStamper, constant_vals):
     stamps = []
 
     primal_indexes = []
@@ -60,6 +60,7 @@ def build_stamps_from_stamper(stamper: LagrangeStamper, constant_vals):
                 )
 
             stamp = StampInstance(
+                model,
                 expression,
                 input,
                 row_index,
@@ -118,12 +119,14 @@ class StampExpression():
 class StampInstance():
     def __init__(
         self,
+        model,
         expression: StampExpression,
         input: StampInput,
         row_index: int,
         col_index: int
         ):
 
+        self.model = model
         self.expression = expression
         self.input = input
         self.row_index = row_index

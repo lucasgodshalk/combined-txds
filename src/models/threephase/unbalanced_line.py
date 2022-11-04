@@ -136,7 +136,7 @@ class UnbalancedLine():
     def get_stamps(self):
         stamps = []
         for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(self.network_model):
-            stamps += build_stamps_from_stampers(
+            stamps += build_stamps_from_stampers(self, 
                 (line_stamper, [g, b, 0]),
                 (shunt_stamper, [B/2, 0]),
                 )

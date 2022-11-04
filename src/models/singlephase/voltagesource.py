@@ -63,7 +63,7 @@ class VoltageSource:
         return [(self.from_bus, self.to_bus)]
 
     def get_stamps(self):
-        return build_stamps_from_stampers(
+        return build_stamps_from_stampers(self, 
             (self.stamper, [self.Vr_set, self.Vi_set]) 
             )
 
