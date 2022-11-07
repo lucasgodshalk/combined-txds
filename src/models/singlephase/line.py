@@ -144,5 +144,5 @@ class Line:
         return build_stamps_from_stampers(self, 
             (self.line_stamper, [self.G, self.B, 0]), 
             (self.shunt_stamper_from, [0, self.B_line, 0]),
-            (self.shunt_stamper_to, [0 ,self.B_line, 0])
+            (self.shunt_stamper_to, [0, self.B_line, 0])
             )

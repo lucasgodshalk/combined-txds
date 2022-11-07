@@ -1,6 +1,7 @@
 import typing
 import numpy as np
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
+from models.singlephase.bus import GROUND
 from models.singlephase.line import line_lh
 from models.singlephase.line import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 from logic.network.networkmodel import DxNetworkModel
@@ -104,6 +105,26 @@ class UnbalancedLine():
             eqn_map[Lr_to] = line1_to.node_lambda_Vr
             eqn_map[Li_to] = line1_to.node_lambda_Vi
 
+            eqn_map_shunt_from = {}
+            eqn_map_shunt_from[Vr_from] = line1_from.node_Vr
+            eqn_map_shunt_from[Vi_from] = line1_from.node_Vi
+            eqn_map_shunt_from[Vr_to] = GROUND.node_Vr
+            eqn_map_shunt_from[Vi_to] = GROUND.node_Vi
+            eqn_map_shunt_from[Lr_from] = line1_from.node_lambda_Vr
+            eqn_map_shunt_from[Li_from] = line1_from.node_lambda_Vi
+            eqn_map_shunt_from[Lr_to] = GROUND.node_lambda_Vr
+            eqn_map_shunt_from[Li_to] = GROUND.node_lambda_Vi
+
+            eqn_map_shunt_to = {}
+            eqn_map_shunt_to[Vr_from] = line1_to.node_Vr
+            eqn_map_shunt_to[Vi_from] = line1_to.node_Vi
+            eqn_map_shunt_to[Vr_to] = GROUND.node_Vr
+            eqn_map_shunt_to[Vi_to] = GROUND.node_Vi
+            eqn_map_shunt_to[Lr_from] = line1_to.node_lambda_Vr
+            eqn_map_shunt_to[Li_from] = line1_to.node_lambda_Vi
+            eqn_map_shunt_to[Lr_to] = GROUND.node_lambda_Vr
+            eqn_map_shunt_to[Li_to] = GROUND.node_lambda_Vi
+
             # Go through all lines
             for j in range(len(self.lines)):
                 line2 = self.lines[j]
@@ -121,9 +142,30 @@ class UnbalancedLine():
 
                 line_stamper = LagrangeStampDetails(line_lh, var_map, optimization_enabled, eqn_map)
 
-                shunt_stamper = LagrangeStampDetails(shunt_lh, var_map, optimization_enabled, eqn_map)
+                var_map_shunt_from = {}
+                var_map_shunt_from[Vr_from] = line2_from.node_Vr
+                var_map_shunt_from[Vi_from] = line2_from.node_Vi
+                var_map_shunt_from[Vr_to] = GROUND.node_Vr
+                var_map_shunt_from[Vi_to] = GROUND.node_Vi
+                var_map_shunt_from[Lr_from] = line2_from.node_lambda_Vr
+                var_map_shunt_from[Li_from] = line2_from.node_lambda_Vi
+                var_map_shunt_from[Lr_to] = GROUND.node_lambda_Vr
+                var_map_shunt_from[Li_to] = GROUND.node_lambda_Vi
 
-                self.stampers[(line1_from, line2_to)] = (line_stamper, shunt_stamper)
+                var_map_shunt_to = {}
+                var_map_shunt_to[Vr_from] = line2_to.node_Vr
+                var_map_shunt_to[Vi_from] = line2_to.node_Vi
+                var_map_shunt_to[Vr_to] = GROUND.node_Vr
+                var_map_shunt_to[Vi_to] = GROUND.node_Vi
+                var_map_shunt_to[Lr_from] = line2_to.node_lambda_Vr
+                var_map_shunt_to[Li_from] = line2_to.node_lambda_Vi
+                var_map_shunt_to[Lr_to] = GROUND.node_lambda_Vr
+                var_map_shunt_to[Li_to] = GROUND.node_lambda_Vi
+
+                shunt_stamper_from = LagrangeStampDetails(shunt_lh, var_map_shunt_from, optimization_enabled, eqn_map_shunt_from)
+                shunt_stamper_to = LagrangeStampDetails(shunt_lh, var_map_shunt_to, optimization_enabled, eqn_map_shunt_to)
+
+                self.stampers[(line1_from, line2_to)] = (line_stamper, shunt_stamper_from, shunt_stamper_to)
 
     def get_connections(self):
         for line in self.lines:
@@ -132,10 +174,11 @@ class UnbalancedLine():
 
     def get_stamps(self):
         stamps = []
-        for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(self.network_model):
+        for (is_own_phase, line_stamper, shunt_stamper_from, shunt_stamper_to, g, b, B) in self.__loop_line_stampers(self.network_model):
             stamps += build_stamps_from_stampers(self, 
                 (line_stamper, [g, b, 0]),
-                (shunt_stamper, [B/2, 0]),
+                (shunt_stamper_from, [0, B/2, 0]),
+                (shunt_stamper_to, [0, B/2, 0])
                 )
         
         return stamps
@@ -164,8 +207,8 @@ class UnbalancedLine():
                 line2 = self.lines[j]
                 _, line2_to = line2.get_nodes(state)
 
-                (line_stamper, shunt_stamper) = self.stampers[(line1_from, line2_to)]
+                (line_stamper, shunt_stamper_from, shunt_stamper_to) = self.stampers[(line1_from, line2_to)]
 
                 is_own_phase = i == j
 
-                yield (is_own_phase, line_stamper, shunt_stamper, g, b, B)
+                yield (is_own_phase, line_stamper, shunt_stamper_from, shunt_stamper_to, g, b, B)
