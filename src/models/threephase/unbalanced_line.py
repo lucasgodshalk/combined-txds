@@ -1,12 +1,9 @@
-from collections import defaultdict
 import typing
 import numpy as np
-from logic.stamping.lagrangestamper import LagrangeStamper
-from logic.stamping.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.singlephase.line import line_lh
 from models.singlephase.line import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 from logic.network.networkmodel import DxNetworkModel
-from models.helpers import merge_residuals
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 
 def calcInverse(Zmatrix):
@@ -122,9 +119,9 @@ class UnbalancedLine():
                 var_map[Lr_to] = line2_to.node_lambda_Vr
                 var_map[Li_to] = line2_to.node_lambda_Vi
 
-                line_stamper = LagrangeStamper(line_lh, var_map, optimization_enabled, eqn_map)
+                line_stamper = LagrangeStampDetails(line_lh, var_map, optimization_enabled, eqn_map)
 
-                shunt_stamper = LagrangeStamper(shunt_lh, var_map, optimization_enabled, eqn_map)
+                shunt_stamper = LagrangeStampDetails(shunt_lh, var_map, optimization_enabled, eqn_map)
 
                 self.stampers[(line1_from, line2_to)] = (line_stamper, shunt_stamper)
 
@@ -142,35 +139,6 @@ class UnbalancedLine():
                 )
         
         return stamps
-
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
-        for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
-            if not is_own_phase:
-                tx_factor = 0
-            line_stamper.stamp_primal(Y, J, [g, b, tx_factor], v_previous)
-            shunt_stamper.stamp_primal(Y, J, [B/2, 0], v_previous)
-
-    def stamp_primal_symbols(self, Y: MatrixBuilder, J, state):
-        for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
-            line_stamper.stamp_primal_symbols(Y, J)
-            shunt_stamper.stamp_primal_symbols(Y, J)    
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        for (is_own_phase, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(network):
-            if not is_own_phase:
-                tx_factor = 0
-            line_stamper.stamp_dual(Y, J, [g, b, tx_factor], v_previous)
-            shunt_stamper.stamp_dual(Y, J, [B/2, 0], v_previous)
-
-    def calculate_residuals(self, state, v):
-        residuals = {}
-
-        for (_, line_stamper, shunt_stamper, g, b, B) in self.__loop_line_stampers(state):
-            line_residuals = line_stamper.calc_residuals([g, b, 0], v)
-            shunt_residuals = shunt_stamper.calc_residuals([B/2, 0], v)
-            merge_residuals(residuals, line_residuals, shunt_residuals)
-
-        return residuals
 
     def __loop_line_stampers(self, state):
         # Go through all phases

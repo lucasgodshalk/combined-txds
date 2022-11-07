@@ -1,12 +1,9 @@
-from collections import defaultdict
 from typing import List
 import numpy as np
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
-from models.singlephase.bus import GROUND
+from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 from models.singlephase.line import build_line_stamper_bus
-from models.helpers import merge_residuals
 from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
 from models.wellknownvariables import tx_factor
 from logic.stamping.matrixstamper import build_stamps_from_stampers
@@ -129,7 +126,7 @@ class CenterTapTransformer():
             index_map[Lr_L2] = SKIP
             index_map[Li_L2] = SKIP
 
-        self.center_tap_xfmr_stamper = LagrangeStamper(center_tap_xfmr_lh, index_map, optimization_enabled)
+        self.center_tap_xfmr_stamper = LagrangeStampDetails(center_tap_xfmr_lh, index_map, optimization_enabled)
 
     def get_stamps(self):
         return build_stamps_from_stampers(self, 
@@ -144,24 +141,3 @@ class CenterTapTransformer():
             (self.coils[0].from_node, self.coils[1].to_node), 
             (self.coils[0].from_node, self.coils[2].to_node)
         ]
-
-    def stamp_primal(self, Y, J, v_previous, tx_factor, state):
-        self.center_tap_xfmr_stamper.stamp_primal(Y, J, [self.turn_ratio, tx_factor], v_previous)
-        self.primary_impedance_stamper.stamp_primal(Y, J, [self.g0, self.b0, tx_factor], v_previous)
-        self.L1_impedance_stamper.stamp_primal(Y, J, [self.g1, self.b1, tx_factor], v_previous)
-        self.L2_impedance_stamper.stamp_primal(Y, J, [self.g2, self.b2, tx_factor], v_previous)
-
-    def stamp_dual(self, Y, J, v_previous, tx_factor, state):
-        self.center_tap_xfmr_stamper.stamp_dual(Y, J, [self.turn_ratio, tx_factor], v_previous)
-        self.primary_impedance_stamper.stamp_dual(Y, J, [self.g0, self.b0, tx_factor], v_previous)
-        self.L1_impedance_stamper.stamp_dual(Y, J, [self.g1, self.b1, tx_factor], v_previous)
-        self.L2_impedance_stamper.stamp_dual(Y, J, [self.g2, self.b2, tx_factor], v_previous)
-
-    def calculate_residuals(self, state, v):
-        center_tap_xfmr_resid = self.center_tap_xfmr_stamper.calc_residuals([self.turn_ratio, 0], v)
-        pri_imp_resid = self.primary_impedance_stamper.calc_residuals([self.g0, self.b0, 0], v)
-        L1_imp_resid = self.L1_impedance_stamper.calc_residuals([self.g1, self.b1, 0], v)
-        L2_imp_resid = self.L2_impedance_stamper.calc_residuals([self.g2, self.b2, 0], v)
-
-        return merge_residuals({}, center_tap_xfmr_resid, pri_imp_resid, L1_imp_resid, L2_imp_resid)
-

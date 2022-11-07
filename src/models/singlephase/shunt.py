@@ -1,10 +1,5 @@
 from __future__ import division
 from itertools import count
-import numpy as np
-from sympy import symbols
-from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestamper import LagrangeStamper
-from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import GROUND, Bus
 from models.singlephase.line import build_line_stamper_bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
@@ -62,12 +57,3 @@ class Shunt:
 
     def get_connections(self):
         return []
-
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
-
-    def calculate_residuals(self, network, v):
-        return self.stamper.calc_residuals([self.G, self.B, 0], v)

@@ -1,12 +1,10 @@
 import numpy as np
 from sympy import symbols
-from collections import defaultdict
 from itertools import count
 from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestamper import LagrangeStamper
+from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 from models.singlephase.bus import Bus
-from logic.stamping.matrixbuilder import MatrixBuilder
 from models.wellknownvariables import tx_factor
 
 TX_LARGE_G = 20
@@ -55,7 +53,7 @@ def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_i
     index_map[Lr_to] = Lr_to_idx
     index_map[Li_to] = Li_to_idx
 
-    return LagrangeStamper(line_lh, index_map, optimization_enabled)
+    return LagrangeStampDetails(line_lh, index_map, optimization_enabled)
 
 constants = B_shunt, tx_factor = symbols('B_sh tx_factor')
 primals = [Vr_from, Vi_from, Vr_to, Vi_to] = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
@@ -121,7 +119,7 @@ class Line:
         index_map[Lr_to] = self.to_bus.node_lambda_Vr
         index_map[Li_to] = self.to_bus.node_lambda_Vi
 
-        self.shunt_stamper = LagrangeStamper(shunt_lh, index_map, optimization_enabled)
+        self.shunt_stamper = LagrangeStampDetails(shunt_lh, index_map, optimization_enabled)
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
@@ -131,30 +129,3 @@ class Line:
             (self.line_stamper, [self.G, self.B, 0]), 
             (self.shunt_stamper, [self.B_line, 0])
             )
-
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        if not self.status:
-            return
-
-        self.line_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
-        self.shunt_stamper.stamp_primal(Y, J, [self.B_line, tx_factor], v_previous)
-    
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        if not self.status:
-            return
-        
-        self.line_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
-        self.shunt_stamper.stamp_dual(Y, J, [self.B_line, tx_factor], v_previous)
-    
-    def calculate_residuals(self, network, v):
-        residuals = defaultdict(lambda: 0)
-
-        for (key, value) in self.line_stamper.calc_residuals([self.G, self.B, 0], v).items():
-            residuals[key] += value
-
-        for (key, value) in self.shunt_stamper.calc_residuals([self.B_line, 0], v).items():
-            residuals[key] += value
-        
-        return residuals
-        
-

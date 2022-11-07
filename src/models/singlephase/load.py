@@ -3,9 +3,7 @@ from itertools import count
 import numpy as np
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
-from logic.stamping.matrixbuilder import MatrixBuilder
-from models.helpers import merge_residuals
+from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus
 from logic.stamping.matrixstamper import build_stamps_from_stampers
@@ -147,12 +145,12 @@ class Load:
         if self.P == 0 and self.Q == 0:
             self.stamper_pq = None
         else:
-            self.stamper_pq = LagrangeStamper(lh_pq, index_map, optimization_enabled)
+            self.stamper_pq = LagrangeStampDetails(lh_pq, index_map, optimization_enabled)
 
         if self.IP == 0 and self.IQ == 0:
             self.stamper_Ic = None
         else:
-            self.stamper_Ic = LagrangeStamper(lh_Ic, index_map, optimization_enabled)
+            self.stamper_Ic = LagrangeStampDetails(lh_Ic, index_map, optimization_enabled)
 
         if self.Z == 0:
             self.stamper_z = None
@@ -168,41 +166,3 @@ class Load:
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
-
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        if self.stamper_pq != None:
-            self.stamper_pq.stamp_primal(Y, J, [self.P, self.Q], v_previous)
-
-        if self.stamper_Ic != None:
-            self.stamper_Ic.stamp_primal(Y, J, [self.IP, self.IQ], v_previous)
-
-        if self.stamper_z != None:
-            self.stamper_z.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        if self.stamper_pq != None:
-            self.stamper_pq.stamp_dual(Y, J, [self.P, self.Q], v_previous)
-
-        if self.stamper_Ic != None:
-            self.stamper_Ic.stamp_dual(Y, J, [self.IP, self.IQ], v_previous)
-
-        if self.stamper_z != None:
-            self.stamper_z.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
-
-    def calculate_residuals(self, network, v):
-        if self.stamper_pq == None:
-            pq_residuals = {}
-        else:
-            pq_residuals = self.stamper_pq.calc_residuals([self.P, self.Q], v)
-
-        if self.stamper_Ic == None:
-            Ic_residuals = {}
-        else:
-            Ic_residuals = self.stamper_Ic.calc_residuals([self.IP, self.IQ], v)
-
-        if self.stamper_z == None:
-            resistive_residuals = {}
-        else:
-            resistive_residuals = self.stamper_z.calc_residuals([self.G, self.B, 0], v)
-
-        return merge_residuals({}, pq_residuals, resistive_residuals, Ic_residuals)

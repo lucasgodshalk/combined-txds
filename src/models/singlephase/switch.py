@@ -38,23 +38,3 @@ class Switch():
             return []
 
         return [(self.from_node, self.to_node)]
-
-    def stamp_primal(self, Y, J, v_previous, tx_factor, state):
-        # Don't stamp values if the switch is open
-        if self.status == SwitchStatus.OPEN:
-            return
-
-        self.vs.stamp_primal(Y, J, v_previous, tx_factor, state)
-
-    def stamp_dual(self, Y, J, v_previous, tx_factor, state):
-        if self.status == SwitchStatus.OPEN:
-            return
-
-        self.vs.stamp_dual(Y, J, v_previous, tx_factor, state)
-    
-    def calculate_residuals(self, state, v):
-        if self.status == SwitchStatus.OPEN:
-            return {}
-            
-        return self.vs.calculate_residuals(state, v)
-

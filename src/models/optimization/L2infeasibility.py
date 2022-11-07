@@ -1,9 +1,7 @@
 from typing import List
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestamper import LagrangeStamper
-from logic.stamping.matrixbuilder import MatrixBuilder
-from models.helpers import merge_residuals
+from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.singlephase.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 
@@ -26,18 +24,6 @@ class L2InfeasibilityOptimization:
         for infeas_current in self.infeasibility_currents:
             stamps += infeas_current.get_stamps()
         return stamps
-        
-    def stamp(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        for inf_current in self.infeasibility_currents:
-            inf_current.stamp_primal(Y, J, v_previous, tx_factor, network)
-            inf_current.stamp_dual(Y, J, v_previous, tx_factor, network)
-
-    def calculate_residuals(self, network, v):
-        residuals = {}
-        for inf_current in self.infeasibility_currents:
-            merge_residuals(residuals, inf_current.calculate_residuals(network, v))
-        
-        return residuals
 
 constants = ()
 primals = [Iir, Iii] = symbols("Iir Iii")
@@ -64,19 +50,10 @@ class L2InfeasibilityCurrent:
         index_map[Lr] = self.bus.node_lambda_Vr
         index_map[Li] = self.bus.node_lambda_Vi
 
-        self.stamper = LagrangeStamper(lh, index_map, optimization_enabled=True)
+        self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled=True)
 
     def get_stamps(self):
         return build_stamps_from_stamper(self, self.stamper, [])
 
     def get_connections(self):
         return []
-
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_primal(Y, J, [], v_previous)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_dual(Y, J, [], v_previous)
-
-    def calculate_residuals(self, network, v):
-        return self.stamper.calc_residuals([], v)

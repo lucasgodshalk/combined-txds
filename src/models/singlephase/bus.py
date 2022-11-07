@@ -1,6 +1,6 @@
 from __future__ import division
 import math
-from logic.stamping.lagrangestamper import SKIP
+from logic.stamping.lagrangestampdetails import SKIP
 
 #Represents an interconnection point for other network element with a shared voltage. In the three-phase case, this is used for a single phase.
 class Bus:

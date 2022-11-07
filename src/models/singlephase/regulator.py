@@ -1,6 +1,4 @@
 from enum import Enum
-from logic.stamping.matrixbuilder import MatrixBuilder
-from models.helpers import merge_residuals
 from models.singlephase.bus import GROUND, Bus
 from models.singlephase.transformer import Transformer
 from models.singlephase.voltagesource import CurrentSensor
@@ -123,17 +121,3 @@ class Regulator():
 
     def get_connections(self):
         return [(self.from_node, self.to_node)]
-
-    def stamp_primal(self, Y, J, v, tx_factor, state):
-        self.transformer.stamp_primal(Y, J, v, tx_factor, state)
-        self.current_sensor.stamp_primal(Y, J, v, tx_factor, state)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
-        self.transformer.stamp_dual(Y, J, v_previous, tx_factor, state)
-        self.current_sensor.stamp_dual(Y, J, v_previous, tx_factor, state)
-
-    def calculate_residuals(self, network, v):
-        xfrmr_residuals = self.transformer.calculate_residuals(network, v)
-        sensor_residuals = self.current_sensor.calculate_residuals(network, v)
-
-        return merge_residuals({}, xfrmr_residuals, sensor_residuals)

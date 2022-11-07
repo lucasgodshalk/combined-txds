@@ -1,7 +1,4 @@
-from collections import defaultdict
 from enum import Enum
-from logic.stamping.matrixbuilder import MatrixBuilder
-from models.helpers import merge_residuals
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus
 from models.singlephase.voltagesource import CurrentSensor
@@ -68,26 +65,3 @@ class Fuse():
             return True
     
         return False
-
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        if self.status == FuseStatus.BLOWN:
-            raise Exception("Blown fuses are not supported")
-
-        self.line_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
-        self.current_sensor.stamp_primal(Y, J, v_previous, tx_factor, network)
-    
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        if self.status == FuseStatus.BLOWN:
-            raise Exception("Blown fuses are not supported")
-
-        self.line_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
-        self.current_sensor.stamp_dual(Y, J, v_previous, tx_factor, network)
-
-    def calculate_residuals(self, state, v):
-        if self.status == FuseStatus.BLOWN:
-            raise Exception("Blown fuses are not supported")
-
-        line_residuals = self.line_stamper.calc_residuals([self.G, self.B, 0], v)
-        sensor_residuals = self.current_sensor.calculate_residuals(state, v)
-
-        return merge_residuals({}, line_residuals, sensor_residuals)

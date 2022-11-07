@@ -1,15 +1,12 @@
-from collections import defaultdict
 from typing import List, Dict
 import numpy as np
-from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
+from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.wellknownvariables import tx_factor
 from models.singlephase.bus import Bus
 
 def build_matrix_stamper(network, optimization_enabled: bool):
-    matrix_stamper = MatrixStamper(optimization_enabled)
-
     stamps = []
     for element in network.get_all_elements():
         if type(element) == Bus:
@@ -20,9 +17,7 @@ def build_matrix_stamper(network, optimization_enabled: bool):
     if network.optimization != None:
         stamps += network.optimization.get_stamps()
 
-    matrix_stamper.register_stamps(stamps)
-
-    return matrix_stamper
+    return MatrixStamper(stamps, optimization_enabled)
 
 def build_stamps_from_stampers(model, *args):
     stamps = []
@@ -74,7 +69,7 @@ def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabl
     
     return expressions, residuals
 
-def build_stamps_from_stamper(model, stamper: LagrangeStamper, constant_vals):
+def build_stamps_from_stamper(model, stamper: LagrangeStampDetails, constant_vals):
     primal_indexes = [stamper.var_map[primal] for primal in stamper.lsegment.primals]
     dual_indexes = [stamper.var_map[dual] for dual in stamper.lsegment.duals]
 
@@ -205,7 +200,7 @@ class InputBuilder():
         
         return self.input_indexes.index(input.key)
 
-    def freeze_inputs(self, is_linear_only: bool):
+    def freeze_inputs(self):
         #Somewhat counter-intuitively, the row is the argument index
         #and the column is the stamp instance's index.
         self.args = [np.zeros(len(self.inputs)) for x in range(self.arg_count)]
@@ -220,25 +215,22 @@ class InputBuilder():
                 self.args[arg_index][instance_idx] = constant_val
                 arg_index += 1
             
-            #If the inputs are only used for linear expressions, then we don't need to touch it at all
-            #after the the inputs are formed during the linear step.
-            if not is_linear_only:
-                #The row and column to use for the input array, not to be confused with the row and column of the Y matrix
-                for v_idx in input.primal_indexes:
+            #The row and column to use for the input array, not to be confused with the row and column of the Y matrix
+            for v_idx in input.primal_indexes:
+                self.input_fills.append((arg_index, instance_idx, v_idx))
+                arg_index += 1
+
+            for v_idx in input.dual_indexes:
+                if self.optimization_enabled:
                     self.input_fills.append((arg_index, instance_idx, v_idx))
-                    arg_index += 1
+                else:
+                    self.args[arg_index][instance_idx] = None
+                arg_index += 1
+            
+            self.input_fills = [x for x in self.input_fills if (SKIP not in x)]
 
-                for v_idx in input.dual_indexes:
-                    if self.optimization_enabled:
-                        self.input_fills.append((arg_index, instance_idx, v_idx))
-                    else:
-                        self.args[arg_index][instance_idx] = None
-                    arg_index += 1
-                
-                self.input_fills = [x for x in self.input_fills if (SKIP not in x)]
-
-                if arg_index != self.arg_count:
-                    raise Exception("Length mismatch in parameter inputs for stamp")
+            if arg_index != self.arg_count:
+                raise Exception("Length mismatch in parameter inputs for stamp")
                 
             instance_idx += 1
 
@@ -294,9 +286,10 @@ class ResidualSet():
         self.residuals = {}
     
     def add_residual(self, input: StampInput, row_index: int):
-        if row_index not in self.residuals:
+        key = str(row_index) + input.key
+        if input.key not in self.residuals:
             output_index = self.input_builder.add_input(input)
-            self.residuals[row_index] = (output_index, input.model)
+            self.residuals[key] = (input.model, row_index, output_index)
 
     def calc_residuals(self, residual_contributions):
         args = self.input_builder.get_args()
@@ -305,22 +298,20 @@ class ResidualSet():
         if type(output_v) != np.ndarray:
             output_v = np.full(args[0].shape[0], output_v)
 
-        for row_idx, (output_idx, model) in self.residuals.items():
-            residual_contributions.append((model, row_idx, output_v[output_idx]))
+        for model, row_index, output_index in self.residuals.values():
+            residual_contributions.append((model, row_index, output_v[output_index]))
 
 class MatrixStamper():
     def __init__(
         self,
+        stamps: List[StampInstance],
         optimization_enabled: bool
         ):
 
         self.optimization_enabled = optimization_enabled
 
-    def register_stamps(self, stamps: List[StampInstance]):
         input_builders = {}
         input_builders: Dict[str, InputBuilder]
-
-        nonlinear_inputs = set()
 
         stamp_sets = {}
         stamp_sets: Dict[str, StampSet]
@@ -331,9 +322,6 @@ class MatrixStamper():
         for stamp in stamps:
             if stamp.expression.parameters_key not in input_builders:
                 input_builders[stamp.expression.parameters_key] = InputBuilder(stamp.expression.parameters, stamp.expression.tx_factor_index, self.optimization_enabled)
-
-            if not stamp.expression.is_linear:
-                nonlinear_inputs.add(stamp.expression.parameters_key)
 
             if stamp.expression.key not in stamp_sets:
                 stamp_sets[stamp.expression.key] = StampSet(stamp.expression, input_builders[stamp.expression.parameters_key])
@@ -351,8 +339,8 @@ class MatrixStamper():
             
             residual_sets[residual_key].add_residual(stamp.input, stamp.row_index)
 
-        for key, input_builder in input_builders.items():
-            input_builder.freeze_inputs(key not in nonlinear_inputs)
+        for input_builder in input_builders.values():
+            input_builder.freeze_inputs()
 
         self.input_builders = input_builders.values()
         self.linear_sets = []

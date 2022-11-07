@@ -1,6 +1,4 @@
 from enum import Enum
-import math
-from logic.stamping.matrixbuilder import MatrixBuilder
 from models.singlephase.bus import Bus
 from models.singlephase.line import build_line_stamper_bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
@@ -66,21 +64,3 @@ class Capacitor:
             raise Exception(f"{self.mode} mode for capacitor not implemented")
 
         return adjustment_made
-
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        if self.switch == CapSwitchState.OPEN:
-            return
-
-        self.line_stamper.stamp_primal(Y, J, [self.G, self.B, tx_factor], v_previous)
-    
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        if self.switch == CapSwitchState.OPEN:
-            return
-    
-        self.line_stamper.stamp_dual(Y, J, [self.G, self.B, tx_factor], v_previous)
-    
-    def calculate_residuals(self, network, v):
-        if self.switch == CapSwitchState.OPEN:
-            return {}
-
-        return self.line_stamper.calc_residuals([self.G, self.B, 0], v)

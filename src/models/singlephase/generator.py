@@ -2,8 +2,7 @@ from __future__ import division
 from itertools import count
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestamper import LagrangeStamper
-from logic.stamping.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.singlephase.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 
@@ -70,7 +69,7 @@ class Generator:
         index_map[Li] = self.bus.node_lambda_Vi
         index_map[LQ] = self.bus.node_lambda_Q
 
-        self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
+        self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled)
 
     def get_stamps(self):
         return build_stamps_from_stamper(self, self.stamper, [self.P, self.Vset])
@@ -78,11 +77,3 @@ class Generator:
     def get_connections(self):
         return []
 
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_primal(Y, J, [self.P, self.Vset], v_previous)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_dual(Y, J, [self.P, self.Vset], v_previous)
-
-    def calculate_residuals(self, network, v):
-        return self.stamper.calc_residuals([self.P, self.Vset], v)

@@ -2,8 +2,7 @@ from __future__ import division
 import numpy as np
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
-from logic.stamping.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 import math
 from models.singlephase.bus import GROUND, Bus
 from logic.stamping.matrixstamper import build_stamps_from_stampers
@@ -75,7 +74,7 @@ class Slack:
         index_map[Lsr] = self.slack_lambda_Ir
         index_map[Lsi] = self.slack_lambda_Ii
 
-        self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
+        self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled)
 
     def get_stamps(self):
         return build_stamps_from_stampers(self, 
@@ -84,12 +83,3 @@ class Slack:
 
     def get_connections(self):
         return [(self.bus, GROUND)]
-
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_primal(Y, J, [self.Vr_set, self.Vi_set], v_previous)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_dual(Y, J, [self.Vr_set, self.Vi_set], v_previous)
-
-    def calculate_residuals(self, network, v):
-        return self.stamper.calc_residuals([self.Vr_set, self.Vi_set], v)

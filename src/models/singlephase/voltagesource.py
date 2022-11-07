@@ -1,8 +1,7 @@
 import numpy as np
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestamper import SKIP, LagrangeStamper
-from logic.stamping.matrixbuilder import MatrixBuilder
+from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 from models.singlephase.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 
@@ -57,7 +56,7 @@ class VoltageSource:
         index_map[Lir] = self.Lir_index
         index_map[Lii] = self.Lii_index
 
-        self.stamper = LagrangeStamper(lh, index_map, optimization_enabled)
+        self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled)
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
@@ -67,15 +66,6 @@ class VoltageSource:
             (self.stamper, [self.Vr_set, self.Vi_set]) 
             )
 
-    def stamp_primal(self, Y: MatrixBuilder, J, v_previous, tx_factor, state):
-        self.stamper.stamp_primal(Y, J, [self.Vr_set, self.Vi_set], v_previous)
-
-    def stamp_dual(self, Y: MatrixBuilder, J, v_previous, tx_factor, network):
-        self.stamper.stamp_dual(Y, J, [self.Vr_set, self.Vi_set], v_previous)
-
-    def calculate_residuals(self, state, v):
-        return self.stamper.calc_residuals([self.Vr_set, self.Vi_set], v)
-    
     def get_current(self, v):
         return (v[self.Ir_index], v[self.Ii_index])
     
