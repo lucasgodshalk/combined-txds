@@ -7,7 +7,7 @@ from sympy import sin
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 import math
-from models.singlephase.line import build_line_stamper
+from models.singlephase.line import build_line_stamper, build_line_stamper_bus
 from models.singlephase.bus import GROUND, Bus
 from models.wellknownvariables import tx_factor
 from logic.stamping.matrixstamper import build_stamps_from_stampers
@@ -140,15 +140,9 @@ class Transformer:
             optimization_enabled
             )
         
-        self.shunt_stamper = build_line_stamper(
-            self.to_bus_pos.node_Vr, 
-            self.to_bus_pos.node_Vi,
+        self.shunt_stamper = build_line_stamper_bus(
+            self.to_bus_pos, 
             GROUND, 
-            GROUND,
-            self.to_bus_pos.node_lambda_Vr, 
-            self.to_bus_pos.node_lambda_Vi,
-            GROUND, 
-            GROUND,
             optimization_enabled,
             no_tx_factor=True
             )
@@ -156,6 +150,8 @@ class Transformer:
     def get_stamps(self):
         return build_stamps_from_stampers(self, 
             (self.xfrmr_stamper, [self.tr, self.ang_rad, 0]), 
+            #TODO: enable shunt capacitance for transformers. We don't match with gridlabd atm, undetermined reason.
+            #(self.shunt_stamper, [self.G_shunt, self.B_shunt, 0]),
             (self.losses_stamper, [self.G_loss, self.B_loss, 0])
             )
 
