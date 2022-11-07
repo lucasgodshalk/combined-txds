@@ -30,7 +30,7 @@ class Fuse():
         self.B = 1e4
     
     def assign_nodes(self, node_index, optimization_enabled):
-        self.line_stamper = build_line_stamper_bus(self.from_node, self.interior_node, optimization_enabled, no_tx_factor=False)
+        self.line_stamper = build_line_stamper_bus(self.from_node, self.interior_node, optimization_enabled)
 
         self.current_sensor = CurrentSensor(self.interior_node, self.to_node)
         self.current_sensor.assign_nodes(node_index, optimization_enabled)

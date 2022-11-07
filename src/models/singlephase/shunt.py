@@ -50,7 +50,7 @@ class Shunt:
             self.bus, 
             GROUND, 
             optimization_enabled,
-            no_tx_factor=False
+            is_shunt=True
             )
 
     def get_stamps(self):

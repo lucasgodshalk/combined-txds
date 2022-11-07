@@ -155,7 +155,7 @@ class Load:
         if self.Z == 0:
             self.stamper_z = None
         else:
-            self.stamper_z = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled, no_tx_factor=False)
+            self.stamper_z = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled, is_shunt=True)
 
     def get_stamps(self):
         return build_stamps_from_stampers(self, 

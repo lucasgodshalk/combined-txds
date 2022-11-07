@@ -144,7 +144,7 @@ class Transformer:
             self.to_bus_pos, 
             GROUND, 
             optimization_enabled,
-            no_tx_factor=True
+            is_shunt=True
             )
 
     def get_stamps(self):

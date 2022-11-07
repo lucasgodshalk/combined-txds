@@ -31,7 +31,7 @@ class Capacitor:
         self.switch = CapSwitchState.CLOSED
     
     def assign_nodes(self, node_index, optimization_enabled):
-        self.line_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled, no_tx_factor=False)
+        self.line_stamper = build_line_stamper_bus(self.from_bus, self.to_bus, optimization_enabled, is_shunt=True)
 
     def get_stamps(self):
         if self.switch == CapSwitchState.OPEN:

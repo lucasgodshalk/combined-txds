@@ -4,7 +4,7 @@ from itertools import count
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from logic.stamping.matrixstamper import build_stamps_from_stampers
-from models.singlephase.bus import Bus
+from models.singlephase.bus import Bus, GROUND
 from models.wellknownvariables import tx_factor
 
 TX_LARGE_G = 20
@@ -29,15 +29,22 @@ lagrange = np.dot(duals, eqns)
 
 line_lh = LagrangeSegment(lagrange, constants, primals, duals)
 
-lagrange_no_tx_factor = lagrange.subs(tx_factor, 0)
+# The only distinction between shunt and line impedance behavior
+# is that when the homotopy factor is at 1,
+# we expect line impedance to go to [large number]
+# and the shunt impedance to go to 0
 
-line_lh_no_tx_factor = LagrangeSegment(lagrange_no_tx_factor, constants, primals, duals)
+lagrange_shunt = lagrange.subs(tx_factor, 0)
+lagrange_shunt = lagrange_shunt.subs(G_orig, G_orig * (1 - tx_factor))
+lagrange_shunt = lagrange_shunt.subs(B_orig, B_orig * (1 - tx_factor))
+
+shunt_lh = LagrangeSegment(lagrange_shunt, constants, primals, duals)
 
 def build_line_stamper_bus(
     from_bus: Bus, 
     to_bus: Bus, 
     optimization_enabled,
-    no_tx_factor = True
+    is_shunt = False
     ):
     return build_line_stamper(
         from_bus.node_Vr,
@@ -49,7 +56,7 @@ def build_line_stamper_bus(
         to_bus.node_lambda_Vr,
         to_bus.node_lambda_Vi,
         optimization_enabled,
-        no_tx_factor
+        is_shunt
         )
 
 def build_line_stamper(
@@ -62,7 +69,7 @@ def build_line_stamper(
     Lr_to_idx, 
     Li_to_idx, 
     optimization_enabled,
-    no_tx_factor = True
+    is_shunt = False
     ):
     index_map = {}
     index_map[Vr_from] = Vr_from_idx
@@ -74,27 +81,10 @@ def build_line_stamper(
     index_map[Lr_to] = Lr_to_idx
     index_map[Li_to] = Li_to_idx
 
-    if no_tx_factor:
+    if is_shunt:
         return LagrangeStampDetails(line_lh, index_map, optimization_enabled)
     else:
-        return LagrangeStampDetails(line_lh_no_tx_factor, index_map, optimization_enabled)
-
-constants = B_shunt, tx_factor = symbols('B_sh tx_factor')
-primals = [Vr_from, Vi_from, Vr_to, Vi_to] = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
-duals = [Lr_from, Li_from, Lr_to, Li_to] = symbols('lambda_from\,r lambda_from\,i lambda_to\,r lambda_to\,i')
-
-scaled_B_line = B_shunt * (1 - tx_factor)
-
-shunt_eqns = [
-    -scaled_B_line * Vi_from,
-    scaled_B_line * Vr_from,
-    -scaled_B_line * Vi_to,
-    scaled_B_line * Vr_to,    
-]
-
-lagrange = np.dot(duals, shunt_eqns)
-
-shunt_lh = LagrangeSegment(lagrange, constants, primals, duals)
+        return LagrangeStampDetails(shunt_lh, index_map, optimization_enabled)
 
 class Line:
     _ids = count(0)
@@ -133,17 +123,19 @@ class Line:
             optimization_enabled
             )
 
-        index_map = {}
-        index_map[Vr_from] = self.from_bus.node_Vr
-        index_map[Vi_from] = self.from_bus.node_Vi
-        index_map[Vr_to] = self.to_bus.node_Vr
-        index_map[Vi_to] = self.to_bus.node_Vi
-        index_map[Lr_from] = self.from_bus.node_lambda_Vr
-        index_map[Li_from] = self.from_bus.node_lambda_Vi
-        index_map[Lr_to] = self.to_bus.node_lambda_Vr
-        index_map[Li_to] = self.to_bus.node_lambda_Vi
+        self.shunt_stamper_from = build_line_stamper_bus(
+            self.from_bus,
+            GROUND,
+            optimization_enabled,
+            is_shunt=True
+            )
 
-        self.shunt_stamper = LagrangeStampDetails(shunt_lh, index_map, optimization_enabled)
+        self.shunt_stamper_to = build_line_stamper_bus(
+            self.to_bus,
+            GROUND,
+            optimization_enabled,
+            is_shunt=True
+            )
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
@@ -151,5 +143,6 @@ class Line:
     def get_stamps(self):
         return build_stamps_from_stampers(self, 
             (self.line_stamper, [self.G, self.B, 0]), 
-            (self.shunt_stamper, [self.B_line, 0])
+            (self.shunt_stamper_from, [0, self.B_line, 0]),
+            (self.shunt_stamper_to, [0 ,self.B_line, 0])
             )
