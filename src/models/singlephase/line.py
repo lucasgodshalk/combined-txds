@@ -29,7 +29,16 @@ lagrange = np.dot(duals, eqns)
 
 line_lh = LagrangeSegment(lagrange, constants, primals, duals)
 
-def build_line_stamper_bus(from_bus: Bus, to_bus: Bus, optimization_enabled):
+lagrange_no_tx_factor = lagrange.subs(tx_factor, 0)
+
+line_lh_no_tx_factor = LagrangeSegment(lagrange_no_tx_factor, constants, primals, duals)
+
+def build_line_stamper_bus(
+    from_bus: Bus, 
+    to_bus: Bus, 
+    optimization_enabled,
+    no_tx_factor = True
+    ):
     return build_line_stamper(
         from_bus.node_Vr,
         from_bus.node_Vi,
@@ -39,10 +48,22 @@ def build_line_stamper_bus(from_bus: Bus, to_bus: Bus, optimization_enabled):
         from_bus.node_lambda_Vi,
         to_bus.node_lambda_Vr,
         to_bus.node_lambda_Vi,
-        optimization_enabled
+        optimization_enabled,
+        no_tx_factor
         )
 
-def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_idx, Li_from_idx, Lr_to_idx, Li_to_idx, optimization_enabled):
+def build_line_stamper(
+    Vr_from_idx, 
+    Vi_from_idx, 
+    Vr_to_idx, 
+    Vi_to_idx, 
+    Lr_from_idx, 
+    Li_from_idx, 
+    Lr_to_idx, 
+    Li_to_idx, 
+    optimization_enabled,
+    no_tx_factor = True
+    ):
     index_map = {}
     index_map[Vr_from] = Vr_from_idx
     index_map[Vi_from] = Vi_from_idx
@@ -53,7 +74,10 @@ def build_line_stamper(Vr_from_idx, Vi_from_idx, Vr_to_idx, Vi_to_idx, Lr_from_i
     index_map[Lr_to] = Lr_to_idx
     index_map[Li_to] = Li_to_idx
 
-    return LagrangeStampDetails(line_lh, index_map, optimization_enabled)
+    if no_tx_factor:
+        return LagrangeStampDetails(line_lh, index_map, optimization_enabled)
+    else:
+        return LagrangeStampDetails(line_lh_no_tx_factor, index_map, optimization_enabled)
 
 constants = B_shunt, tx_factor = symbols('B_sh tx_factor')
 primals = [Vr_from, Vi_from, Vr_to, Vi_to] = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')

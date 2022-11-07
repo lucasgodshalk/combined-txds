@@ -49,7 +49,8 @@ class Shunt:
         self.stamper = build_line_stamper_bus(
             self.bus, 
             GROUND, 
-            optimization_enabled
+            optimization_enabled,
+            no_tx_factor=False
             )
 
     def get_stamps(self):

@@ -149,7 +149,8 @@ class Transformer:
             self.to_bus_pos.node_lambda_Vi,
             GROUND, 
             GROUND,
-            optimization_enabled
+            optimization_enabled,
+            no_tx_factor=True
             )
 
     def get_stamps(self):
