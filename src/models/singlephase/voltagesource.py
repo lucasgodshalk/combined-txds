@@ -3,7 +3,7 @@ from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 from models.singlephase.bus import Bus
-from logic.stamping.matrixstamper import build_stamps_from_stampers
+from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 constants = Vr_set, Vi_set = symbols("Vr_set Vi_set")
 primals = Vr_from, Vi_from, Vr_to, Vi_to, Ir, Ii = symbols('Vr_from Vi_from Vr_to Vi_to Ir Ii')
@@ -62,9 +62,7 @@ class VoltageSource:
         return [(self.from_bus, self.to_bus)]
 
     def get_stamps(self):
-        return build_stamps_from_stampers(self, 
-            (self.stamper, [self.Vr_set, self.Vi_set]) 
-            )
+        return build_stamps_from_stamper(self, self.stamper, [self.Vr_set, self.Vi_set])
 
     def get_current(self, v):
         return (v[self.Ir_index], v[self.Ii_index])

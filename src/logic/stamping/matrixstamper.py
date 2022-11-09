@@ -24,7 +24,7 @@ def build_stamps_from_stampers(model, *args):
     for (stamper, constantvals) in args:
         if stamper == None:
             continue
-        stamps += build_stamps_from_stamper(model, stamper, constantvals)
+        stamps.append(__build_stampcollection_from_stamper(model, stamper, constantvals))
     
     return stamps
 
@@ -70,13 +70,15 @@ def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabl
     return expressions, residuals
 
 def build_stamps_from_stamper(model, stamper: LagrangeStampDetails, constant_vals):
+    return [__build_stampcollection_from_stamper(model, stamper, constant_vals)]
+
+def __build_stampcollection_from_stamper(model, stamper: LagrangeStampDetails, constant_vals):
     primal_indexes = [stamper.var_map[primal] for primal in stamper.lsegment.primals]
     dual_indexes = [stamper.var_map[dual] for dual in stamper.lsegment.duals]
 
-    expressions, _ = get_or_build_stamp_expressions(stamper.lsegment, stamper.optimization_enabled)
+    expressions, residual_exprs = get_or_build_stamp_expressions(stamper.lsegment, stamper.optimization_enabled)
 
     input = StampInput(
-        model,
         constant_vals, 
         primal_indexes, 
         dual_indexes
@@ -104,7 +106,15 @@ def build_stamps_from_stamper(model, stamper: LagrangeStampDetails, constant_val
         
         stamps.append(stamp)
 
-    return stamps
+    residuals = []
+    for first_order, expr, expr_eval in residual_exprs:
+        row_index = stamper.get_variable_row_index(first_order)
+        if row_index == SKIP:
+            continue
+        residual = ResidualInstance(stamper.lsegment, first_order, row_index, input, expr, expr_eval)
+        residuals.append(residual)
+
+    return StampCollection(model, stamper.lsegment, stamps, residuals)
 
 #All of the constants and variables that will be used to calculate a stamp. The set of parameters
 #will be different for each instance of a model, but the shape will be the same based on the expression.
@@ -113,13 +123,10 @@ def build_stamps_from_stamper(model, stamper: LagrangeStampDetails, constant_val
 class StampInput():
     def __init__(
         self,
-        model,
         constant_vals: List,
         primal_indexes: List[int],
         dual_indexes: List[int]
         ):
-
-        self.model = model
 
         #Inputs are assumed to be ordered as: constants | primals | duals in list order supplied.
         self.constant_vals = constant_vals
@@ -172,6 +179,38 @@ class StampInstance():
         self.row_index = row_index
         #Column index will be ignored if the expression gets put in the J vector.
         self.col_index = col_index
+
+class ResidualInstance():
+    def __init__(
+        self,
+        lsegment: LagrangeSegment,
+        first_order,
+        row_index: int,
+        input: StampInput,
+        expr,
+        expr_eval
+        ):
+        
+        self.lsegment = lsegment
+        self.first_order = first_order
+        self.row_index = row_index
+        self.input = input
+        self.expr = expr
+        self.expr_eval = expr_eval
+
+class StampCollection():
+    def __init__(self, 
+        model,
+        lsegment,
+        stamps: List[StampInstance], 
+        residuals: List[ResidualInstance]
+        ):
+
+        self.model = model
+        self.lsegment = lsegment
+        self.stamps = stamps
+        self.residuals = residuals
+
 
 #Constructs the input matrix for a particular expression based on the set of stamp inputs.
 class InputBuilder():
@@ -283,13 +322,11 @@ class ResidualSet():
         self.residual_eval = residual_eval
         self.input_builder = input_builder
 
-        self.residuals = {}
+        self.residuals = []
     
-    def add_residual(self, input: StampInput, row_index: int):
-        key = str(row_index) + input.key
-        if input.key not in self.residuals:
-            output_index = self.input_builder.add_input(input)
-            self.residuals[key] = (input.model, row_index, output_index)
+    def add_residual(self, model, residual: ResidualInstance):
+        output_index = self.input_builder.add_input(residual.input)
+        self.residuals.append((model, residual, output_index))
 
     def calc_residuals(self, residual_contributions):
         args = self.input_builder.get_args()
@@ -298,13 +335,13 @@ class ResidualSet():
         if type(output_v) != np.ndarray:
             output_v = np.full(args[0].shape[0], output_v)
 
-        for model, row_index, output_index in self.residuals.values():
-            residual_contributions.append((model, row_index, output_v[output_index]))
+        for model, residual, output_index in self.residuals:
+            residual_contributions.append((model, residual.row_index, output_v[output_index]))
 
 class MatrixStamper():
     def __init__(
         self,
-        stamps: List[StampInstance],
+        stampcollections: List[StampCollection],
         optimization_enabled: bool
         ):
 
@@ -319,25 +356,27 @@ class MatrixStamper():
         residual_sets = {}
         residual_sets: Dict[str, ResidualSet]
 
-        for stamp in stamps:
-            if stamp.expression.parameters_key not in input_builders:
-                input_builders[stamp.expression.parameters_key] = InputBuilder(stamp.expression.parameters, stamp.expression.tx_factor_index, self.optimization_enabled)
+        for stampcollection in stampcollections:
+            for stamp in stampcollection.stamps:
+                if stamp.expression.parameters_key not in input_builders:
+                    input_builders[stamp.expression.parameters_key] = InputBuilder(stamp.expression.parameters, stamp.expression.tx_factor_index, self.optimization_enabled)
 
-            if stamp.expression.key not in stamp_sets:
-                stamp_sets[stamp.expression.key] = StampSet(stamp.expression, input_builders[stamp.expression.parameters_key])
-            
-            stamp_sets[stamp.expression.key].add_stamp(stamp)
+                if stamp.expression.key not in stamp_sets:
+                    stamp_sets[stamp.expression.key] = StampSet(stamp.expression, input_builders[stamp.expression.parameters_key])
+                
+                stamp_sets[stamp.expression.key].add_stamp(stamp)
 
-            residual_key = stamp.expression.lsegment.lagrange_key + str(stamp.expression.first_order)
-            if not residual_key in residual_sets:
-                derivative = stamp.expression.lsegment.get_derivatives()[stamp.expression.first_order]
-                residual_sets[residual_key] = ResidualSet(
-                    derivative.expr,
-                    derivative.expr_eval,
-                    input_builders[stamp.expression.parameters_key]
-                    )
-            
-            residual_sets[residual_key].add_residual(stamp.input, stamp.row_index)
+            for residual in stampcollection.residuals:
+                residual_key = residual.lsegment.lagrange_key + str(residual.first_order)
+                if not residual_key in residual_sets:
+                    derivative = residual.lsegment.get_derivatives()[residual.first_order]
+                    residual_sets[residual_key] = ResidualSet(
+                        derivative.expr,
+                        derivative.expr_eval,
+                        input_builders[stamp.expression.parameters_key]
+                        )
+                
+                residual_sets[residual_key].add_residual(stampcollection.model, residual)
 
         for input_builder in input_builders.values():
             input_builder.freeze_inputs()

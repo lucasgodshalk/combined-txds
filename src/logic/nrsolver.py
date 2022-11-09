@@ -99,12 +99,18 @@ class NRSolver:
                     return (False, v_next, iteration_num)
             
             if err_max < self.settings.tolerance:
+                if self.settings.dump_matrix:
+                    dump_v(v_next)
+
                 return (True, v_next, iteration_num)
             elif self.v_limiting != None and err_max > self.settings.tolerance:
                 v_next = self.v_limiting.apply_limiting(v_next, v_previous, diff)
 
             v_previous = v_next
             Y.clear(retain_idx=linear_index)
+
+        if self.settings.dump_matrix:
+            dump_v(v_next)
 
         return (False, v_next, iteration_num)
 
@@ -136,6 +142,21 @@ def dump_J(J, iteration):
         for i in range(len(J)):
             if J[i] != 0:
                 outputfile.write(f"{i}: {J[i]:.5g}\r")
+
+def dump_v(v):
+    Path("./dumps").mkdir(parents=True, exist_ok=True)
+
+    filename = f'./dumps/v_output.txt'
+
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
+    with open(filename, 'a') as outputfile:
+        for i in range(len(v)):
+            if v[i] != 0:
+                outputfile.write(f"{i}: {v[i]:.5g}\r") 
 
 def dump_Y(Y, iteration):
     Path("./dumps").mkdir(parents=True, exist_ok=True)
