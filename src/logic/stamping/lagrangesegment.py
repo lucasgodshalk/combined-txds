@@ -126,6 +126,8 @@ class LagrangeSegment:
 
         self.parameters = self.constants + self.variables
 
+        self.parameters_key = str(self.parameters)
+
         self._derivatives = None
         self._derivatives: typing.Dict[Symbol, DerivativeEntry]
 

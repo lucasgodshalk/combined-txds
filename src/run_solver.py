@@ -37,7 +37,7 @@ debug = args.debug
 verbose = args.verbose
 infeas = args.infeas
 load_factor = float(args.load_factor)
-print(colored("Running power flow solver...",'red'))
+print(colored("Starting power flow solver...",'green'))
 print(colored("Infeasibility option is %s" % infeas, 'green'))
 
 settings = PowerFlowSettings(

@@ -158,9 +158,9 @@ class StampExpression():
         self.yth_variable = yth_variable
         self.tx_factor_index = tx_factor_index
 
-        self.parameters_key = str(self.parameters)
+        self.parameters_key = lsegment.parameters_key
 
-        self.key = lsegment.lagrange_key + str(first_order) + str(expression) + str(yth_variable) + str(is_linear) + str(tx_factor_index)
+        self.key = lsegment.lagrange_key + str(first_order) + str(yth_variable) + str(is_linear) + str(tx_factor_index)
 
 # Multiple stamp instances exist for every single model instance, based on the number of expressions to compute,
 # e.g. each load instance will share the expressions/equations being computed with all other loads, 
@@ -234,10 +234,10 @@ class InputBuilder():
     
     def add_input(self, input: StampInput):
         if input.key not in self.inputs:
-            self.inputs[input.key] = input
             self.input_indexes.append(input.key)
+            self.inputs[input.key] = (input, len(self.input_indexes) - 1)
         
-        return self.input_indexes.index(input.key)
+        return self.inputs[input.key][1]
 
     def freeze_inputs(self):
         #Somewhat counter-intuitively, the row is the argument index
@@ -247,7 +247,7 @@ class InputBuilder():
 
         instance_idx = 0
         for input_key in self.input_indexes:
-            input = self.inputs[input_key]
+            input, _ = self.inputs[input_key]
             arg_index = 0
 
             for constant_val in input.constant_vals:
@@ -256,18 +256,18 @@ class InputBuilder():
             
             #The row and column to use for the input array, not to be confused with the row and column of the Y matrix
             for v_idx in input.primal_indexes:
-                self.input_fills.append((arg_index, instance_idx, v_idx))
+                if v_idx != None:
+                    self.input_fills.append((arg_index, instance_idx, v_idx))
                 arg_index += 1
 
             for v_idx in input.dual_indexes:
-                if self.optimization_enabled:
-                    self.input_fills.append((arg_index, instance_idx, v_idx))
-                else:
-                    self.args[arg_index][instance_idx] = None
+                if v_idx != None:
+                    if self.optimization_enabled:
+                        self.input_fills.append((arg_index, instance_idx, v_idx))
+                    else:
+                        self.args[arg_index][instance_idx] = None
                 arg_index += 1
             
-            self.input_fills = [x for x in self.input_fills if (SKIP not in x)]
-
             if arg_index != self.arg_count:
                 raise Exception("Length mismatch in parameter inputs for stamp")
                 

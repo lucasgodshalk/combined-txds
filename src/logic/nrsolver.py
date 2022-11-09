@@ -7,7 +7,6 @@ from logic.powerflowsettings import PowerFlowSettings
 from pathlib import Path
 from colorama import init
 from termcolor import colored
-from logic.stamping.matrixstamper import build_matrix_stamper
 from models.singlephase.bus import Bus
 # use Colorama to make Termcolor work on Windows too
 init()
@@ -31,15 +30,13 @@ class NRSolver:
 
         return self.diff_mask
 
-    def stamp_linear(self, Y: MatrixBuilder, J, tx_factor):
-        self.matrix_stamper.stamp_linear(Y, J, tx_factor)
+    def stamp_linear(self, matrix_stamper, Y: MatrixBuilder, J, tx_factor):
+        matrix_stamper.stamp_linear(Y, J, tx_factor)
 
-    def stamp_nonlinear(self, Y: MatrixBuilder, J, v_previous, tx_factor):
-        self.matrix_stamper.stamp_nonlinear(Y, J, v_previous)
+    def stamp_nonlinear(self, matrix_stamper, Y: MatrixBuilder, J, v_previous):
+        matrix_stamper.stamp_nonlinear(Y, J, v_previous)
 
-    def run_powerflow(self, v_init, tx_factor):
-        self.matrix_stamper = build_matrix_stamper(self.network, self.settings.infeasibility_analysis)
-
+    def run_powerflow(self, matrix_stamper, v_init, tx_factor):
         if self.settings.dump_matrix:
             dump_matrix_map(self.network.matrix_map)
 
@@ -48,7 +45,7 @@ class NRSolver:
         Y = MatrixBuilder(self.settings)
         J_linear = np.zeros(len(v_init))
 
-        self.stamp_linear(Y, J_linear, tx_factor)
+        self.stamp_linear(matrix_stamper, Y, J_linear, tx_factor)
 
         linear_index = Y.get_usage()
 
@@ -57,7 +54,7 @@ class NRSolver:
         for iteration_num in range(self.settings.max_iters):
             J = J_linear.copy()
 
-            self.stamp_nonlinear(Y, J, v_previous, tx_factor)
+            self.stamp_nonlinear(matrix_stamper, Y, J, v_previous)
 
             Y.assert_valid(check_zeros=True)
 

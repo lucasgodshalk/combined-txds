@@ -31,10 +31,11 @@ class PowerFlow:
 
         nrsolver = NRSolver(self.settings, self.network, v_limiting)
 
-        homotopy_controller = HomotopyController(self.settings, nrsolver)
+        homotopy_controller = HomotopyController(self.settings, self.network, nrsolver)
 
         device_controller = DeviceController(self.settings, homotopy_controller)
 
+        print("Running powerflow...")
         is_success, v_final, iteration_num, tx_percent = device_controller.run_powerflow()
 
         end_time = time.perf_counter_ns()
