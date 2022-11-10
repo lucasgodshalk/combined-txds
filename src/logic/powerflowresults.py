@@ -92,9 +92,10 @@ class PowerFlowResults:
         tx_percent,
         duration_sec, 
         network: NetworkModel,
-         v_final, 
-         settings: PowerFlowSettings
-         ):
+        v_final, 
+        settings: PowerFlowSettings,
+        residual_contributions
+        ):
         self.is_success = is_success
         self.iterations = iterations
         self.tx_percent = tx_percent
@@ -167,7 +168,7 @@ class PowerFlowResults:
 
             self.infeasibility_totals = (total_P, total_Q)    
 
-        self.max_residual, self.max_residual_index, self.residuals = self.calculate_residuals()        
+        self.max_residual, self.max_residual_index, self.residuals = self.calculate_residuals(residual_contributions)        
 
     def display(self, verbose=False):
         print("=====================")
@@ -212,11 +213,7 @@ class PowerFlowResults:
         for load in self.load_results:
             print(load)
 
-    def calculate_residuals(self):
-        stamper = build_matrix_stamper(self.network, self.settings.infeasibility_analysis)
-
-        residual_contributions = stamper.calc_residuals(0, self.v_final)
-
+    def calculate_residuals(self, residual_contributions):
         residuals = np.zeros(len(self.v_final))
         for (_, index, value) in residual_contributions:
             residuals[index] += value

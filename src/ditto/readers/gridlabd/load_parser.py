@@ -189,8 +189,8 @@ class LoadParser:
         except AttributeError:
             pass
 
-    def __create_phaseload(self, model, phase, is_delta):
-        phaseload = PhaseLoad(model)
+    def __create_phaseload(self, _, phase, is_delta):
+        phaseload = PhaseLoad()
         if is_delta:
             if phase == "A":
                 phaseload.phase = "AB"

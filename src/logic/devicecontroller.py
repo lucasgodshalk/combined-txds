@@ -28,7 +28,7 @@ class DeviceController:
             self.try_adjust_devices(v_init)
 
         for _ in range(MAX_DEVICE_ITERATIONS):
-            results = is_success, v_final, _, _ = self.homotopy.run_powerflow(v_init)
+            results = is_success, v_final, _, _, _ = self.homotopy.run_powerflow(v_init)
             if not is_success:
                 return results
             if not self.settings.device_control or not self.try_adjust_devices(v_final):

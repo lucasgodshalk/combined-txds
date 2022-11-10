@@ -36,7 +36,7 @@ class PowerFlow:
         device_controller = DeviceController(self.settings, homotopy_controller)
 
         print("Running powerflow...")
-        is_success, v_final, iteration_num, tx_percent = device_controller.run_powerflow()
+        is_success, v_final, iteration_num, tx_percent, residuals = device_controller.run_powerflow()
 
         end_time = time.perf_counter_ns()
 
@@ -49,7 +49,8 @@ class PowerFlow:
             duration_seconds,
             self.network, 
             v_final, 
-            self.settings
+            self.settings,
+            residuals
             )
 
     
