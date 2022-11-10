@@ -8,6 +8,7 @@ class LagrangeStampDetails:
 
         #The equation map is really the row index lookup, and the variable map is really the column index lookup.
         self.var_map = var_map
+        self.var_str_map = {str(x[0]): x[1] for x in var_map.items()}
         if eqn_map == None:
             self.eqn_map = var_map
         else: 

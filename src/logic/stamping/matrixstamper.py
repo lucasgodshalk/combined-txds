@@ -49,9 +49,9 @@ def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabl
     for first_order in first_order_variables:
         derivative = lsegment.get_derivatives()[first_order]
 
-        residuals.append((first_order, derivative.expr, derivative.expr_eval))
+        residuals.append((first_order, str(first_order), derivative.expr, derivative.expr_eval))
 
-        for (yth_variable, func, expr) in derivative.get_evals():
+        for (yth_variable, func, expr, is_constant_expr) in derivative.get_evals():
             free_syms = expr.free_symbols
             is_linear = not any([(x in free_syms) for x in lsegment.variables])
 
@@ -65,7 +65,7 @@ def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabl
                 tx_factor_index
                 )
             
-            expressions.append((first_order, yth_variable, expression))
+            expressions.append((first_order, yth_variable, None if is_constant_expr else str(yth_variable), expression, is_constant_expr))
     
     lagrange_cache[key] = (expressions, residuals)
     
@@ -80,22 +80,25 @@ def __build_stampcollection_from_stamper(model, stamper: LagrangeStampDetails, c
 
     expressions, residual_exprs = get_or_build_stamp_expressions(stamper.lsegment, stamper.optimization_enabled)
 
-    input = StampInput(
-        constant_vals, 
-        primal_indexes, 
-        dual_indexes
-        )
+    input = StampInput(constant_vals, primal_indexes, dual_indexes)
 
+    stamps = __build_stamps(stamper, expressions, input)
+
+    residuals = __build_residuals(stamper, residual_exprs, input)
+
+    return StampCollection(model, stamper.lsegment, stamps, residuals)
+
+def __build_stamps(stamper: LagrangeStampDetails, expressions, input):
     stamps = []
-    for first_order, yth_variable, expression in expressions:
+    for first_order, _, yth_variable_str, expression, is_constant_expr in expressions:
         row_index = stamper.get_variable_row_index(first_order)
         if row_index == SKIP:
             continue
         
-        if yth_variable == None:
+        if is_constant_expr:
             col_index = None
         else:
-            col_index = stamper.var_map[yth_variable]
+            col_index = stamper.var_str_map[yth_variable_str]
             if col_index == SKIP:
                 continue
 
@@ -107,16 +110,20 @@ def __build_stampcollection_from_stamper(model, stamper: LagrangeStampDetails, c
             )
         
         stamps.append(stamp)
+    
+    return stamps
 
+
+def __build_residuals(stamper, residual_exprs, input):
     residuals = []
-    for first_order, expr, expr_eval in residual_exprs:
+    for first_order, first_order_str, expr, expr_eval in residual_exprs:
         row_index = stamper.get_variable_row_index(first_order)
         if row_index == SKIP:
             continue
-        residual = ResidualInstance(stamper.lsegment, first_order, row_index, input, expr, expr_eval)
+        residual = ResidualInstance(stamper.lsegment, first_order, first_order_str, row_index, input, expr, expr_eval)
         residuals.append(residual)
 
-    return StampCollection(model, stamper.lsegment, stamps, residuals)
+    return residuals
 
 #All of the constants and variables that will be used to calculate a stamp. The set of parameters
 #will be different for each instance of a model, but the shape will be the same based on the expression.
@@ -187,6 +194,7 @@ class ResidualInstance():
         self,
         lsegment: LagrangeSegment,
         first_order,
+        first_order_str: str,
         row_index: int,
         input: StampInput,
         expr,
@@ -195,6 +203,7 @@ class ResidualInstance():
         
         self.lsegment = lsegment
         self.first_order = first_order
+        self.first_order_str = first_order_str
         self.row_index = row_index
         self.input = input
         self.expr = expr
@@ -369,7 +378,7 @@ class MatrixStamper():
                 stamp_sets[stamp.expression.key].add_stamp(stamp)
 
             for residual in stampcollection.residuals:
-                residual_key = residual.lsegment.lagrange_key + str(residual.first_order)
+                residual_key = residual.lsegment.lagrange_key + residual.first_order_str
                 if not residual_key in residual_sets:
                     derivative = residual.lsegment.get_derivatives()[residual.first_order]
                     residual_sets[residual_key] = ResidualSet(
