@@ -20,7 +20,9 @@ class PositiveSeqVoltageLimiting:
            self.bus_mask[bus.node_Vr] = True
            self.bus_mask[bus.node_Vi] = True
     
-    def apply_limiting(self, v_next, v_previous, diff):
+    def apply_limiting(self, v_next, v_previous):
+        diff = v_next - v_previous
+
         self.try_create_mask()
 
         diff_clip = np.clip(diff[self.bus_mask], -V_DIFF_MAX, V_DIFF_MAX)

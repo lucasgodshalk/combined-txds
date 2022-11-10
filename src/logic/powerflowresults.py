@@ -8,7 +8,7 @@ from logic.network.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
 from models.optimization.L2infeasibility import L2InfeasibilityOptimization
 from models.singlephase.bus import Bus
-from logic.stamping.matrixstamper import build_matrix_stamper
+from logic.residualdetails import ResidualDetails
 
 class GENTYPE:
     PV = "PV"
@@ -94,7 +94,7 @@ class PowerFlowResults:
         network: NetworkModel,
         v_final, 
         settings: PowerFlowSettings,
-        residual_contributions
+        residuals: ResidualDetails
         ):
         self.is_success = is_success
         self.iterations = iterations
@@ -103,6 +103,7 @@ class PowerFlowResults:
         self.network = network
         self.v_final = v_final
         self.settings = settings
+        self.residuals = residuals
 
         self.bus_results: List[BusResult]
         self.bus_results = []
@@ -168,7 +169,7 @@ class PowerFlowResults:
 
             self.infeasibility_totals = (total_P, total_Q)    
 
-        self.max_residual, self.max_residual_index, self.residuals = self.calculate_residuals(residual_contributions)        
+        self.max_residual = self.residuals.max_residual   
 
     def display(self, verbose=False):
         print("=====================")
@@ -179,7 +180,7 @@ class PowerFlowResults:
         print(f'Iterations: {self.iterations}')
         print(f'Duration: {"{:.3f}".format(self.duration_sec)}(s)')
 
-        print(f'Max Residual: {self.max_residual:.3g} [Index: {self.max_residual_index}]')
+        print(f'Max Residual: {self.residuals.max_residual:.3g} [Index: {self.residuals.max_residual_idx}]')
 
         if verbose:
             for idx in range(len(self.residuals)):
@@ -212,16 +213,6 @@ class PowerFlowResults:
 
         for load in self.load_results:
             print(load)
-
-    def calculate_residuals(self, residual_contributions):
-        residuals = np.zeros(len(self.v_final))
-        for (_, index, value) in residual_contributions:
-            residuals[index] += value
-
-        max_residual = np.amax(np.abs(residuals))
-        max_residual_idx = int(np.argmax(np.abs(residuals)))
-
-        return (max_residual, max_residual_idx, residuals)
 
     def report_infeasible(self):
         results = []

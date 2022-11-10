@@ -4,10 +4,10 @@ from scipy.sparse.linalg import spsolve
 from logic.stamping.matrixbuilder import MatrixBuilder
 from logic.network.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
+from logic.stamping.matrixstamper import MatrixStamper
 from pathlib import Path
 from colorama import init
 from termcolor import colored
-from models.singlephase.bus import Bus
 # use Colorama to make Termcolor work on Windows too
 init()
 
@@ -36,7 +36,7 @@ class NRSolver:
     def stamp_nonlinear(self, matrix_stamper, Y: MatrixBuilder, J, v_previous):
         matrix_stamper.stamp_nonlinear(Y, J, v_previous)
 
-    def run_powerflow(self, matrix_stamper, v_init, tx_factor):
+    def run_powerflow(self, matrix_stamper: MatrixStamper, v_init, tx_factor):
         if self.settings.dump_matrix:
             dump_matrix_map(self.network.matrix_map)
 
@@ -49,7 +49,7 @@ class NRSolver:
 
         linear_index = Y.get_usage()
 
-        max_error_history = []
+        max_residual_history = []
 
         for iteration_num in range(self.settings.max_iters):
             J = J_linear.copy()
@@ -69,39 +69,34 @@ class NRSolver:
             if np.isnan(v_next).any():
                 raise Exception("Error solving linear system")
 
-            diff = v_next - v_previous
+            residuals = matrix_stamper.calc_residuals(tx_factor, v_next)
+            residual_max = residuals.max_residual
+            residual_max_idx = residuals.max_residual_idx
 
-            diff_mask = self.get_or_create_diff_mask()
-
-            err = abs(diff[diff_mask])
-
-            err_max = err.max()
-            err_arg_max = np.argmax(err)
-
-            if err_arg_max in self.network.matrix_map:
-                err_max_attr = self.network.matrix_map[err_arg_max]
+            if residual_max_idx in self.network.matrix_map:
+                residual_max_attr = self.network.matrix_map[residual_max_idx]
             else:
-                err_max_attr = "other"
+                residual_max_attr = "other"
 
-            print(colored("The maximum error for this iteration is %f at %s"%(err_max, err_max_attr), 'green')) 
-            max_error_history.append(err_max)
+            print(colored(f"The maximum residual for iteration {iteration_num} is {residual_max} at {residual_max_attr}", 'green')) 
+            max_residual_history.append(residual_max)
 
-            if len(max_error_history) % 50 == 0:
+            if len(max_residual_history) % 50 == 0:
                 #We check regularly if the solver is making progress and bail if not.
-                x = np.array(range(len(max_error_history)))
+                x = np.array(range(len(max_residual_history)))
                 A = np.vstack([x, np.ones(len(x))]).T
-                y = np.array(max_error_history)
+                y = np.array(max_residual_history)
                 m, _ = np.linalg.lstsq(A, y, rcond=None)[0]
                 if m > 0:
                     return (False, v_next, iteration_num)
             
-            if err_max < self.settings.tolerance:
+            if residual_max < self.settings.tolerance:
                 if self.settings.dump_matrix:
                     dump_v(v_next)
 
                 return (True, v_next, iteration_num)
-            elif self.v_limiting != None and err_max > self.settings.tolerance:
-                v_next = self.v_limiting.apply_limiting(v_next, v_previous, diff)
+            elif self.v_limiting != None and residual_max > self.settings.tolerance:
+                v_next = self.v_limiting.apply_limiting(v_next, v_previous)
 
             v_previous = v_next
             Y.clear(retain_idx=linear_index)

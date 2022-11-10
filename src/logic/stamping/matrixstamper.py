@@ -1,5 +1,6 @@
 from typing import List, Dict
 import numpy as np
+from logic.residualdetails import ResidualDetails
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.matrixbuilder import MatrixBuilder
@@ -51,7 +52,8 @@ def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabl
         residuals.append((first_order, derivative.expr, derivative.expr_eval))
 
         for (yth_variable, func, expr) in derivative.get_evals():
-            is_linear = not any([(x in expr.free_symbols) for x in lsegment.variables])
+            free_syms = expr.free_symbols
+            is_linear = not any([(x in free_syms) for x in lsegment.variables])
 
             expression = StampExpression(
                 lsegment,
@@ -421,4 +423,4 @@ class MatrixStamper():
         for residual_set in self.residual_sets:
             residual_set.calc_residuals(residual_contributions)
         
-        return residual_contributions
+        return ResidualDetails(residual_contributions, len(v_result))
