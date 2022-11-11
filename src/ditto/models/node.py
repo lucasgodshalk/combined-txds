@@ -18,6 +18,16 @@ from .position import Position
 
 
 class Node(DiTToHasTraits):
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+
+        self.name = None
+        self.nominal_voltage = None
+        self.phases = None
+        self.is_delta = None
+        self.is_triplex = None
+        self.triplex_phase = None
+
     """Inheritance:
     Asset (self._asset)
         -> Location (self._loc)
@@ -25,18 +35,6 @@ class Node(DiTToHasTraits):
     ConnectivityNode (self._cn)
     """
 
-    name = Unicode(help="""Name of the node object""")
-    nominal_voltage = Float(
-        help="""This parameter defines the base voltage at the node.""",
-        default_value=None,
-    )
-    phases = List(
-        Instance(Unicode),
-        help="""This parameter is a list of all the phases at the node.""",
-    )
-    is_delta = Bool(help="""Defines if the node is delta or not""")
-    is_triplex = Bool(help="""Defines if the node is a triplex or not""")
-    triplex_phase = Unicode(help="""The originating phase for the triplex line"""),
     positions = List(
         Instance(Position),
         help="""This parameter is a list of positional points describing the node - it should only contain one.

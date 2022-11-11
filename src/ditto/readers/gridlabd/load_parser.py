@@ -54,7 +54,7 @@ class LoadParser:
 
             if "S" in phase_str:
                 #S means that it's split phase/triplex
-                api_load.triplex_phase = Unicode(phase_str[0])
+                api_load.triplex_phase = phase_str[0]
                 phase_str = "12"
             elif "D" in phase_str:
                 is_delta = True

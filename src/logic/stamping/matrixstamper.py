@@ -242,6 +242,9 @@ class InputBuilder():
         self.inputs: Dict[str, StampInput]
 
         self.input_indexes = []
+
+        # We utilize this to know if we actually need to update our previous iteration information.
+        self.iteration_num = -1
     
     def add_input(self, input: StampInput):
         if input.key not in self.inputs:
@@ -284,9 +287,14 @@ class InputBuilder():
                 
             instance_idx += 1
 
-    def update_vprev(self, v_prev):
+    def update_vprev(self, v_prev, iteration_num):
+        if iteration_num == self.iteration_num:
+            return
+        
         for arg_index, instance_idx, v_idx in self.input_fills:
             self.args[arg_index][instance_idx] = v_prev[v_idx]
+            
+        self.iteration_num = iteration_num
         
     def update_txfactor(self, tx_factor):
         if self.tx_factor_index != SKIP:
@@ -339,7 +347,7 @@ class ResidualSet():
         output_index = self.input_builder.add_input(residual.input)
         self.residuals.append((model, residual, output_index))
 
-    def calc_residuals(self, residual_contributions):
+    def calc_residuals(self):
         args = self.input_builder.get_args()
 
         output_v = self.residual_eval(*args)
@@ -347,7 +355,7 @@ class ResidualSet():
             output_v = np.full(args[0].shape[0], output_v)
 
         for model, residual, output_index in self.residuals:
-            residual_contributions.append((model, residual.row_index, output_v[output_index]))
+            yield (model, residual.row_index, output_v[output_index])
 
 class MatrixStamper():
     def __init__(
@@ -414,22 +422,27 @@ class MatrixStamper():
         for stamp_set in self.linear_sets:
             stamp_set.stamp(Y, J)
 
-    def stamp_nonlinear(self, Y: MatrixBuilder, J, v_prev):
+    def stamp_nonlinear(self, Y: MatrixBuilder, J, v_prev, iteration_num):
         for input_builder in self.input_builders:
-            input_builder.update_vprev(v_prev)
+            input_builder.update_vprev(v_prev, iteration_num)
         
         for stamp_set in self.nonlinear_sets:
             stamp_set.stamp(Y, J)
 
-    def calc_residuals(self, tx_factor, v_result):
+    def __calc_residuals_iter(self, tx_factor, v_result, iteration_num):
         for input_builder in self.input_builders:
-            input_builder.update_vprev(v_result)
+            input_builder.update_vprev(v_result, iteration_num)
         
         for input_builder in self.input_builders:
             input_builder.update_txfactor(tx_factor)
         
-        residual_contributions = []
         for residual_set in self.residual_sets:
-            residual_set.calc_residuals(residual_contributions)
+            for contribution in residual_set.calc_residuals():
+                yield contribution
+
+    def calc_residuals(self, tx_factor, v_result, iteration_num):
+        residual_contributions = []
+        for contribution in self.__calc_residuals_iter(tx_factor, v_result, iteration_num):
+            residual_contributions.append(contribution)
         
         return ResidualDetails(residual_contributions, len(v_result))

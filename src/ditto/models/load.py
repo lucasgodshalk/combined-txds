@@ -20,11 +20,23 @@ from .timeseries import Timeseries
 
 
 class Load(DiTToHasTraits):
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
 
-    name = Unicode(help="""Name of the load object""", default_value="")
-    nominal_voltage = Float(
-        help="""This is the nominal voltage of the load.""", default_value=None
-    )
+        # Modification: Nicolas (August 2017)
+        # OpenDSS needs the name of the bus to which the load is connected, because it does not
+        # represent the load as a bus with a connection line to another bus in the feeder.
+        self.connecting_element = None
+        
+        self.name = None
+        self.nominal_voltage = None
+        self.voltage_1 = None
+        self.voltage_2 = None
+        self.phases = None
+        self.phase_loads = None
+        self.triplex_phase = None
+
+
     connection_type = Unicode(
         help="""The connection type (D, Y, Z, A) for Delta, Wye, Zigzag or autotransformer.""",
         default_value=None,
@@ -37,28 +49,15 @@ class Load(DiTToHasTraits):
         help="""The maximum per-unit voltage value. Going below this implies constant impedance.""",
         default_value=None,
     )
-    phase_loads = List(
-        Instance(PhaseLoad),
-        help="""A list of the different phase loads connected to the load. This contains information about the phase as well as the p&q or zip load data.""",
-        default_value=None,
-    )
     positions = List(
         Instance(Position),
         help="""This parameter is a list of positional points describing the load- it should only contain one. The positions are objects containing elements of long, lat and elevation.""",
         default_value=None,
     )
-
     timeseries = List(
         Instance(Timeseries),
         help="""A list of all the timeseries elements used to represent the loads""",
         default_value=None,
-    )
-
-    # Modification: Nicolas (August 2017)
-    # OpenDSS needs the name of the bus to which the load is connected, because it does not
-    # represent the load as a bus with a connection line to another bus in the feeder.
-    connecting_element = Unicode(
-        help="""Name of the bus to which the load is connected""", default_value=None
     )
 
     # Modification: Claudio (August 2017)

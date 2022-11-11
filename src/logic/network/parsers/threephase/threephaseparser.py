@@ -139,7 +139,7 @@ class ThreePhaseParser:
 
     def create_load(self, model, network_model: DxNetworkModel):
         load_num = model.name.split("_")[-1]
-        triplex_phase = model.triplex_phase.default_value if hasattr(model, "triplex_phase") else None
+        triplex_phase = model.triplex_phase
         for phase_load in model.phase_loads:
             from_bus = self.get_load_connection(model, network_model, phase_load.phase[0])
 

@@ -17,24 +17,6 @@ class NRSolver:
         self.settings = settings
         self.network = network
         self.v_limiting = v_limiting
-        self.diff_mask = None
-
-    def get_or_create_diff_mask(self):
-        if self.diff_mask != None:
-            return self.diff_mask
-
-        self.diff_mask = [False] * self.network.size_Y
-        for bus in self.network.buses:
-           self.diff_mask[bus.node_Vr] = True
-           self.diff_mask[bus.node_Vi] = True
-
-        return self.diff_mask
-
-    def stamp_linear(self, matrix_stamper, Y: MatrixBuilder, J, tx_factor):
-        matrix_stamper.stamp_linear(Y, J, tx_factor)
-
-    def stamp_nonlinear(self, matrix_stamper, Y: MatrixBuilder, J, v_previous):
-        matrix_stamper.stamp_nonlinear(Y, J, v_previous)
 
     def run_powerflow(self, matrix_stamper: MatrixStamper, v_init, tx_factor):
         if self.settings.dump_matrix:
@@ -45,7 +27,7 @@ class NRSolver:
         Y = MatrixBuilder(self.settings)
         J_linear = np.zeros(len(v_init))
 
-        self.stamp_linear(matrix_stamper, Y, J_linear, tx_factor)
+        matrix_stamper.stamp_linear(Y, J_linear, tx_factor)
 
         linear_index = Y.get_usage()
 
@@ -54,7 +36,7 @@ class NRSolver:
         for iteration_num in range(self.settings.max_iters):
             J = J_linear.copy()
 
-            self.stamp_nonlinear(matrix_stamper, Y, J, v_previous)
+            matrix_stamper.stamp_nonlinear(Y, J, v_previous, iteration_num)
 
             Y.assert_valid(check_zeros=True)
 
@@ -69,7 +51,7 @@ class NRSolver:
             if np.isnan(v_next).any():
                 raise Exception("Error solving linear system")
 
-            residuals = matrix_stamper.calc_residuals(tx_factor, v_next)
+            residuals = matrix_stamper.calc_residuals(tx_factor, v_next, iteration_num)
             residual_max = residuals.max_residual
             residual_max_idx = residuals.max_residual_idx
 

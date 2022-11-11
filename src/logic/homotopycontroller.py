@@ -21,7 +21,7 @@ class HomotopyController:
         #optimistically try to solve without homotopy first.
         is_success, v_final, iteration_num = self.nrsolver.run_powerflow(matrix_stamper, v_init, 0)
         if is_success or not self.settings.tx_stepping:
-            return (is_success, v_final, iteration_num, 0, matrix_stamper.calc_residuals(0, v_final))
+            return (is_success, v_final, iteration_num, 0, matrix_stamper.calc_residuals(0, v_final, iteration_num))
 
         tx_factor = TX_ITERATIONS
         iterations = 0

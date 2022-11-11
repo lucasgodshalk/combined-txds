@@ -310,7 +310,7 @@ class Reader(AbstractReader):
                 api_node.phases = triplex_phases
                 api_node.is_delta = is_delta
                 api_node.is_triplex = is_triplex
-                api_node.triplex_phase = Unicode(phases[0])
+                api_node.triplex_phase = phases[0]
 
                 try:
                     api_node.nominal_voltage = float(obj["nominal_voltage"])
