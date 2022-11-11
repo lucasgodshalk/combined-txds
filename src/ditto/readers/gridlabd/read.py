@@ -264,7 +264,7 @@ class Reader(AbstractReader):
                 if is_triplex:
                     raise Exception(f"Triplex is indicated on a non-triplex node. {api_node.name}")
 
-                api_node.phases = [Unicode(x) for x in phases]
+                api_node.phases = phases
                 api_node.is_delta = is_delta
                 api_node.is_triplex = is_triplex
                 api_node.triplex_phase = None
@@ -686,7 +686,7 @@ class Reader(AbstractReader):
                 api_line.phases = phases
 
                 try:
-                    api_line._current_limit = remove_nonnum.sub('', obj["current_limit"])
+                    api_line.current_limit = remove_nonnum.sub('', obj["current_limit"])
                 except AttributeError:
                     pass
 

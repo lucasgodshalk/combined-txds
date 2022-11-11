@@ -1,7 +1,6 @@
-from ditto.models.base import Unicode
 from typing import List, Tuple
 
-triplex_phases = [Unicode("1"), Unicode("2")]
+triplex_phases = ["1", "2"]
 
 def parse_phases(phase_str: str, obj_name: str) -> Tuple[List[str], bool, bool]:
     phases = []

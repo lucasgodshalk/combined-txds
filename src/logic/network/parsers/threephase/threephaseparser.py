@@ -96,32 +96,32 @@ class ThreePhaseParser:
                     isSlack = True
 
                 for phase in model.phases:
-                    if phase.default_value in self._phase_to_angle:
-                        if hasattr(model, "parent"):
+                    if phase in self._phase_to_angle:
+                        if model.parent != None:
                             #For now, just map any child nodes back to their parent.
-                            bus = network_model.bus_name_map[model.parent + "_" + phase.default_value]
-                            network_model.bus_name_map[model.name + "_" + phase.default_value] = bus
-                        elif hasattr(model, "_connecting_element"):
-                            bus = network_model.bus_name_map[model._connecting_element + "_" + phase]
+                            bus = network_model.bus_name_map[model.parent + "_" + phase]
+                            network_model.bus_name_map[model.name + "_" + phase] = bus
+                        elif model.connecting_element != None:
+                            bus = network_model.bus_name_map[model.connecting_element + "_" + phase]
                         else:
                             v_mag = model.nominal_voltage
-                            v_ang = self._phase_to_angle[phase.default_value]
+                            v_ang = self._phase_to_angle[phase]
 
                             try:
                                 #For L1 and L2 on triplex, we always use the nominal magnitude and phase for v_init.
-                                if not phase.default_value in ["1", "2"]:
-                                    voltage = getattr(model, "voltage_" + phase.default_value)
+                                if not phase in ["1", "2"]:
+                                    voltage = getattr(model, "voltage_" + phase)
                                     v_mag = abs(voltage)
                                     v_ang = cmath.phase(voltage)
                             except:
                                 pass
 
-                            bus = self.create_bus(network_model, v_mag, v_ang, model.name, phase.default_value, False)
+                            bus = self.create_bus(network_model, v_mag, v_ang, model.name, phase, False)
 
-                            if phase.default_value == "1":
+                            if phase == "1":
                                 bus.Vr_init = -60.0
                                 bus.Vi_init = 103.92
-                            elif phase.default_value == "2":
+                            elif phase == "2":
                                 bus.Vr_init = 60.0
                                 bus.Vi_init = -103.92
 
@@ -285,7 +285,7 @@ class ThreePhaseParser:
                 from_bus = network_model.bus_name_map[model.from_element + "_" + wire.phase]
                 to_bus = network_model.bus_name_map[model.to_element + "_" + wire.phase]
 
-                current_limit = float(model._current_limit)
+                current_limit = float(model.current_limit)
 
                 fuse_status = FuseStatus.GOOD
                 if hasattr(model, "phase_" + wire.phase + "_status"):

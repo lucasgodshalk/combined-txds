@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
-from builtins import super, range, zip, round, map
 
 from .base import (
     DiTToHasTraits,
@@ -16,42 +13,31 @@ from .base import (
 )
 
 from .position import Position
-from .wire import Wire
 
 
 class Line(DiTToHasTraits):
-    """
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
 
-    Inheritance:
-        Line (self._line)
-            -> Equipment: ACLineSegment (self._acls)
-                            ->BaseVoltage (self._bv)
-                            ->PSRType (self._psr)
-        Asset (self._asset)
-            -> Location (self._loc)
-            -> WireSpacingInfo (self._wsi)
+        self.name = None
+        self.phases = None
+        self.nominal_voltage = None
+        self.line_type = None
+        self.length = None
 
-    """
+        self.from_element = None
+        self.to_element = None
 
-    name = Unicode(help="""Name of the line object""")
-    nominal_voltage = Float(
-        help="""This parameter defines the base voltage of the wire.""",
-        default_value=None,
-    )
-    line_type = Unicode(
-        help="""Whether the line is overhead or underground""", default_value=None
-    )
-    length = Float(
-        help="""This parameter is the length of the Line.""", default_value=0
-    )
-    from_element = Any(
-        help="""Name of the node which connects to the 'from' end of the line""",
-        default_value=None,
-    )
-    to_element = Any(
-        help="""'Name of the node which connects to the 'to' end of the line""",
-        default_value=None,
-    )
+        self.is_fuse = None
+        self.is_switch = None
+
+        self.wires = None
+
+        self.impedance_matrix = None
+        self.capacitance_matrix = None
+
+        self.current_limit = None
+
     from_element_connection_index = Int(
         help="""Index of the position in the node that the 'from' end of the line connects to (e.g. for a long bus)""",
         default_value=None,
@@ -61,14 +47,6 @@ class Line(DiTToHasTraits):
         default_value=None,
     )
 
-    is_fuse = Bool(
-        help="""This flag indicates whether or not the line is also a fuse""",
-        default_value=None,
-    )
-    is_switch = Bool(
-        help="""This flag indicates whether or not the line is also a switch""",
-        default_value=None,
-    )
     is_banked = Bool(
         help="""This flag indicates whether or not the switch is banked. If this is true, the switch objects are controlled together""",
         default_value=None,
@@ -76,23 +54,10 @@ class Line(DiTToHasTraits):
     faultrate = Float(
         help="""The number of faults that occur per year""", default_value=None
     )
-    wires = List(
-        Instance(Wire),
-        help="""This parameter is a list of all the wires included on the line. The wires are objects containing elements of phase, X and Y. """,
-        default_value=None,
-    )
     positions = List(
         Instance(Position),
         help="""This parameter is a list of positional points describing the line. The positions are objects containing elements of long, lat and elevation. The points can be used to map the position of the line.  """,
         default_value=None,
-    )
-    impedance_matrix = List(
-        List(Complex()),
-        help="""This provides the matrix representation of the line impedance in complex form. Computed from the values of GMR and distances of individual wires. Kron reduction is applied to make this a 3x3 matrix.""",
-    )
-    capacitance_matrix = List(
-        List(Complex()),
-        help="""This provides the matrix representation of the line capacitance in complex form. Computed from the values of diameters and distances of individual wires. Kron reduction is applied to make this a 3x3 matrix.""",
     )
 
     # Modification: Nicolas (December 2017)

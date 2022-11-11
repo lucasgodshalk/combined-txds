@@ -1,8 +1,6 @@
 from ditto.models.node import Node
 from ditto.models.load import Load
 from ditto.models.phase_load import PhaseLoad
-from ditto.models.base import Unicode
-from ditto.readers.gridlabd.helpers import parse_phases, triplex_phases
 
 class LoadParser:
     def parse(self, all_schedules, model, obj):
@@ -64,7 +62,7 @@ class LoadParser:
                     phases.append(i)
 
             if not has_parent:
-                api_node.phases = list(map(lambda x: Unicode(x), phases))
+                api_node.phases = phases
         except AttributeError:
             pass
 
