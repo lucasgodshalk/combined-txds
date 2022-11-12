@@ -3,9 +3,9 @@ Perform steady state power flow analysis of electrical transmission & distributi
 
 Project documentation can be found [here](https://github.com/lucasgodshalk/combined-txds/wiki).
 
-## Get Started
+## Quick Start
 
-Assuming you are on the command line in the root of the repository, first install all of the python modules as listed in `requirements.txt`:
+Assuming you cloned the repository and you are in the root of the repository, first install all of the python modules as listed in `requirements.txt`:
 
 ```
 python -m pip install -r ./requirements.txt
@@ -22,23 +22,7 @@ For transmission cases, run:
 python src/run_solver.py $PATH-TO-RAW-FILE$
 ```
 
-In order to save network simulation results (in the same folder) in output_voltage.csv and output_power.csv use:
-```
---outputfile ./output  
-```
-
-In order to run tests:
-```
-export PYTHONPATH="./src:./test"
-
-python -m pytest test/test_positiveseq.py
-```
-
-If you are using VS Code with the Python extension and want to run unit tests, you can add a `.env` file to the root of the repository with:
-
-```
-PYTHONPATH="./src:./test"
-```
+## Background
 
 The codebase is based on the following papers:
 ```
@@ -48,4 +32,3 @@ The codebase is based on the following papers:
 4. CMU 18762 Class Notes: Circuit Simulation and Optimization Methods: A Power Systems Perspective
 5. Foster, E., Pandey, A., & Pileggi, L. (2022). Three-phase infeasibility analysis for distribution grid studies. Electric Power Systems Research, 212, 108486.
 ```
-

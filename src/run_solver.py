@@ -22,8 +22,9 @@ parser.add_argument("--artificialswingbus", required=False)
 parser.add_argument("--outputfile", required=False)
 parser.add_argument("--debug", required=False, action='store_true')
 parser.add_argument("--verbose", required=False, action='store_true')
-parser.add_argument("--infeas", required=False, default='False')
+parser.add_argument("--infeasibility", required=False, default='False')
 parser.add_argument("--load_factor", required=False, default=-1)
+parser.add_argument("--tx_stepping", required=False, default=-False)
 args = parser.parse_args()
 
 case = args.case
@@ -35,17 +36,18 @@ artificialswingbus = args.artificialswingbus
 outputfile = args.outputfile
 debug = args.debug
 verbose = args.verbose
-infeas = args.infeas
+infeasibility = args.infeasibility
+tx_stepping = args.tx_stepping
 load_factor = float(args.load_factor)
 print(colored("Starting power flow solver...",'green'))
-print(colored("Infeasibility option is %s" % infeas, 'green'))
+print(colored(f"Infeasibility analysis is enabled: {infeasibility}", 'green'))
 
 settings = PowerFlowSettings(
     debug=debug, 
     max_iters=50, 
     flat_start=False, 
-    infeasibility_analysis=infeas, 
-    tx_stepping=False, 
+    infeasibility_analysis=infeasibility, 
+    tx_stepping=tx_stepping, 
     voltage_limiting=False,
     dump_matrix=False,
     load_factor=load_factor
