@@ -140,7 +140,12 @@ class UnbalancedLine():
                 var_map[Lr_to] = line2_to.node_lambda_Vr
                 var_map[Li_to] = line2_to.node_lambda_Vi
 
-                line_stamper = LagrangeStampDetails(line_lh, var_map, optimization_enabled, eqn_map)
+                if i == j:
+                    segment = line_lh
+                else:
+                    segment = shunt_lh
+
+                line_stamper = LagrangeStampDetails(segment, var_map, optimization_enabled, eqn_map)
 
                 var_map_shunt_from = {}
                 var_map_shunt_from[Vr_from] = line2_from.node_Vr
