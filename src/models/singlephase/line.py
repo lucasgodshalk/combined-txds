@@ -82,9 +82,9 @@ def build_line_stamper(
     index_map[Li_to] = Li_to_idx
 
     if is_shunt:
-        return LagrangeStampDetails(line_lh, index_map, optimization_enabled)
-    else:
         return LagrangeStampDetails(shunt_lh, index_map, optimization_enabled)
+    else:
+        return LagrangeStampDetails(line_lh, index_map, optimization_enabled)
 
 class Line:
     _ids = count(0)

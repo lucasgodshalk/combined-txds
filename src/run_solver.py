@@ -1,3 +1,4 @@
+from logic.network.loadfactor import modify_load_factor
 from logic.network.timeseriesprocessor import TimeSeriesProcessor
 from logic.powerflowsettings import PowerFlowSettings
 from logic.powerflow import PowerFlow
@@ -22,9 +23,9 @@ parser.add_argument("--artificialswingbus", required=False)
 parser.add_argument("--outputfile", required=False)
 parser.add_argument("--debug", required=False, action='store_true')
 parser.add_argument("--verbose", required=False, action='store_true')
-parser.add_argument("--infeasibility", required=False, default='False')
+parser.add_argument("--infeasibility", required=False, default=False, action='store_true')
 parser.add_argument("--load_factor", required=False, default=-1)
-parser.add_argument("--tx_stepping", required=False, default=-False)
+parser.add_argument("--tx_stepping", required=False, default=False, action='store_true')
 args = parser.parse_args()
 
 case = args.case
@@ -54,6 +55,8 @@ settings = PowerFlowSettings(
     )
 
 network = NetworkLoader(settings).from_file(case)
+
+modify_load_factor(network, load_factor, load_factor)
 
 network.display()
 

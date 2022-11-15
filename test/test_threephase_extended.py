@@ -20,9 +20,9 @@ def test_network_model_case2():
 
 def test_infeasibility_r1_12_47_1():
     filepath = get_glm_case_file("r1_12_47_1")
-    settings = PowerFlowSettings(max_iters=10, tx_stepping=True)
+    settings = PowerFlowSettings(tx_stepping=True, infeasibility_analysis=True)
     network = NetworkLoader(settings).from_file(filepath)
-    modify_load_factor(network, 10, 10)
+    modify_load_factor(network, 5, 5)
     powerflow = PowerFlow(network, settings)
     results = powerflow.execute()
 

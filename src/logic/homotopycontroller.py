@@ -4,7 +4,7 @@ from logic.nrsolver import NRSolver
 from logic.powerflowsettings import PowerFlowSettings
 from logic.stamping.matrixstamper import build_matrix_stamper
 
-TX_ITERATIONS = 1000
+TX_ITERATIONS = 100
 TX_SCALE = 1.0 / TX_ITERATIONS
 
 #Simplistic homotopy process, where we just linearly modify the homotopy factor
@@ -41,4 +41,4 @@ class HomotopyController:
 
             tx_factor -= 1
 
-        return (is_success, v_next, iterations, tx_factor * TX_SCALE, matrix_stamper.calc_residuals(0, v_final))
+        return (is_success, v_next, iterations, tx_factor * TX_SCALE, matrix_stamper.calc_residuals(0, v_final, iteration_num))
