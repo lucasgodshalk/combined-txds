@@ -41,7 +41,7 @@ infeasibility = args.infeasibility
 tx_stepping = args.tx_stepping
 load_factor = float(args.load_factor)
 print(colored("Starting power flow solver...",'green'))
-print(colored(f"Infeasibility analysis is enabled: {infeasibility}", 'green'))
+print(colored(f"Can run power deficient networks: {infeasibility}", 'green'))
 
 settings = PowerFlowSettings(
     debug=debug, 
