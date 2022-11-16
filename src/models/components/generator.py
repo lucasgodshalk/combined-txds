@@ -10,11 +10,11 @@ constants = P, Vset = symbols('P V_set')
 primals = Vr, Vi, Q = symbols('V_r V_i Q')
 duals = Lr, Li, LQ = symbols('lambda_r lambda_i lambda_Q')
 
-F_Vr = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
-F_Vi = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
+F_Ir = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
+F_Ii = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
 F_Q = Vset ** 2 - Vr ** 2 - Vi ** 2
 
-lagrange = Lr * F_Vr + Li * F_Vi + LQ * F_Q
+lagrange = Lr * F_Ir + Li * F_Ii + LQ * F_Q
 
 lh = LagrangeSegment(lagrange, constants, primals, duals)
 

@@ -6,17 +6,24 @@ from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.singlephase.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 
-constants = c1, c2, Vset = symbols('c1 c2 V_set')
+def convert_inequality_to_barrier(F_ieq, mu_variable):
+    return None
+
+constants = c1, c2, Vset, P_min, P_max = symbols('c1 c2 V_set P_min P_max')
 primals = Vr, Vi, P, Q = symbols('V_r V_i P Q')
 duals = Lr, Li, LQ = symbols('lambda_r lambda_i lambda_Q')
+mus = Mu_P_max, Mu_P_min = symbols('Mu_P_max Mu_P_min') 
 
-F_Vr = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
-F_Vi = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
+F_Ir = (-P * Vr - Q * Vi) / (Vr ** 2 + Vi ** 2)
+F_Ii = (-P * Vi + Q * Vr) / (Vr ** 2 + Vi ** 2)
 F_Q = Vset ** 2 - Vr ** 2 - Vi ** 2
 
-lagrange = c1 * P**2 + c2 * P + Lr * F_Vr + Li * F_Vi + LQ * F_Q
+F_P_max = P - P_max
+F_P_min = P_min - P
 
-lh = LagrangeSegment(lagrange, constants, primals, duals)
+lagrange = c1 * P**2 + c2 * P + Lr * F_Ir + Li * F_Ii + LQ * F_Q + convert_inequality_to_barrier(F_P_max, Mu_P_max) + convert_inequality_to_barrier(F_P_min, Mu_P_min)
+
+lh = LagrangeSegment(lagrange, constants, primals, duals, mus)
 
 class EconGenerator:
     _ids = count(0)
@@ -52,13 +59,13 @@ class EconGenerator:
         self.id = self._ids.__next__()
 
         self.bus = bus
-        self.P = -P
+        self.P = P
         self.Vset = Vset
 
-        self.Qinit = -Qinit
+        self.Qinit = Qinit
 
-        self.Qmax = -Qmax
-        self.Qmin = -Qmin
+        self.Qmax = Qmax
+        self.Qmin = Qmin
 
     def assign_nodes(self, node_index, optimization_enabled):
         index_map = {}
