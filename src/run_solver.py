@@ -59,10 +59,10 @@ settings = PowerFlowSettings(
 
 network = NetworkLoader(settings).from_file(case)
 
-load_econ_dispatch(network, econ_dispatch_csv)
-
 if infeasibility:
     network.optimization = load_infeasibility_analysis(network)
+elif econ_dispatch_csv != None:
+    network.optimization = load_econ_dispatch(network, econ_dispatch_csv)
 
 modify_load_factor(network, load_factor, load_factor)
 
