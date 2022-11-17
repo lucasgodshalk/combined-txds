@@ -5,6 +5,7 @@ from logic.powerflow import PowerFlow
 from logic.network.networkloader import NetworkLoader
 import argparse
 from logic.network.timeseriessettings import TimeSeriesSettings
+from models.optimization.econgenerator import load_econ_dispatch
 from models.optimization.L2infeasibility import load_infeasibility_analysis
 
 from colorama import init
@@ -27,6 +28,7 @@ parser.add_argument("--verbose", required=False, action='store_true')
 parser.add_argument("--infeasibility", required=False, default=False, action='store_true')
 parser.add_argument("--load_factor", required=False, default=-1)
 parser.add_argument("--tx_stepping", required=False, default=False, action='store_true')
+parser.add_argument("--econ_dispatch", required=False, default=None)
 args = parser.parse_args()
 
 case = args.case
@@ -40,6 +42,7 @@ debug = args.debug
 verbose = args.verbose
 infeasibility = args.infeasibility
 tx_stepping = args.tx_stepping
+econ_dispatch_csv = args.econ_dispatch
 load_factor = float(args.load_factor)
 print(colored("Starting power flow solver...",'green'))
 print(colored(f"Can run power deficient networks: {infeasibility}", 'green'))
@@ -55,6 +58,8 @@ settings = PowerFlowSettings(
     )
 
 network = NetworkLoader(settings).from_file(case)
+
+load_econ_dispatch(network, econ_dispatch_csv)
 
 if infeasibility:
     network.optimization = load_infeasibility_analysis(network)

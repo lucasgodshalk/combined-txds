@@ -1,27 +1,31 @@
-from __future__ import division
 from itertools import count
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.singlephase.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
+from logic.network.networkmodel import NetworkModel
+
+def load_econ_dispatch(network: NetworkModel, econ_dispatch_csv: str):
+    pass
 
 def convert_inequality_to_barrier(F_ieq, mu_variable):
-    return None
+    return 1
 
-constants = c1, c2, Vset, P_min, P_max = symbols('c1 c2 V_set P_min P_max')
+constants = c1, c2, P_min, P_max = symbols('c1 c2 P_min P_max')
 primals = Vr, Vi, P, Q = symbols('V_r V_i P Q')
-duals = Lr, Li, LQ = symbols('lambda_r lambda_i lambda_Q')
+duals = Lr, Li = symbols('lambda_r lambda_i')
 mus = Mu_P_max, Mu_P_min = symbols('Mu_P_max Mu_P_min') 
+
+obj_F = c1 * P**2 + c2 * P
 
 F_Ir = (-P * Vr - Q * Vi) / (Vr ** 2 + Vi ** 2)
 F_Ii = (-P * Vi + Q * Vr) / (Vr ** 2 + Vi ** 2)
-F_Q = Vset ** 2 - Vr ** 2 - Vi ** 2
 
 F_P_max = P - P_max
 F_P_min = P_min - P
 
-lagrange = c1 * P**2 + c2 * P + Lr * F_Ir + Li * F_Ii + LQ * F_Q + convert_inequality_to_barrier(F_P_max, Mu_P_max) + convert_inequality_to_barrier(F_P_min, Mu_P_min)
+lagrange = obj_F + (Lr * F_Ir + Li * F_Ii) + (convert_inequality_to_barrier(F_P_max, Mu_P_max) + convert_inequality_to_barrier(F_P_min, Mu_P_min))
 
 lh = LagrangeSegment(lagrange, constants, primals, duals, mus)
 

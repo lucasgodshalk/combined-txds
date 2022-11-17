@@ -36,6 +36,9 @@ class NetworkModel():
         self.lines: List
         self.lines = []
 
+        self.econ_generators: List
+        self.econ_generators = []
+        
         #Holding area for any other models that don't have a dedicated list.
         self.misc: List
         self.misc = []

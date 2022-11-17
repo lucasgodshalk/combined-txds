@@ -115,7 +115,7 @@ class LagrangeSegment:
     VERSION = 4 #Increment if changes have been made to bust the derivative cache.
     _pickler = LagrangePickler()
 
-    def __init__(self, lagrange, constant_symbols, primal_symbols, dual_symbols, mu_symbols) -> None:
+    def __init__(self, lagrange, constant_symbols, primal_symbols, dual_symbols, mu_symbols = ()) -> None:
         self.lagrange = lagrange
         self.constants = constant_symbols
         self.primals = primal_symbols
