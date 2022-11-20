@@ -28,7 +28,7 @@ primals = Vr, Vi, P, Q = symbols('V_r V_i P Q')
 duals = Lr, Li = symbols('lambda_r lambda_i')
 mus = Mu_P_max, Mu_P_min = symbols('Mu_P_max Mu_P_min') 
 
-obj_F = c1 * P**2 + c2 * P
+obj_F = C1 * P**2 + C2 * P
 
 F_Ir = (-P * Vr - Q * Vi) / (Vr ** 2 + Vi ** 2)
 F_Ii = (-P * Vi + Q * Vr) / (Vr ** 2 + Vi ** 2)
