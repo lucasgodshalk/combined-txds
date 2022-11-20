@@ -5,14 +5,10 @@ from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.wellknownvariables import tx_factor
-from models.singlephase.bus import Bus
 
 def build_matrix_stamper(network, optimization_enabled: bool):
     stamps = []
     for element in network.get_all_elements():
-        if type(element) == Bus:
-            continue
-        
         stamps += element.get_stamps()
     
     if network.optimization != None:

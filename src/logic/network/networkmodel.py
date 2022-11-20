@@ -17,10 +17,8 @@ BUS_Vi_FLAT = 0
 BUS_Q_FLAT = -1
 
 class NetworkModel():
-    def __init__(
-        self, 
-        is_three_phase: bool, 
-        ):
+    def __init__(self, is_three_phase: bool):
+        
         self.is_three_phase = is_three_phase
 
         self.buses: List[Bus]
@@ -42,6 +40,15 @@ class NetworkModel():
 
         self.size_Y = None
         self.matrix_version = -1
+
+    def get_all_elements(self):
+        return self.buses + \
+            self.lines + \
+            self.transformers + \
+            self.slack + \
+            self.switches + \
+            self.generators + \
+            self.loads
 
     def display(self):
         nodeset = set()
@@ -99,36 +106,14 @@ class NetworkModel():
 
 
 class TxNetworkModel(NetworkModel):
-    def __init__(
-        self, 
-        buses=[], 
-        loads=[], 
-        slack=[], 
-        generators=[], 
-        transformers=[], 
-        lines=[], 
-        shunts=[],
-        voltage_sources=[]
-        ):
+    def __init__(self):
         NetworkModel.__init__(self, is_three_phase=False)
         
-        self.buses = buses
-        self.loads = loads
-        self.slack = slack
-        self.generators = generators
-        self.transformers = transformers
-        self.lines = lines
-        self.shunts = shunts
-        self.voltage_sources = voltage_sources
+        self.shunts = []
+        self.voltage_sources = []
 
-    def get_NR_invariant_elements(self):
-        return self.lines + self.shunts + self.transformers + self.slack + self.switches + self.voltage_sources
-
-    def get_NR_variable_elements(self):
-        return self.generators + self.loads
-    
     def get_all_elements(self):
-        return self.buses + self.get_NR_invariant_elements() + self.get_NR_variable_elements()
+        return super().get_all_elements() + self.voltage_sources + self.shunts
 
     def generate_v_init(self, settings: PowerFlowSettings):
         v_init = np.zeros(self.size_Y)
@@ -168,8 +153,6 @@ class DxNetworkModel(NetworkModel):
     def __init__(self):
         NetworkModel.__init__(self, is_three_phase=True)
 
-        # The map from each bus id to the location of its (real, imaginary) state variables in J
-        self.bus_map = {}
         # The map from a bus name to its bus id
         self.bus_name_map: Dict[str, Bus]
         self.bus_name_map = {}
@@ -188,15 +171,9 @@ class DxNetworkModel(NetworkModel):
         # Reference nodes to be removed from the set of equations
         self.reference_r = None
         self.reference_i = None
-    
-    def get_NR_invariant_elements(self):
-        return self.slack + self.lines + self.transformers + self.regulators + self.switches + self.fuses + self.capacitors
-
-    def get_NR_variable_elements(self):
-        return self.loads
 
     def get_all_elements(self):
-        return self.buses + self.get_NR_invariant_elements() + self.get_NR_variable_elements()
+        return super().get_all_elements() + self.regulators + self.fuses + self.capacitors
 
     def generate_v_init(self, settings: PowerFlowSettings):
         v_init = np.zeros(self.size_Y)

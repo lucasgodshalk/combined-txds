@@ -72,15 +72,14 @@ class NetworkLoader:
         lines = raw_data['branches']
         shunts = raw_data['shunts']
 
-        network = TxNetworkModel(
-            buses=buses, 
-            loads=loads, 
-            slack=slack, 
-            generators=generators, 
-            transformers=transformers,
-            lines=lines,
-            shunts=shunts
-            )
+        network = TxNetworkModel()
+        network.buses = buses
+        network.loads = loads
+        network.slack = slack
+        network.generators = generators
+        network.transformers = transformers
+        network.lines = lines
+        network.shunts = shunts
 
         return network
     

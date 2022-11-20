@@ -101,7 +101,11 @@ def test_isolated_grnded_xfmr_network():
     vs = VoltageSource(from_bus_neg, GROUND, 0, 0)
     vs.assign_nodes(next_idx, False)
 
-    network = TxNetworkModel(buses=[from_bus_pos, from_bus_neg, to_bus], transformers=[xfrmr], slack=[slack], voltage_sources=[vs])
+    network = TxNetworkModel()
+    network.buses = [from_bus_pos, from_bus_neg, to_bus]
+    network.transformers = [xfrmr]
+    network.slack = [slack]
+    network.voltage_sources = [vs]
     network.size_Y = next(next_idx)
 
     powerflow = PowerFlow(network, PowerFlowSettings(debug=True))
