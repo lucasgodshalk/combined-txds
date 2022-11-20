@@ -14,12 +14,11 @@ class DeviceController:
         self.settings = settings
         self.homotopy = solver
 
-        self.optimization_enabled = self.settings.infeasibility_analysis
         self.network = self.homotopy.nrsolver.network
 
     def run_powerflow(self):
         #In the future, we may regenerate this based on device changes.
-        self.network.assign_matrix(self.optimization_enabled)
+        self.network.assign_matrix()
 
         v_init = self.network.generate_v_init(self.settings)
 

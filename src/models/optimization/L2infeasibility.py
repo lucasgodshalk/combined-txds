@@ -5,6 +5,9 @@ from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.singlephase.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 
+def load_infeasibility_analysis(network):
+    return L2InfeasibilityOptimization(network.buses)
+
 class L2InfeasibilityOptimization:
     def __init__(self, buses: List[Bus]) -> None:
         self.is_linear = True
@@ -16,8 +19,11 @@ class L2InfeasibilityOptimization:
             self.infeasibility_currents.append(current)
 
     def assign_nodes(self, node_index, optimization_enabled):
+        if not optimization_enabled:
+            raise Exception("Cannot use infeasibility currents when optimization is not enabled")
+
         for infeas_current in self.infeasibility_currents:
-            infeas_current.assign_nodes(node_index, optimization_enabled)
+            infeas_current.assign_nodes(node_index)
 
     def get_stamps(self):
         stamps = []
@@ -37,9 +43,7 @@ class L2InfeasibilityCurrent:
     def __init__(self, bus: Bus) -> None:
         self.bus = bus
 
-    def assign_nodes(self, node_index, optimization_enabled):
-        if not optimization_enabled:
-            raise Exception("Cannot use infeasibility currents when optimization is not enabled")
+    def assign_nodes(self, node_index):
 
         self.node_Ir_inf = next(node_index)
         self.node_Ii_inf = next(node_index)

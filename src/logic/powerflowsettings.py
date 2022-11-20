@@ -7,7 +7,6 @@ class PowerFlowSettings:
         debug = False, 
         flat_start = False, 
         tx_stepping = False, 
-        infeasibility_analysis = False,
         dump_matrix = False,
         device_control = True,
         load_factor = None,
@@ -19,7 +18,6 @@ class PowerFlowSettings:
         self.debug = debug
         self.flat_start = flat_start
         self.tx_stepping = tx_stepping
-        self.infeasibility_analysis = infeasibility_analysis
         self.dump_matrix = dump_matrix
         self.device_control = device_control
         self.load_factor = load_factor

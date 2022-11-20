@@ -6,7 +6,7 @@ from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.matrixbuilder import MatrixBuilder
 from models.wellknownvariables import tx_factor
 
-def build_matrix_stamper(network, optimization_enabled: bool):
+def build_matrix_stamper(network):
     stamps = []
     for element in network.get_all_elements():
         stamps += element.get_stamps()
@@ -14,7 +14,7 @@ def build_matrix_stamper(network, optimization_enabled: bool):
     if network.optimization != None:
         stamps += network.optimization.get_stamps()
 
-    return MatrixStamper(stamps, optimization_enabled)
+    return MatrixStamper(stamps, network.optimization != None)
 
 def build_stamps_from_stampers(model, *args):
     stamps = []

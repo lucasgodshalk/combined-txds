@@ -16,7 +16,7 @@ class HomotopyController:
         self.nrsolver = solver
 
     def run_powerflow(self, v_init):
-        matrix_stamper = build_matrix_stamper(self.network, self.settings.infeasibility_analysis)
+        matrix_stamper = build_matrix_stamper(self.network)
 
         #optimistically try to solve without homotopy first.
         is_success, v_final, iteration_num = self.nrsolver.run_powerflow(matrix_stamper, v_init, 0)

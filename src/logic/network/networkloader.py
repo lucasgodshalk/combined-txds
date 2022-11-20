@@ -49,8 +49,6 @@ class NetworkLoader:
         else:
             raise Exception("Unknown network file format")
 
-        network.optimization = self.__load_optimization(network)
-
         return network
 
     def __parse_glm_network(self, network_file: str):
@@ -82,9 +80,3 @@ class NetworkLoader:
         network.shunts = shunts
 
         return network
-    
-    def __load_optimization(self, network):
-        if self.settings.infeasibility_analysis:
-            return L2InfeasibilityOptimization(network.buses)
-
-        return None

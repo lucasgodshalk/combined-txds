@@ -6,7 +6,7 @@ from logic.powerflowresults import PowerFlowResults
 from scipy.io import loadmat
 from logic.powerflowsettings import PowerFlowSettings
 from logic.network.networkloader import NetworkLoader
-
+from models.optimization.L2infeasibility import load_infeasibility_analysis
 from models.singlephase.bus import GROUND, Bus
 from models.singlephase.transformer import Transformer
 from models.singlephase.slack import Slack
@@ -39,9 +39,11 @@ def assert_mat_comparison(mat, results: PowerFlowResults):
         assert mag_diff < 1e-4
         assert ang_diff < 1e-4
 
-def execute_positiveseq_raw(casename, settings = PowerFlowSettings()):
+def execute_positiveseq_raw(casename, settings = PowerFlowSettings(), infeasibility_analysis = False):
     filepath = get_positiveseq_raw(casename)
     network = NetworkLoader(settings).from_file(filepath)
+    if infeasibility_analysis:
+        network.optimization = load_infeasibility_analysis(network)
     powerflow = PowerFlow(network, settings)
     return powerflow.execute()
 
@@ -53,13 +55,13 @@ def test_GS_4_prior_solution():
     assert_mat_comparison(mat_result, results)
 
 def test_infeasibility_analysis_GS_4_prior_solution():
-    results = execute_positiveseq_raw("GS-4_prior_solution", PowerFlowSettings(infeasibility_analysis=True, debug=True))
+    results = execute_positiveseq_raw("GS-4_prior_solution", PowerFlowSettings(), infeasibility_analysis=True)
     assert results.is_success
     assert results.max_residual < 1e-8
     assert results.infeasibility_totals == (0, 0)
 
 def test_infeasibility_analysis_GS_4_stressed():
-    results = execute_positiveseq_raw("GS-4_stressed", PowerFlowSettings(infeasibility_analysis=True, voltage_limiting=True))
+    results = execute_positiveseq_raw("GS-4_stressed", PowerFlowSettings(voltage_limiting=True), infeasibility_analysis=True)
     assert results.is_success
     assert results.max_residual < 1e-6
     P, Q = results.infeasibility_totals

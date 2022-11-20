@@ -68,8 +68,10 @@ class NetworkModel():
         print(f"Lines: {len(self.lines)}")
         print(f"Loads: {len(loadset)} ({len(self.loads)} phase loads)")
 
-    def assign_matrix(self, optimization_enabled):
+    def assign_matrix(self):
         node_index = count(0)
+
+        optimization_enabled = self.optimization != None
 
         for ele in self.get_all_elements():
             ele.assign_nodes(node_index, optimization_enabled)
@@ -130,7 +132,7 @@ class TxNetworkModel(NetworkModel):
             (vi_idx, vi_init) = bus.get_Vi_init()
             v_init[vi_idx] = BUS_Vi_FLAT if settings.flat_start else vi_init
 
-            if settings.infeasibility_analysis:
+            if self.optimization != None:
                 Lr_idx, Lr_init = bus.get_Lr_init()
                 v_init[Lr_idx] = Lr_init
 

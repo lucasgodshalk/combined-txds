@@ -118,7 +118,7 @@ class PowerFlowResults:
             V_r = v_final[bus.node_Vr]
             V_i = v_final[bus.node_Vi]
 
-            if settings.infeasibility_analysis:
+            if network.optimization != None:
                 lambda_r = v_final[bus.node_lambda_Vr]
                 lambda_i = v_final[bus.node_lambda_Vi]
             else:
@@ -146,30 +146,35 @@ class PowerFlowResults:
             slack_Ii = v_final[slack.slack_Ii]
             P = Vr * slack_Ir
             Q = Vi * slack_Ii
-            self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Slack))
+            self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Slack)) 
 
-        if self.network.optimization != None and isinstance(self.network.optimization, L2InfeasibilityOptimization):
-            total_P = 0
-            total_Q = 0
-            for infeasibility_current in self.network.optimization.infeasibility_currents:
-                Vr = v_final[infeasibility_current.bus.node_Vr]
-                Vi = v_final[infeasibility_current.bus.node_Vi]
-                inf_Ir = v_final[infeasibility_current.node_Ir_inf]
-                inf_Ii = v_final[infeasibility_current.node_Ii_inf]
-                P = Vr * inf_Ir
-                if P < 1e-5:
-                    P = 0
-                Q = Vi * inf_Ii
-                if Q < 1e-5:
-                    Q = 0
+        self.max_residual = self.residuals.max_residual
 
-                total_P += P
-                total_Q += Q
-                self.generator_results.append(GeneratorResult(infeasibility_current, P, Q, GENTYPE.Inf))
+        self.try_load_infeasibility_data()
 
-            self.infeasibility_totals = (total_P, total_Q)    
+    def try_load_infeasibility_data(self):
+        if self.network.optimization == None or not isinstance(self.network.optimization, L2InfeasibilityOptimization):
+            return
 
-        self.max_residual = self.residuals.max_residual   
+        total_P = 0
+        total_Q = 0
+        for infeasibility_current in self.network.optimization.infeasibility_currents:
+            Vr = self.v_final[infeasibility_current.bus.node_Vr]
+            Vi = self.v_final[infeasibility_current.bus.node_Vi]
+            inf_Ir = self.v_final[infeasibility_current.node_Ir_inf]
+            inf_Ii = self.v_final[infeasibility_current.node_Ii_inf]
+            P = Vr * inf_Ir
+            if P < 1e-5:
+                P = 0
+            Q = Vi * inf_Ii
+            if Q < 1e-5:
+                Q = 0
+
+            total_P += P
+            total_Q += Q
+            self.generator_results.append(GeneratorResult(infeasibility_current, P, Q, GENTYPE.Inf))
+
+        self.infeasibility_totals = (total_P, total_Q)   
 
     def display(self, verbose=False):
         print("=====================")
@@ -186,7 +191,7 @@ class PowerFlowResults:
             for idx in range(len(self.residuals)):
                 print(f'Residual {idx}: {self.residuals[idx]:.3g}')
 
-        if self.settings.infeasibility_analysis:
+        if self.infeasibility_totals != None:
             results = self.report_infeasible()
             P_sum = sum([result.P for result in results])
             Q_sum = sum([result.Q for result in results])

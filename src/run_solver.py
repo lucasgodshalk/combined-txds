@@ -5,6 +5,7 @@ from logic.powerflow import PowerFlow
 from logic.network.networkloader import NetworkLoader
 import argparse
 from logic.network.timeseriessettings import TimeSeriesSettings
+from models.optimization.L2infeasibility import load_infeasibility_analysis
 
 from colorama import init
 from termcolor import colored
@@ -47,7 +48,6 @@ settings = PowerFlowSettings(
     debug=debug, 
     max_iters=50, 
     flat_start=False, 
-    infeasibility_analysis=infeasibility, 
     tx_stepping=tx_stepping, 
     voltage_limiting=False,
     dump_matrix=False,
@@ -55,6 +55,9 @@ settings = PowerFlowSettings(
     )
 
 network = NetworkLoader(settings).from_file(case)
+
+if infeasibility:
+    network.optimization = load_infeasibility_analysis(network)
 
 modify_load_factor(network, load_factor, load_factor)
 
