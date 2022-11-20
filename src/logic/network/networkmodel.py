@@ -36,6 +36,10 @@ class NetworkModel():
         self.lines: List
         self.lines = []
 
+        #Holding area for any other models that don't have a dedicated list.
+        self.misc: List
+        self.misc = []
+
         self.optimization = None
 
         self.size_Y = None
@@ -48,7 +52,8 @@ class NetworkModel():
             self.slack + \
             self.switches + \
             self.generators + \
-            self.loads
+            self.loads + \
+            self.misc
 
     def display(self):
         nodeset = set()
