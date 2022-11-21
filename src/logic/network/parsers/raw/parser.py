@@ -13,7 +13,7 @@
 import time
 from logic.network.parsers.raw.global_vars import global_vars
 
-from models.singlephase.bus import Bus
+from models.components.bus import Bus
 
 import logic.network.parsers.raw.data_classes as data_classes
 

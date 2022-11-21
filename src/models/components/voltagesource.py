@@ -2,7 +2,7 @@ import numpy as np
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
-from models.singlephase.bus import Bus
+from models.components.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 constants = Vr_set, Vi_set = symbols("Vr_set Vi_set")

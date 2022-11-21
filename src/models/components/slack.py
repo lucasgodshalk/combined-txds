@@ -4,7 +4,7 @@ from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 import math
-from models.singlephase.bus import GROUND, Bus
+from models.components.bus import GROUND, Bus
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 
 constants = [Vrset, Viset] = symbols("Vrset Viset")

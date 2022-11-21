@@ -1,5 +1,5 @@
 import typing
-from models.singlephase.bus import Bus
+from models.components.bus import Bus
 
 class SecondaryTransformerCoil():
     

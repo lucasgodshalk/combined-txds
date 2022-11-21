@@ -1,8 +1,8 @@
 from logic.powerflowsettings import PowerFlowSettings
 from logic.homotopycontroller import HomotopyController
-from models.singlephase.capacitor import CapSwitchState, Capacitor, CapacitorMode
-from models.singlephase.fuse import Fuse, FuseStatus
-from models.singlephase.regulator import RegControl, Regulator
+from models.components.capacitor import CapSwitchState, Capacitor, CapacitorMode
+from models.components.fuse import Fuse, FuseStatus
+from models.components.regulator import RegControl, Regulator
 
 MAX_DEVICE_ITERATIONS = 10
 

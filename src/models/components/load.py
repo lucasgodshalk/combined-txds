@@ -4,8 +4,8 @@ import numpy as np
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
-from models.singlephase.bus import Bus
-from models.singlephase.line import build_line_stamper_bus
+from models.components.bus import Bus
+from models.components.line import build_line_stamper_bus
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 
 #Eqns reference:

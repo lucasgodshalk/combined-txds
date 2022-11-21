@@ -4,13 +4,13 @@ from typing import Dict, List
 
 import numpy as np
 from logic.powerflowsettings import PowerFlowSettings
-from models.singlephase.generator import Generator
-from models.singlephase.bus import Bus
-from models.singlephase.load import Load
-from models.singlephase.slack import Slack
-from models.singlephase.transformer import Transformer
-from models.threephase.center_tap_transformer import CenterTapTransformer
-from models.singlephase.switch import Switch, SwitchStatus
+from models.components.generator import Generator
+from models.components.bus import Bus
+from models.components.load import Load
+from models.components.slack import Slack
+from models.components.transformer import Transformer
+from models.components.center_tap_transformer import CenterTapTransformer
+from models.components.switch import Switch, SwitchStatus
 
 BUS_Vr_FLAT = 1
 BUS_Vi_FLAT = 0

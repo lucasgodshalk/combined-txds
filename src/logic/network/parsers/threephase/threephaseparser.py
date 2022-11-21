@@ -10,18 +10,18 @@ from ditto.store import Store
 import ditto.models.load
 from logic.network.parsers.threephase.transformerparser import TransformerParser
 from logic.powerflowsettings import PowerFlowSettings
-from models.singlephase.capacitor import Capacitor, CapacitorMode, CapSwitchState
-from models.singlephase.slack import Slack
+from models.components.capacitor import Capacitor, CapacitorMode, CapSwitchState
+from models.components.slack import Slack
 
-from models.singlephase.load import Load
-from models.singlephase.bus import GROUND, Bus
-from models.threephase.unbalanced_line import UnbalancedLine
-from models.singlephase.fuse import Fuse, FuseStatus
-from models.singlephase.fuse import Fuse
+from models.components.load import Load
+from models.components.bus import GROUND, Bus
+from models.components.unbalanced_line import UnbalancedLine
+from models.components.fuse import Fuse, FuseStatus
+from models.components.fuse import Fuse
 
-from models.singlephase.switch import Switch, SwitchStatus
-from models.singlephase.switch import Switch
-from models.singlephase.regulator import RegControl, RegType, Regulator
+from models.components.switch import Switch, SwitchStatus
+from models.components.switch import Switch
+from models.components.regulator import RegControl, RegType, Regulator
 
 class ThreePhaseParser:
     def rad(degrees):

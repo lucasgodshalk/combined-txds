@@ -1,7 +1,7 @@
 from enum import Enum
-from models.singlephase.bus import Bus
-from models.singlephase.line import build_line_stamper_bus
-from models.singlephase.voltagesource import CurrentSensor
+from models.components.bus import Bus
+from models.components.line import build_line_stamper_bus
+from models.components.voltagesource import CurrentSensor
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 import numpy as np

@@ -4,7 +4,7 @@ from itertools import count
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from logic.stamping.matrixstamper import build_stamps_from_stampers
-from models.singlephase.bus import Bus, GROUND
+from models.components.bus import Bus, GROUND
 from models.wellknownvariables import tx_factor
 
 TX_LARGE_G = 20

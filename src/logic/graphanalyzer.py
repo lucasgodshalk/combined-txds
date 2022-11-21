@@ -1,12 +1,12 @@
 from collections import defaultdict
 import networkx as nx
 from logic.network.networkmodel import NetworkModel
-from models.singlephase.bus import GROUND
-from models.singlephase.load import Load
-from models.threephase.center_tap_transformer import CenterTapTransformer
-from models.singlephase.switch import Switch
-from models.singlephase.transformer import Transformer
-from models.singlephase.regulator import Regulator
+from models.components.bus import GROUND
+from models.components.load import Load
+from models.components.center_tap_transformer import CenterTapTransformer
+from models.components.switch import Switch
+from models.components.transformer import Transformer
+from models.components.regulator import Regulator
 
 #Class for performing graph-based analysis of the network, generally
 #as a set of validations before attempting to solve power flow or

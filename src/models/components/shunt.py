@@ -1,7 +1,7 @@
 from __future__ import division
 from itertools import count
-from models.singlephase.bus import GROUND, Bus
-from models.singlephase.line import build_line_stamper_bus
+from models.components.bus import GROUND, Bus
+from models.components.line import build_line_stamper_bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 #Todo: this should be unified with the capacitor class.

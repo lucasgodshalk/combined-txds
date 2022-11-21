@@ -7,8 +7,8 @@ from sympy import sin
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 import math
-from models.singlephase.line import build_line_stamper, build_line_stamper_bus
-from models.singlephase.bus import GROUND, Bus
+from models.components.line import build_line_stamper, build_line_stamper_bus
+from models.components.bus import GROUND, Bus
 from models.wellknownvariables import tx_factor
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 

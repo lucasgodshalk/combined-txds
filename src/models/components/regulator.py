@@ -1,7 +1,7 @@
 from enum import Enum
-from models.singlephase.bus import GROUND, Bus
-from models.singlephase.transformer import Transformer
-from models.singlephase.voltagesource import CurrentSensor
+from models.components.bus import GROUND, Bus
+from models.components.transformer import Transformer
+from models.components.voltagesource import CurrentSensor
 
 class RegType(Enum):
     A = "A"

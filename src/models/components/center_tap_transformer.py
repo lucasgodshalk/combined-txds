@@ -3,8 +3,8 @@ import numpy as np
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
-from models.singlephase.line import build_line_stamper_bus
-from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
+from models.components.line import build_line_stamper_bus
+from models.components.center_tap_transformer_coil import CenterTapTransformerCoil
 from models.wellknownvariables import tx_factor
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 

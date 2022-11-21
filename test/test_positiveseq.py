@@ -7,10 +7,10 @@ from scipy.io import loadmat
 from logic.powerflowsettings import PowerFlowSettings
 from logic.network.networkloader import NetworkLoader
 from models.optimization.L2infeasibility import load_infeasibility_analysis
-from models.singlephase.bus import GROUND, Bus
-from models.singlephase.transformer import Transformer
-from models.singlephase.slack import Slack
-from models.singlephase.voltagesource import VoltageSource
+from models.components.bus import GROUND, Bus
+from models.components.transformer import Transformer
+from models.components.slack import Slack
+from models.components.voltagesource import VoltageSource
 
 CURR_DIR = os.path.realpath(os.path.dirname(__file__))
 

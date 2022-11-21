@@ -1,6 +1,6 @@
 from enum import Enum
-from models.singlephase.bus import Bus
-from models.singlephase.voltagesource import VoltageSource
+from models.components.bus import Bus
+from models.components.voltagesource import VoltageSource
 
 class SwitchStatus(Enum):
     OPEN = "OPEN"

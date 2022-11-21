@@ -1,12 +1,12 @@
 import math
 import typing
 from logic.network.networkmodel import DxNetworkModel
-from models.singlephase.bus import Bus, GROUND
-from models.singlephase.transformer import Transformer
-from models.threephase.center_tap_transformer import CenterTapTransformer
-from models.threephase.center_tap_transformer_coil import CenterTapTransformerCoil
-from models.threephase.primary_transformer_coil import PrimaryTransformerCoil
-from models.threephase.secondary_transformer_coil import SecondaryTransformerCoil
+from models.components.bus import Bus, GROUND
+from models.components.transformer import Transformer
+from models.components.center_tap_transformer import CenterTapTransformer
+from models.components.center_tap_transformer_coil import CenterTapTransformerCoil
+from models.components.primary_transformer_coil import PrimaryTransformerCoil
+from models.components.secondary_transformer_coil import SecondaryTransformerCoil
 from ditto.models.powertransformer import PowerTransformer
 
 NEUTRAL = "N"

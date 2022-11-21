@@ -3,7 +3,7 @@ from itertools import count
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
-from models.singlephase.bus import Bus
+from models.components.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 
 constants = P, Vset = symbols('P V_set')
