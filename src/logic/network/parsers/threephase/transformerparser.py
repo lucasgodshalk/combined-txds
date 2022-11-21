@@ -3,10 +3,7 @@ import typing
 from logic.network.networkmodel import DxNetworkModel
 from models.components.bus import Bus, GROUND
 from models.components.transformer import Transformer
-from models.components.center_tap_transformer import CenterTapTransformer
-from models.components.center_tap_transformer_coil import CenterTapTransformerCoil
-from models.components.primary_transformer_coil import PrimaryTransformerCoil
-from models.components.secondary_transformer_coil import SecondaryTransformerCoil
+from models.components.center_tap_transformer import CenterTapTransformer, CenterTapTransformerCoil
 from ditto.models.powertransformer import PowerTransformer
 
 NEUTRAL = "N"
@@ -178,3 +175,43 @@ def get_phase_list(primary_coil, secondary_coil, phases):
         for i in range(len(phase_list)):
             phase_list[i] += NEUTRAL
     return phase_list
+
+class PrimaryTransformerCoil():
+    
+    def __init__(self
+                , nominal_voltage
+                , rated_power
+                , connection_type
+                , voltage_limit
+                # , I1 # The current which controls voltage of CCVS
+                # , I2 # The current which flows through the node
+                ):
+        self.nominal_voltage = nominal_voltage
+        self.rated_power = rated_power
+        self.connection_type = connection_type
+        self.voltage_limit = voltage_limit
+
+        self.phase_coils: typing.Dict[str, Bus]
+        self.phase_connections = {}
+
+class SecondaryTransformerCoil():
+    def __init__(self
+                , nominal_voltage
+                , rated_power
+                , connection_type
+                , voltage_limit
+                , resistance
+                , reactance
+                # , I1 # The current which controls voltage of CCVS
+                # , I2 # The current which flows through the node
+                ):
+        self.nominal_voltage = nominal_voltage
+        self.rated_power = rated_power
+        self.connection_type = connection_type
+        self.voltage_limit = voltage_limit
+
+        self.phase_coils: typing.Dict[str, Bus]
+        self.phase_connections = {}
+        
+        self.resistance = resistance
+        self.reactance = reactance

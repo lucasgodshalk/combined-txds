@@ -4,7 +4,6 @@ from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 from models.components.line import build_line_stamper_bus
-from models.components.center_tap_transformer_coil import CenterTapTransformerCoil
 from models.wellknownvariables import tx_factor
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 
@@ -37,6 +36,23 @@ eqns = [
 lagrange = np.dot(duals, eqns)
 
 center_tap_xfmr_lh = LagrangeSegment(lagrange, constants, primals, duals)
+
+class CenterTapTransformerCoil():
+    
+    def __init__(self
+                , nominal_voltage
+                , rated_power
+                , connection_type
+                , voltage_limit
+                , resistance = None
+                , reactance = None
+                ):
+        self.nominal_voltage = nominal_voltage
+        self.rated_power = rated_power
+        self.connection_type = connection_type
+        self.voltage_limit = voltage_limit
+        self.resistance = resistance
+        self.reactance = reactance
 
 class CenterTapTransformer():
     def __init__(self
