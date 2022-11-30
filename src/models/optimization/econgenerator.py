@@ -17,13 +17,16 @@ def load_econ_dispatch(network: NetworkModel, econ_dispatch_csv: str):
         bus.Type = 1
 
     list_of_gens = []
+    reference_gen = True
     for row in data:
         bus_index, V_min, V_max, PG_min, PG_max, QG_min, QG_max, C1, C2 = row
         gen_bus = [bus for bus in network.buses if bus.Bus==bus_index][0]
         if np.isnan(PG_min) or np.isnan(PG_max):
             continue
-        temp = EconGenerator(gen_bus, PG_min / 100, PG_max / 100, QG_min / 100, QG_max / 100, C1, C2)
+        temp = EconGenerator(gen_bus, PG_min / 100, PG_max / 100, QG_min / 100, QG_max / 100, C1, C2, reference_gen)
         list_of_gens.append(temp)
+
+        reference_gen = False
     
     return EconomicDispatch(list_of_gens)
 
@@ -54,6 +57,12 @@ lagrange += convert_inequality_to_barrier(F_Q_min)
 
 lh = LagrangeSegment(lagrange, constants, primals, duals)
 
+duals_bus_ref = L_Vr_set, L_Vi_set = symbols('lambda_Vr_set lambda_Vi_set')
+
+lagrange_bus_ref = L_Vr_set * Vr + L_Vi_set * Vi #V_r = 0 and V_i = 0 for a reference bus.
+
+lh_bus_ref = LagrangeSegment(lagrange_bus_ref, (), (Vr, Vi), duals_bus_ref)
+
 class EconGenerator:
     _ids = count(0)
 
@@ -64,7 +73,8 @@ class EconGenerator:
                  Q_min,
                  Q_max,
                  C1,
-                 C2
+                 C2,
+                 reference_gen: bool
         ):
 
         self.id = self._ids.__next__()
@@ -76,6 +86,7 @@ class EconGenerator:
         self.C2 = C2
         self.Q_max = -Q_max
         self.Q_min = -Q_min
+        self.reference_gen = reference_gen
 
     def assign_nodes(self, node_index):
         self.node_P = next(node_index)
@@ -90,8 +101,24 @@ class EconGenerator:
 
         self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled=True)
 
+        if self.reference_gen:
+            self.node_Vr_set = next(node_index)
+            self.node_Vi_set = next(node_index)
+            index_map = {}
+            index_map[Vr] = self.bus.node_Vr
+            index_map[Vi] = self.bus.node_Vi
+            index_map[L_Vr_set] = self.node_Vr_set
+            index_map[L_Vi_set] = self.node_Vi_set
+
+            self.reference_stamper = LagrangeStampDetails(lh_bus_ref, index_map, optimization_enabled=True)
+
     def get_stamps(self):
-        return build_stamps_from_stamper(self, self.stamper, [self.C1, self.C2, self.P_min, self.P_max, self.Q_min, self.Q_max]) 
+        stamps = build_stamps_from_stamper(self, self.stamper, [self.C1, self.C2, self.P_min, self.P_max, self.Q_min, self.Q_max]) 
+
+        if self.reference_gen:
+            stamps += build_stamps_from_stamper(self, self.reference_stamper, []) 
+
+        return stamps
 
     def get_connections(self):
         return []
