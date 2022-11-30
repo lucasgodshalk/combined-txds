@@ -13,6 +13,10 @@ class MatrixBuilder:
         self._index = 0
         self._max_index = 0
 
+        self._row_history = []
+        self._col_history = []
+        self._val_history = []
+
     def stamp(self, row, column, value):
         if value == 0:
             return
@@ -41,9 +45,16 @@ class MatrixBuilder:
     def clear(self, retain_idx = 0):
         self._index = retain_idx
 
+        if self.settings.debug:
+            self._row_history.append(self._row.copy())
+            self._col_history.append(self._col.copy())
+            self._val_history.append(self._val.copy())
+
     def to_matrix(self) -> csc_matrix:
-        if self.settings.debug and self._max_index != self._index:
-            raise Exception("Solver was not fully utilized. Garbage data remains")
+        if self._max_index != self._index:
+            self._row = self._row[:self._index]
+            self._col = self._col[:self._index]
+            self._val = self._val[:self._index]
 
         return csc_matrix((self._val, (self._row, self._col)), dtype=np.float64)
 

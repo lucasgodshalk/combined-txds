@@ -50,18 +50,21 @@ F_Q_max = Q - Q_max
 F_Q_min = Q_min - Q
 
 lagrange = obj_F + (Lr * F_Ir + Li * F_Ii)
-lagrange += convert_inequality_to_barrier(F_P_max)
-lagrange += convert_inequality_to_barrier(F_P_min)
-lagrange += convert_inequality_to_barrier(F_Q_max)
-lagrange += convert_inequality_to_barrier(F_Q_min)
+#lagrange += convert_inequality_to_barrier(F_P_max)
+#lagrange += convert_inequality_to_barrier(F_P_min)
+#lagrange += convert_inequality_to_barrier(F_Q_max)
+#lagrange += convert_inequality_to_barrier(F_Q_min)
 
 lh = LagrangeSegment(lagrange, constants, primals, duals)
 
-duals_bus_ref = L_Vr_set, L_Vi_set = symbols('lambda_Vr_set lambda_Vi_set')
+L_Vi_set = symbols('lambda_Vi_set')
 
-lagrange_bus_ref = L_Vr_set * (Vr - 1) + L_Vi_set * Vi #V_r = 0 and V_i = 0 for a reference bus.
+lagrange_bus_ref = L_Vi_set * Vi #V_r = 0 and V_i = 0 for a reference bus.
 
-lh_bus_ref = LagrangeSegment(lagrange_bus_ref, (), (Vr, Vi), duals_bus_ref)
+primals = (Vi,)
+duals = (L_Vi_set,)
+
+lh_bus_ref = LagrangeSegment(lagrange_bus_ref, (), primals, duals)
 
 class EconGenerator:
     _ids = count(0)
@@ -102,12 +105,9 @@ class EconGenerator:
         self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled=True)
 
         if self.reference_gen:
-            self.node_Vr_set = next(node_index)
             self.node_Vi_set = next(node_index)
             index_map = {}
-            index_map[Vr] = self.bus.node_Vr
             index_map[Vi] = self.bus.node_Vi
-            index_map[L_Vr_set] = self.node_Vr_set
             index_map[L_Vi_set] = self.node_Vi_set
 
             self.reference_stamper = LagrangeStampDetails(lh_bus_ref, index_map, optimization_enabled=True)
@@ -124,7 +124,7 @@ class EconGenerator:
         return []
 
 class EconomicDispatch():
-    def __init__(self,list_of_gens) -> None:
+    def __init__(self,list_of_gens):
         self.list_of_gens: List[EconGenerator]
         self.list_of_gens = list_of_gens
 
