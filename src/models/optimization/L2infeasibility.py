@@ -25,6 +25,12 @@ class L2InfeasibilityOptimization:
         for infeas_current in self.infeasibility_currents:
             infeas_current.assign_nodes(node_index)
 
+    def set_v_init(v_init):
+        pass
+
+    def try_limit_v(v_next):
+        return v_next
+
     def get_stamps(self):
         stamps = []
         for infeas_current in self.infeasibility_currents:

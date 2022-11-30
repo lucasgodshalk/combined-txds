@@ -153,6 +153,8 @@ class PowerFlowResults:
         self.try_load_infeasibility_data()
 
     def try_load_infeasibility_data(self):
+        self.infeasibility_totals = None
+
         if self.network.optimization == None or not isinstance(self.network.optimization, L2InfeasibilityOptimization):
             return
 

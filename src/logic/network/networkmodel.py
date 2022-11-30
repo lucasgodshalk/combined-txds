@@ -35,9 +35,6 @@ class NetworkModel():
         self.switches = []
         self.lines: List
         self.lines = []
-
-        self.econ_generators: List
-        self.econ_generators = []
         
         #Holding area for any other models that don't have a dedicated list.
         self.misc: List
@@ -88,6 +85,9 @@ class NetworkModel():
         for bus in self.buses:
             self.matrix_map[bus.node_Vr] = f"bus:{bus.NodeName}:{bus.NodePhase}:Vr"
             self.matrix_map[bus.node_Vi] = f"bus:{bus.NodeName}:{bus.NodePhase}:Vi"
+            if self.optimization != None:
+                self.matrix_map[bus.node_lambda_Vr] = f"bus:{bus.NodeName}:{bus.NodePhase}:L_Vr"
+                self.matrix_map[bus.node_lambda_Vi] = f"bus:{bus.NodeName}:{bus.NodePhase}:L_Vi"
 
         for slack in self.slack:
             self.matrix_map[slack.slack_Ir] = f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ir"
@@ -153,6 +153,9 @@ class TxNetworkModel(NetworkModel):
             v_init[slack.slack_Ir] = 0 if settings.flat_start else slack.Pinit
             v_init[slack.slack_Ii] = 0 if settings.flat_start else slack.Qinit
 
+        if self.optimization != None:
+            self.optimization.set_v_init(v_init)
+
         return v_init
 
 class DxNetworkModel(NetworkModel):
@@ -191,5 +194,8 @@ class DxNetworkModel(NetworkModel):
         # Set initial voltage values for all other buses (one object per phase)
         for bus in self.buses:
             bus.set_initial_voltages(v_init)
-        
+
+        if self.optimization != None:
+            self.optimization.set_v_init(v_init)
+
         return v_init

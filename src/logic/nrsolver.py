@@ -80,6 +80,9 @@ class NRSolver:
             elif self.v_limiting != None and residual_max > self.settings.tolerance:
                 v_next = self.v_limiting.apply_limiting(v_next, v_previous)
 
+            if self.network.optimization != None:
+                v_next = self.network.optimization.try_limit_v(v_next)
+
             v_previous = v_next
             Y.clear(retain_idx=linear_index)
 
