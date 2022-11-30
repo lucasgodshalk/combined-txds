@@ -4,7 +4,7 @@ from sympy import symbols
 from sympy.functions.elementary.exponential import log
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
-from models.components.bus import Bus
+from models.components.bus import Bus, Lambda_init
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 from logic.network.networkmodel import NetworkModel
 import numpy as np
@@ -105,10 +105,10 @@ class EconGenerator:
         self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled=True)
 
         if self.reference_gen:
-            self.node_Vi_set = next(node_index)
+            self.node_L_Vi_set = next(node_index)
             index_map = {}
             index_map[Vi] = self.bus.node_Vi
-            index_map[L_Vi_set] = self.node_Vi_set
+            index_map[L_Vi_set] = self.node_L_Vi_set
 
             self.reference_stamper = LagrangeStampDetails(lh_bus_ref, index_map, optimization_enabled=True)
 
@@ -145,8 +145,12 @@ class EconomicDispatch():
         for econ_gen in self.list_of_gens:
             v_init[econ_gen.node_P] = (econ_gen.P_max + econ_gen.P_min) / 2
             v_init[econ_gen.node_Q] = (econ_gen.Q_max + econ_gen.Q_min) / 2
+            if econ_gen.reference_gen:
+                v_init[econ_gen.node_L_Vi_set] = Lambda_init
 
     def try_limit_v(self, v_next):
+        return v_next
+
         buffer = 0.01
         for econ_gen in self.list_of_gens:
             if v_next[econ_gen.node_P] < econ_gen.P_max + buffer:

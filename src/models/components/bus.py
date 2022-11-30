@@ -2,6 +2,8 @@ from __future__ import division
 import math
 from logic.stamping.lagrangestampdetails import SKIP
 
+Lambda_init = 1e-4
+
 #Represents an interconnection point for other network element with a shared voltage. In the three-phase case, this is used for a single phase.
 class Bus:
     def __init__(self,
@@ -71,14 +73,14 @@ class Bus:
         return (self.node_Vi, self.Vi_init)
 
     def get_Lr_init(self):
-        return (self.node_lambda_Vr, 1e-4)
+        return (self.node_lambda_Vr, Lambda_init)
 
     def get_Li_init(self):
-        return (self.node_lambda_Vr, 1e-4)
+        return (self.node_lambda_Vr, Lambda_init)
 
     def get_LQ_init(self):
         if self.Type == 2:
-            return (self.node_lambda_Q, 1e-4)
+            return (self.node_lambda_Q, Lambda_init)
         else:
             return (None, None)
 
