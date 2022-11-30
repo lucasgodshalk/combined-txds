@@ -9,12 +9,14 @@ from logic.powerflowsettings import PowerFlowSettings
 from models.optimization.L2infeasibility import L2InfeasibilityOptimization
 from models.components.bus import Bus
 from logic.residualdetails import ResidualDetails
+from models.optimization.econgenerator import EconomicDispatch
 
 class GENTYPE:
     PV = "PV"
     Slack = "Slack"
     Inf = "Inf"
     PQ = "PQ"
+    EconGen = "EconGen"
 
 class GeneratorResult:
     def __init__(self, generator, P, Q, type_str):
@@ -103,7 +105,7 @@ class PowerFlowResults:
         self.network = network
         self.v_final = v_final
         self.settings = settings
-        self.residuals = residuals
+        self.residual_details = residuals
 
         self.bus_results: List[BusResult]
         self.bus_results = []
@@ -148,9 +150,11 @@ class PowerFlowResults:
             Q = Vi * slack_Ii
             self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Slack)) 
 
-        self.max_residual = self.residuals.max_residual
+        self.max_residual = self.residual_details.max_residual
 
         self.try_load_infeasibility_data()
+
+        self.try_load_econ_dispatch_data()
 
     def try_load_infeasibility_data(self):
         self.infeasibility_totals = None
@@ -178,6 +182,16 @@ class PowerFlowResults:
 
         self.infeasibility_totals = (total_P, total_Q)   
 
+    def try_load_econ_dispatch_data(self):
+        if self.network.optimization == None or not isinstance(self.network.optimization, EconomicDispatch):
+            return
+        
+        for econ_generator in self.network.optimization.list_of_gens:
+            P = self.v_final[econ_generator.node_P]
+            Q = self.v_final[econ_generator.node_Q]
+            self.generator_results.append(GeneratorResult(econ_generator, P, Q, GENTYPE.EconGen))
+
+
     def display(self, verbose=False):
         print("=====================")
         print("=====================")
@@ -187,11 +201,11 @@ class PowerFlowResults:
         print(f'Iterations: {self.iterations}')
         print(f'Duration: {"{:.3f}".format(self.duration_sec)}(s)')
 
-        print(f'Max Residual: {self.residuals.max_residual:.3g} [Index: {self.residuals.max_residual_idx}]')
+        print(f'Max Residual: {self.residual_details.max_residual:.3g} [Index: {self.residual_details.max_residual_idx}]')
 
         if verbose:
-            for idx in range(len(self.residuals)):
-                print(f'Residual {idx}: {self.residuals[idx]:.3g}')
+            for idx in range(len(self.residual_details.residuals)):
+                print(f'Residual {idx}: {self.residual_details.residuals[idx]:.3g}')
 
         if self.infeasibility_totals != None:
             results = self.report_infeasible()
