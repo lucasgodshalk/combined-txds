@@ -59,7 +59,7 @@ lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 duals_bus_ref = L_Vr_set, L_Vi_set = symbols('lambda_Vr_set lambda_Vi_set')
 
-lagrange_bus_ref = L_Vr_set * Vr + L_Vi_set * Vi #V_r = 0 and V_i = 0 for a reference bus.
+lagrange_bus_ref = L_Vr_set * (Vr - 1) + L_Vi_set * Vi #V_r = 0 and V_i = 0 for a reference bus.
 
 lh_bus_ref = LagrangeSegment(lagrange_bus_ref, (), (Vr, Vi), duals_bus_ref)
 
