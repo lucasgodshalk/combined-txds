@@ -55,6 +55,7 @@ class MatrixBuilder:
             self._row = self._row[:self._index]
             self._col = self._col[:self._index]
             self._val = self._val[:self._index]
+            self._max_index = self._index
 
         return csc_matrix((self._val, (self._row, self._col)), dtype=np.float64)
 

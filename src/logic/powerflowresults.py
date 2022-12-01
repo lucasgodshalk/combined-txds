@@ -183,13 +183,18 @@ class PowerFlowResults:
         self.infeasibility_totals = (total_P, total_Q)   
 
     def try_load_econ_dispatch_data(self):
+        self.total_cost = None
         if self.network.optimization == None or not isinstance(self.network.optimization, EconomicDispatch):
             return
         
+        self.total_cost = 0
+
         for econ_generator in self.network.optimization.list_of_gens:
             P = self.v_final[econ_generator.node_P]
             Q = self.v_final[econ_generator.node_Q]
             self.generator_results.append(GeneratorResult(econ_generator, P, Q, GENTYPE.EconGen))
+
+            self.total_cost += econ_generator.C1 * P ** 2 + econ_generator.C2 * P
 
 
     def display(self, verbose=False):
@@ -213,6 +218,9 @@ class PowerFlowResults:
             Q_sum = sum([result.Q for result in results])
             print(f'Inf P: {P_sum:.3g}')
             print(f'Inf Q: {Q_sum:.3g}')
+
+        if self.total_cost != None:
+            print(f"Econ Cost: {self.total_cost:.2g}")
 
         if verbose:
             self.__display_verbose()
