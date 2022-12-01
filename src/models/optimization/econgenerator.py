@@ -196,20 +196,26 @@ class EconomicDispatch():
 
             #P is actually a negative range, so signs are flipped.
             if P < econ_gen.P_max + buffer:
+                print(f"{econ_gen.bus.Bus}: P_max hit")
                 v_next[econ_gen.node_P] = econ_gen.P_max + buffer
             elif P > econ_gen.P_min - buffer:
+                print(f"{econ_gen.bus.Bus}: P_min hit")
                 v_next[econ_gen.node_P] = econ_gen.P_min - buffer
             
             if Q > econ_gen.Q_max - buffer:
+                print(f"{econ_gen.bus.Bus}: Q_max hit")
                 v_next[econ_gen.node_Q] = econ_gen.Q_max - buffer
             elif Q < econ_gen.Q_min + buffer:
+                print(f"{econ_gen.bus.Bus}: Q_min hit")
                 v_next[econ_gen.node_Q] = econ_gen.Q_min + buffer
         
         for v_limiter in self.v_limiters:
             V_mag = np.sqrt(v_next[v_limiter.bus.node_Vr]**2 + v_next[v_limiter.bus.node_Vi]**2)
 
             if V_mag > v_limiter.V_max - buffer:
+                print(f"{v_limiter.bus.Bus}: V_max hit")
                 v_next[econ_gen.node_Q] = v_limiter.V_max - buffer
             elif V_mag < v_limiter.V_min + buffer:
+                print(f"{v_limiter.bus.Bus}: V_min hit")
                 v_next[econ_gen.node_Q] = v_limiter.V_min + buffer
         return v_next
