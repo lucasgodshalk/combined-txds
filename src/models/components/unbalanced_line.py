@@ -2,9 +2,10 @@ import typing
 import numpy as np
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.components.bus import GROUND
-from models.components.line import line_lh, shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
+from models.components.line import line_lh, shunt_lh
 from logic.network.networkmodel import DxNetworkModel
 from logic.stamping.matrixstamper import build_stamps_from_stampers
+from models.wellknownvariables import Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 
 def calcInverse(Zmatrix):
     num_nnz = np.count_nonzero(Zmatrix)

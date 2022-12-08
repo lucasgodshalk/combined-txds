@@ -1,7 +1,7 @@
 import numpy as np
 from sympy import symbols
 from itertools import count
-from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangesegment import LagrangeSegment, ModelEquations, KCL_r, KCL_i
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 from models.components.bus import Bus, GROUND
@@ -12,33 +12,26 @@ TX_LARGE_B = 20
 
 G_orig, B_orig = symbols('G B')
 constants = G_orig, B_orig, tx_factor
-primals = Vr_from, Vi_from, Vr_to, Vi_to
-duals = Lr_from, Li_from, Lr_to, Li_to
+variables = Vr_from, Vi_from, Vr_to, Vi_to
 
 G = G_orig + TX_LARGE_G * G_orig * tx_factor
 B = B_orig + TX_LARGE_B * B_orig * tx_factor
 
-eqns = [
-    G * Vr_from - G * Vr_to - B * Vi_from + B * Vi_to,
-    G * Vi_from - G * Vi_to + B * Vr_from - B * Vr_to,
-    G * Vr_to - G * Vr_from - B * Vi_to + B * Vi_from,
-    G * Vi_to - G * Vi_from + B * Vr_to - B * Vr_from   
-]
+kcl_r = KCL_r(G * Vr_from - G * Vr_to - B * Vi_from + B * Vi_to)
+kcl_i = KCL_i(G * Vi_from - G * Vi_to + B * Vr_from - B * Vr_to)  
 
-lagrange = np.dot(duals, eqns)
-
-line_lh = LagrangeSegment(lagrange, constants, primals, duals)
+line_lh = ModelEquations(variables, constants, kcl_r, kcl_i)
 
 # The only distinction between shunt and line impedance behavior
 # is that when the homotopy factor is at 1,
 # we expect line impedance to go to [large number]
 # and the shunt impedance to go to 0
 
-lagrange_shunt = lagrange.subs(tx_factor, 0)
+lagrange_shunt = line_lh.lagrange.subs(tx_factor, 0)
 lagrange_shunt = lagrange_shunt.subs(G_orig, G_orig * (1 - tx_factor))
 lagrange_shunt = lagrange_shunt.subs(B_orig, B_orig * (1 - tx_factor))
 
-shunt_lh = LagrangeSegment(lagrange_shunt, constants, primals, duals)
+shunt_lh = LagrangeSegment(lagrange_shunt, line_lh.constants, line_lh.primals, line_lh.duals)
 
 def build_line_stamper_bus(
     from_bus: Bus, 
