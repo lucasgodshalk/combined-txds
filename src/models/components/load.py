@@ -1,20 +1,20 @@
-from __future__ import division
 from itertools import count
 import numpy as np
 from sympy import symbols
 from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
+from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.components.bus import Bus
 from models.components.line import build_line_stamper_bus
 from logic.stamping.matrixstamper import build_stamps_from_stampers
+from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to, Lr_from, Li_from, Lr_to, Li_to
 
 #Eqns reference:
 # Pandey, A. (2018). 
 # Robust Steady-State Analysis of Power Grid using Equivalent Circuit Formulation with Circuit Simulation Methods
 
 constants = P, Q = symbols('P, Q')
-primals = Vr_from, Vi_from, Vr_to, Vi_to = symbols('Vr_from, Vi_from, Vr_to, Vi_to')
-duals = Lr_from, Li_from, Lr_to, Li_to = symbols('Lr_from, Li_from, Lr_to, Li_to')
+primals = Vr_from, Vi_from, Vr_to, Vi_to
+duals = Lr_from, Li_from, Lr_to, Li_to
 
 Vr = Vr_from - Vr_to
 Vi = Vi_from - Vi_to

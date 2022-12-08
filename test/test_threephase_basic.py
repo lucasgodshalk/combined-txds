@@ -159,9 +159,6 @@ def test_just_swing():
 def test_swing_and_line_to_pq():
     assert_glm_case_gridlabd_results("swing_and_line_to_pq")
 
-def test_swing_and_long_line_to_pq():
-    assert_glm_case_gridlabd_results("swing_and_long_line_to_pq")
-
 def test_swing_and_long_ul_to_pq():
     assert_glm_case_gridlabd_results("swing_and_long_ul_to_pq")
     

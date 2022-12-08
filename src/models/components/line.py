@@ -5,15 +5,15 @@ from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 from models.components.bus import Bus, GROUND
-from models.wellknownvariables import tx_factor
+from models.wellknownvariables import tx_factor, Vr_from, Vi_from, Vr_to, Vi_to, Lr_from, Li_from, Lr_to, Li_to
 
 TX_LARGE_G = 20
 TX_LARGE_B = 20
 
 G_orig, B_orig = symbols('G B')
 constants = G_orig, B_orig, tx_factor
-primals = Vr_from, Vi_from, Vr_to, Vi_to = symbols('V_from\,r V_from\,i V_to\,r V_to\,i')
-duals = Lr_from, Li_from, Lr_to, Li_to = symbols('lambda_from\,r lambda_from\,i lambda_to\,r lambda_to\,i')
+primals = Vr_from, Vi_from, Vr_to, Vi_to
+duals = Lr_from, Li_from, Lr_to, Li_to
 
 G = G_orig + TX_LARGE_G * G_orig * tx_factor
 B = B_orig + TX_LARGE_B * B_orig * tx_factor

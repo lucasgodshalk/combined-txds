@@ -4,10 +4,14 @@ from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 from models.components.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
+from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to, Lr_from, Li_from, Lr_to, Li_to
+
+Ir, Ii = symbols('Ir Ii')
+Lir, Lii = symbols('Lir Lii')
 
 constants = Vr_set, Vi_set = symbols("Vr_set Vi_set")
-primals = Vr_from, Vi_from, Vr_to, Vi_to, Ir, Ii = symbols('Vr_from Vi_from Vr_to Vi_to Ir Ii')
-duals = Lr_from, Li_from, Lr_to, Li_to, Lir, Lii = symbols('Lr_from Li_from Lr_to Li_to Lir Lii')
+primals = Vr_from, Vi_from, Vr_to, Vi_to, Ir, Ii
+duals = Lr_from, Li_from, Lr_to, Li_to, Lir, Lii
 
 eqns = [
     Ir,

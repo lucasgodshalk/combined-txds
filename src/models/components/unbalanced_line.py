@@ -2,8 +2,7 @@ import typing
 import numpy as np
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.components.bus import GROUND
-from models.components.line import line_lh
-from models.components.line import shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
+from models.components.line import line_lh, shunt_lh, Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 from logic.network.networkmodel import DxNetworkModel
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 
