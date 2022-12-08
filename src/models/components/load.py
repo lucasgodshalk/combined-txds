@@ -107,8 +107,8 @@ class Load:
 
         self.from_bus = from_bus
         self.to_bus = to_bus
-        self.P = P
-        self.Q = Q
+        self.P = P * 0.01
+        self.Q = Q * 0.01
         self.Z = Z
 
         self.IP = IP

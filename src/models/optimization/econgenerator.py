@@ -27,8 +27,8 @@ def load_econ_dispatch(network: NetworkModel, econ_dispatch_csv: str):
         econ_gen = EconGenerator(gen_bus, PG_min / 100, PG_max / 100, QG_min / 100, QG_max / 100, C1, C2, reference_gen)
         list_of_gens.append(econ_gen)
 
-        v_limit = VLimiter(gen_bus, V_min, V_max)
-        v_limits.append(v_limit)
+        # v_limit = VLimiter(gen_bus, V_min, V_max)
+        # v_limits.append(v_limit)
 
         reference_gen = False
     
@@ -42,29 +42,28 @@ constants = C1, C2, P_min, P_max, Q_min, Q_max = symbols('C1 C2 P_min P_max Q_mi
 primals = Vr, Vi, P, Q = symbols('V_r V_i P Q')
 duals = Lr, Li = symbols('lambda_r lambda_i')
 
-obj_F = C1 * P**2 + C2 * (-P)
+obj_F = C1 * P**2 + C2 * P
 
 F_Ir = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
 F_Ii = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
 
-F_P_max = P_max - P 
-F_P_min = P - P_min
+F_P_max = P - P_max
+F_P_min = P_min - P
 
 F_Q_max = Q - Q_max
 F_Q_min = Q_min - Q
 
-lagrange = obj_F + (Lr * F_Ir + Li * F_Ii)
-lagrange += convert_inequality_to_barrier(F_P_max)
-lagrange += convert_inequality_to_barrier(F_P_min)
-lagrange += convert_inequality_to_barrier(F_Q_max)
-lagrange += convert_inequality_to_barrier(F_Q_min)
-
+lagrange = obj_F + (Lr * -F_Ir + Li * -F_Ii)
+# lagrange += convert_inequality_to_barrier(F_P_max)
+# lagrange += convert_inequality_to_barrier(F_P_min)
+# lagrange += convert_inequality_to_barrier(F_Q_max)
+# lagrange += convert_inequality_to_barrier(F_Q_min)
 
 lh = LagrangeSegment(lagrange, constants, primals, duals)
 
 L_Vi_set = symbols('lambda_Vi_set')
 
-lagrange_bus_ref = L_Vi_set * Vi #V_r = 0 and V_i = 0 for a reference bus.
+lagrange_bus_ref = L_Vi_set * Vi #V_i = 0 for a reference bus.
 
 primals = (Vi,)
 duals = (L_Vi_set,)
@@ -74,7 +73,7 @@ lh_bus_ref = LagrangeSegment(lagrange_bus_ref, (), primals, duals)
 V_min, V_max = symbols('V_min V_max')
 
 F_V_max = (Vr**2 + Vi**2) ** 0.5 - V_max
-F_V_min = -(Vr**2 + Vi**2) ** 0.5 + V_min
+F_V_min = V_min - (Vr**2 + Vi**2) ** 0.5
 
 lagrange_v_limit = convert_inequality_to_barrier(F_V_max) + convert_inequality_to_barrier(F_V_min)
 
@@ -120,8 +119,8 @@ class EconGenerator:
         self.id = self._ids.__next__()
 
         self.bus = bus
-        self.P_max = -P_max
-        self.P_min = -P_min
+        self.P_max = P_max
+        self.P_min = P_min
         self.C1 = C1
         self.C2 = C2
         self.Q_max = Q_max
@@ -183,31 +182,31 @@ class EconomicDispatch():
 
     def set_v_init(self, v_init):
         for econ_gen in self.list_of_gens:
-            v_init[econ_gen.node_P] = (econ_gen.P_max + econ_gen.P_min) / 2
-            v_init[econ_gen.node_Q] = (econ_gen.Q_max + econ_gen.Q_min) / 2
+            v_init[econ_gen.node_P] = 0.1#(econ_gen.P_max + econ_gen.P_min) / 2
+            v_init[econ_gen.node_Q] = 0.1#(econ_gen.Q_max + econ_gen.Q_min) / 2
             if econ_gen.reference_gen:
                 v_init[econ_gen.node_L_Vi_set] = Lambda_init
 
     def try_limit_v(self, v_next):
-        buffer = 0.01
+        buffer = 0.001
         for econ_gen in self.list_of_gens:
             P = v_next[econ_gen.node_P]
             Q = v_next[econ_gen.node_Q]
 
             #P is actually a negative range, so signs are flipped.
-            if P < econ_gen.P_max + buffer:
-                print(f"{econ_gen.bus.Bus}: P_max hit")
-                v_next[econ_gen.node_P] = econ_gen.P_max + buffer
-            elif P > econ_gen.P_min - buffer:
-                print(f"{econ_gen.bus.Bus}: P_min hit")
-                v_next[econ_gen.node_P] = econ_gen.P_min - buffer
+            # if P < econ_gen.P_max + buffer:
+            #     print(f"{econ_gen.bus.Bus}: P_max hit")
+            #     v_next[econ_gen.node_P] = econ_gen.P_max + buffer
+            # elif P > econ_gen.P_min - buffer:
+            #     print(f"{econ_gen.bus.Bus}: P_min hit")
+            #     v_next[econ_gen.node_P] = econ_gen.P_min - buffer
             
-            if Q > econ_gen.Q_max - buffer:
-                print(f"{econ_gen.bus.Bus}: Q_max hit")
-                v_next[econ_gen.node_Q] = econ_gen.Q_max - buffer
-            elif Q < econ_gen.Q_min + buffer:
-                print(f"{econ_gen.bus.Bus}: Q_min hit")
-                v_next[econ_gen.node_Q] = econ_gen.Q_min + buffer
+            # if Q > econ_gen.Q_max - buffer:
+            #     print(f"{econ_gen.bus.Bus}: Q_max hit")
+            #     v_next[econ_gen.node_Q] = econ_gen.Q_max - buffer
+            # elif Q < econ_gen.Q_min + buffer:
+            #     print(f"{econ_gen.bus.Bus}: Q_min hit")
+            #     v_next[econ_gen.node_Q] = econ_gen.Q_min + buffer
         
         for v_limiter in self.v_limiters:
             V_mag = np.sqrt(v_next[v_limiter.bus.node_Vr]**2 + v_next[v_limiter.bus.node_Vi]**2)

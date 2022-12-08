@@ -26,9 +26,9 @@ parser.add_argument("--outputfile", required=False)
 parser.add_argument("--debug", required=False, action='store_true')
 parser.add_argument("--verbose", required=False, action='store_true')
 parser.add_argument("--infeasibility", required=False, default=False, action='store_true')
-parser.add_argument("--load_factor", required=False, default=-1)
+parser.add_argument("--load_factor", required=False, default=1)
 parser.add_argument("--tx_stepping", required=False, default=False, action='store_true')
-parser.add_argument("--econ_dispatch", required=False, default=None)
+parser.add_argument("--ac_opf", required=False, default=None)
 args = parser.parse_args()
 
 case = args.case
@@ -42,14 +42,14 @@ debug = args.debug
 verbose = args.verbose
 infeasibility = args.infeasibility
 tx_stepping = args.tx_stepping
-econ_dispatch_csv = args.econ_dispatch
+ac_opf_csv = args.ac_opf
 load_factor = float(args.load_factor)
 print(colored("Starting power flow solver...",'green'))
 print(colored(f"Can run power deficient networks: {infeasibility}", 'green'))
 
 settings = PowerFlowSettings(
     debug=debug, 
-    max_iters=50, 
+    max_iters=1, 
     flat_start=False, 
     tx_stepping=tx_stepping, 
     voltage_limiting=False,
@@ -61,8 +61,8 @@ network = NetworkLoader(settings).from_file(case)
 
 if infeasibility:
     network.optimization = load_infeasibility_analysis(network)
-elif econ_dispatch_csv != None:
-    network.optimization = load_econ_dispatch(network, econ_dispatch_csv)
+elif ac_opf_csv != None:
+    network.optimization = load_econ_dispatch(network, ac_opf_csv)
 
 modify_load_factor(network, load_factor, load_factor)
 
