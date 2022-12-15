@@ -155,6 +155,16 @@ class LagrangeSegment:
         self._derivatives = None
         self._derivatives: Dict[Symbol, DerivativeEntry]
 
+        self.__dual_primal_map_str = {}
+        for dual in self.duals:
+            primal = self.primals[self.duals.index(dual)]
+            self.__dual_primal_map_str[str(dual)] = str(primal)
+
+    def get_duals_corresponding_primal(self, dual_var_str):
+        #For the optimization disabled case, we can't use the dual variable's index
+        #for the matrix row. Instead, we commandeer the index of it's corresponding primal variable.
+        return self.__dual_primal_map_str[dual_var_str]
+
     def get_derivatives(self):
         if self._derivatives != None:
             return self._derivatives

@@ -25,12 +25,20 @@ class StampInput():
         
         self.key = str(constant_vals) + str(primal_indexes) + str(dual_indexes)
 
+class ResidualExpression():
+    def __init__(self, first_order, first_order_str, expr, expr_eval):
+        self.first_order = first_order
+        self.first_order_str = first_order_str
+        self.expr = expr
+        self.expr_eval = expr_eval
+
 #A stamp expression is shared across all instances of a model, and constains details about the equation actually being computed.
 class StampExpression():
     def __init__(
         self,
         lsegment: LagrangeSegment,
         first_order,
+        first_order_str,
         expression,
         evalf,
         yth_variable,
@@ -41,6 +49,7 @@ class StampExpression():
 
         self.lsegment = lsegment
         self.first_order = first_order
+        self.first_order_str = first_order_str
         self.expression = expression
         self.evalf = evalf
         self.parameters = lsegment.parameters
@@ -141,8 +150,10 @@ def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabl
     if key in lagrange_cache:
         return lagrange_cache[key]
 
-    residuals = []
-    expressions = []
+    residual_exprs = []
+    residual_exprs: List[ResidualExpression]
+    stamp_exprs = []
+    stamp_exprs: List[StampExpression]
     if optimization_enabled:
         first_order_variables = lsegment.variables
     else:
@@ -151,12 +162,13 @@ def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabl
     for first_order in first_order_variables:
         derivative = lsegment.get_derivatives()[first_order]
 
-        residuals.append((derivative.variable, derivative.variable_str, derivative.expr, derivative.expr_eval))
+        residual_exprs.append(ResidualExpression(derivative.variable, derivative.variable_str, derivative.expr, derivative.expr_eval))
 
         for entry in derivative.get_evals():
             expression = StampExpression(
                 lsegment,
                 derivative.variable,
+                derivative.variable_str,
                 entry.expr,
                 entry.func,
                 entry.yth_variable,
@@ -165,30 +177,30 @@ def get_or_build_stamp_expressions(lsegment: LagrangeSegment, optimization_enabl
                 entry.is_constant_expr
                 )
             
-            expressions.append(expression)
+            stamp_exprs.append(expression)
     
-    lagrange_cache[key] = (expressions, residuals)
+    lagrange_cache[key] = (stamp_exprs, residual_exprs)
     
-    return expressions, residuals
+    return stamp_exprs, residual_exprs
 
 def __build_stampcollection_from_stamper(model, stamper: LagrangeStampDetails, constant_vals):
-    primal_indexes = [stamper.var_map[primal] for primal in stamper.lsegment.primals]
-    dual_indexes = [stamper.var_map[dual] for dual in stamper.lsegment.duals]
+    primal_indexes = [stamper.get_var_col_index(primal) for primal in stamper.lsegment.primals]
+    dual_indexes = [stamper.get_var_col_index(dual) for dual in stamper.lsegment.duals]
 
-    expressions, residual_exprs = get_or_build_stamp_expressions(stamper.lsegment, stamper.optimization_enabled)
+    stamp_exprs, residuals_exprs = get_or_build_stamp_expressions(stamper.lsegment, stamper.optimization_enabled)
 
     input = StampInput(constant_vals, primal_indexes, dual_indexes)
 
-    stamps = __build_stamps(stamper, expressions, input)
+    stamps = __build_stamps(stamper, stamp_exprs, input)
 
-    residuals = __build_residuals(stamper, residual_exprs, input)
+    residuals = __build_residuals(stamper, residuals_exprs, input)
 
     return StampCollection(model, stamper.lsegment, stamps, residuals)
 
-def __build_stamps(stamper: LagrangeStampDetails, expressions: List[StampExpression], input):
+def __build_stamps(stamper: LagrangeStampDetails, expressions: List[StampExpression], input: StampInput):
     stamps = []
     for expression in expressions:
-        row_index = stamper.get_variable_row_index(expression.first_order)
+        row_index = stamper.get_eqn_row_index_str(expression.first_order_str)
         if row_index == SKIP:
             continue
         
@@ -211,13 +223,21 @@ def __build_stamps(stamper: LagrangeStampDetails, expressions: List[StampExpress
     return stamps
 
 
-def __build_residuals(stamper, residual_exprs, input):
+def __build_residuals(stamper: LagrangeStampDetails, residual_exprs: List[ResidualExpression], input: StampInput):
     residuals = []
-    for first_order, first_order_str, expr, expr_eval in residual_exprs:
-        row_index = stamper.get_variable_row_index(first_order)
+    for residual_expr in residual_exprs:
+        row_index = stamper.get_eqn_row_index_str(residual_expr.first_order_str)
         if row_index == SKIP:
             continue
-        residual = ResidualInstance(stamper.lsegment, first_order, first_order_str, row_index, input, expr, expr_eval)
+        residual = ResidualInstance(
+            stamper.lsegment, 
+            residual_expr.first_order, 
+            residual_expr.first_order_str, 
+            row_index, 
+            input, 
+            residual_expr.expr, 
+            residual_expr.expr_eval
+            )
         residuals.append(residual)
 
     return residuals

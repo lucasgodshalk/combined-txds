@@ -7,22 +7,22 @@ class LagrangeStampDetails:
         self.lsegment = lsegment
 
         #The equation map is really the row index lookup, and the variable map is really the column index lookup.
-        self.var_map = var_map
+        self.__var_map = var_map
         self.var_str_map = {str(x[0]): x[1] for x in var_map.items()}
         if eqn_map == None:
-            self.eqn_map = var_map
+            self.__eqn_map = self.__var_map
+            self.__eqn_map_str = self.var_str_map
         else: 
-            self.eqn_map = eqn_map
+            self.__eqn_map = eqn_map
+            self.__eqn_map_str = {str(x[0]): x[1] for x in eqn_map.items()}
 
         self.optimization_enabled = optimization_enabled
-
-        self.empty_primals = [None] * len(self.lsegment.primals)
-        self.empty_duals = [None] * len(self.lsegment.duals)
     
-    def get_variable_row_index(self, variable):
+    def get_eqn_row_index_str(self, variable_str):
         if self.optimization_enabled:
-            return self.eqn_map[variable]
+            return self.__eqn_map_str[variable_str]
         else:
-            #For the optimization disabled case, we can't use the dual variable's index
-            #for the matrix row. Instead, we commandeer the index of it's corresponding primal variable.
-            return self.eqn_map[self.lsegment.primals[self.lsegment.duals.index(variable)]]
+            return self.__eqn_map_str[self.lsegment.get_duals_corresponding_primal(variable_str)]
+
+    def get_var_col_index(self, variable):
+        return self.__var_map[variable]
