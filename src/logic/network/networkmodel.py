@@ -102,12 +102,12 @@ class NetworkModel():
                 self.matrix_map[xfmr.node_secondary_Vr] = f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vr-sec"
                 self.matrix_map[xfmr.node_secondary_Vi] = f"xfmr:{xfmr.from_bus_pos.NodeName}:{xfmr.from_bus_pos.NodePhase}:Vi-sec"
 
-        for switch in self.switches:
-            if switch.status == SwitchStatus.OPEN:
-                continue
+        # for switch in self.switches:
+        #     if switch.status == SwitchStatus.OPEN:
+        #         continue
 
-            self.matrix_map[switch.vs.Ir_index] = f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ir"
-            self.matrix_map[switch.vs.Ii_index] = f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ii"
+        #     self.matrix_map[switch.vs.Ir_index] = f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ir"
+        #     self.matrix_map[switch.vs.Ii_index] = f"switch:{switch.from_node.NodeName}:{switch.to_node.NodePhase}:Ii"
 
         self.matrix_version += 1
 

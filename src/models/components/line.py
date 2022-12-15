@@ -27,11 +27,13 @@ line_lh = ModelEquations(variables, constants, kcl_r, kcl_i)
 # we expect line impedance to go to [large number]
 # and the shunt impedance to go to 0
 
-lagrange_shunt = line_lh.lagrange.subs(tx_factor, 0)
-lagrange_shunt = lagrange_shunt.subs(G_orig, G_orig * (1 - tx_factor))
-lagrange_shunt = lagrange_shunt.subs(B_orig, B_orig * (1 - tx_factor))
+G = G_orig * (1 - tx_factor)
+B = B_orig * (1 - tx_factor)
 
-shunt_lh = LagrangeSegment(lagrange_shunt, line_lh.constants, line_lh.primals, line_lh.duals)
+kcl_r = KCL_r(G * Vr_from - G * Vr_to - B * Vi_from + B * Vi_to)
+kcl_i = KCL_i(G * Vi_from - G * Vi_to + B * Vr_from - B * Vr_to)  
+
+shunt_lh = ModelEquations(variables, constants, kcl_r, kcl_i)
 
 def build_line_stamper_bus(
     from_bus: Bus, 
