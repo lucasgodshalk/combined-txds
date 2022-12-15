@@ -1,7 +1,7 @@
 from itertools import count
 import numpy as np
 from sympy import symbols
-from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangesegment import ModelEquations, KCL_r, KCL_i
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.components.bus import Bus
 from models.components.line import build_line_stamper_bus
@@ -12,42 +12,26 @@ from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to, Lr_from, L
 # Pandey, A. (2018). 
 # Robust Steady-State Analysis of Power Grid using Equivalent Circuit Formulation with Circuit Simulation Methods
 
+#Constant real & reactive power loads
+#Eqn 25 & 26, pg 45
 constants = P, Q = symbols('P, Q')
-primals = Vr_from, Vi_from, Vr_to, Vi_to
-duals = Lr_from, Li_from, Lr_to, Li_to
+variables = Vr_from, Vi_from, Vr_to, Vi_to
 
 Vr = Vr_from - Vr_to
 Vi = Vi_from - Vi_to
 
-#Constant real & reactive power loads
-#Eqn 25 & 26, pg 45
-Fir_pq = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
-Fii_pq = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
+kcl_r = KCL_r((P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2))
+kcl_i = KCL_i((P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2))
 
-eqns = [
-    Fir_pq,
-    Fii_pq,
-    -Fir_pq,
-    -Fii_pq
-]
-
-lagrange_pq = np.dot(duals, eqns)
-
-lh_pq = LagrangeSegment(lagrange_pq, constants, primals, duals)
+lh_pq = ModelEquations(variables, constants, kcl_r, kcl_i)
 
 #Constant Current loads
 constants = IP, IQ = symbols('IP, IQ')
 
-eqns = [
-    IP,
-    IQ,
-    -IP,
-    -IQ
-]
+kcl_r = KCL_r(IP)
+kcl_i = KCL_i(IQ)
 
-lagrange_Ic = np.dot(duals, eqns)
-
-lh_Ic = LagrangeSegment(lagrange_Ic, constants, primals, duals)
+lh_Ic = ModelEquations(variables, constants, kcl_r, kcl_i)
 
 #Zip loads (partially implemented)
 #Eqn 31 & 32, pg 47
@@ -59,19 +43,10 @@ cos_arctan_V = 1 / (V_ratio**2 + 1)**0.5
 sin_arctan_V = V_ratio / (V_ratio**2 + 1)**0.5
 
 #Only have the constant current component for now.
-Fir_Zip = Ic_mag * (cos_arctan_V * cos_Ipf - sin_arctan_V * sin_Ipf)
-Fir_Zip = Ic_mag * (sin_arctan_V * cos_Ipf + cos_arctan_V * sin_Ipf)
+kcl_r = KCL_r(Ic_mag * (cos_arctan_V * cos_Ipf - sin_arctan_V * sin_Ipf))
+kcl_i = KCL_i(Ic_mag * (sin_arctan_V * cos_Ipf + cos_arctan_V * sin_Ipf))
 
-eqns = [
-    Fir_Zip,
-    Fir_Zip,
-    -Fir_Zip,
-    -Fir_Zip
-]
-
-lagrange_zip = np.dot(duals, eqns)
-
-lh_zip = LagrangeSegment(lagrange_zip, constants, primals, duals)
+lh_zip = ModelEquations(variables, constants, kcl_r, kcl_i)
 
 #Represents a two-terminal load. Can be used for positive sequence or three phase.
 class Load:

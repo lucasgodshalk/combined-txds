@@ -1,6 +1,6 @@
-from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangesegment import LagrangeSegment, SKIP
 
-SKIP = None
+SKIP = SKIP
 
 class LagrangeStampDetails:
     def __init__(self, lsegment: LagrangeSegment, var_map: dict, optimization_enabled: bool, eqn_map: dict = None) -> None:

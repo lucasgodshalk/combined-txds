@@ -3,6 +3,9 @@ from typing import Dict, List
 from sympy import Add, diff, lambdify, expand, Pow, Symbol
 from logic.stamping.lagrangepickler import LagrangePickler
 from models.wellknownvariables import Lr_from, Li_from, Lr_to, Li_to
+from models.wellknownvariables import tx_factor
+
+SKIP = None
 
 def is_constant(expr, vars):
     for symbol in expr.free_symbols:
@@ -75,9 +78,18 @@ def split_expr(eqn, vars):
     
     return (constant_expr, variable_expr_dict)
 
+class EvaluationEntry:
+    def __init__(self, yth_variable, func, expr, is_constant_expr, is_linear):
+        self.yth_variable = yth_variable
+        self.func = func
+        self.expr = expr
+        self.is_constant_expr = is_constant_expr
+        self.is_linear = is_linear
+
 class DerivativeEntry:
-    def __init__(self, variable, expr, constant_expr, variable_exprs, lambda_inputs) -> None:
-        self.variable = variable
+    def __init__(self, first_order, expr, constant_expr, variable_exprs, lambda_inputs, variables) -> None:
+        self.variable = first_order
+        self.variable_str = str(first_order)
         self.expr = expr
         
         #The constant expression will end up in the J vector
@@ -96,12 +108,18 @@ class DerivativeEntry:
                 self.variable_evals[var] = lambdify(self.lambda_inputs, variable_eqn, "numpy")
 
         self.evals = []
+        self.evals: List[EvaluationEntry]
 
         if self.constant_expr != 0:
-            self.evals.append((None, self.constant_eval, self.constant_expr, True))
+            free_syms = self.constant_expr.free_symbols
+            is_linear = not any([(x in free_syms) for x in variables])
+            self.evals.append(EvaluationEntry(None, self.constant_eval, self.constant_expr, True, is_linear))
 
         for (variable, func) in self.variable_evals.items():
-            self.evals.append((variable, func, self.variable_exprs[variable], False))
+            expr = self.variable_exprs[variable]
+            free_syms = expr.free_symbols
+            is_linear = not any([(x in free_syms) for x in variables])
+            self.evals.append(EvaluationEntry(variable, func, expr, False, is_linear))
 
     def get_evals(self):
         return self.evals
@@ -113,7 +131,7 @@ class DerivativeEntry:
 #You can think of all the segments as summing together to make the full Lagrange equation,
 #but in reality we map individual segments straight onto the matrix (see: LagrangeStamper)
 class LagrangeSegment:
-    VERSION = 4 #Increment if changes have been made to bust the derivative cache.
+    VERSION = 6 #Increment if changes have been made to bust the derivative cache.
     _pickler = LagrangePickler()
 
     def __init__(self, lagrange, constant_symbols, primal_symbols, dual_symbols):
@@ -128,6 +146,11 @@ class LagrangeSegment:
         self.parameters = self.constants + self.variables
 
         self.parameters_key = str(self.parameters)
+
+        if tx_factor in self.constants:
+            self.tx_factor_index = self.constants.index(tx_factor) 
+        else:
+            self.tx_factor_index = SKIP
 
         self._derivatives = None
         self._derivatives: Dict[Symbol, DerivativeEntry]
@@ -154,7 +177,7 @@ class LagrangeSegment:
 
             constant_expr, variable_exprs = split_expr(derivative, self.variables)
 
-            self._derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, self.parameters)
+            self._derivatives[first_order] = DerivativeEntry(first_order, derivative, constant_expr, variable_exprs, self.parameters, self.variables)
 
         LagrangeSegment._pickler.try_pickle(self.lagrange_key, self._derivatives)
 
@@ -163,12 +186,12 @@ class Eq():
     def __init__(self, equality) -> None:
         self.constraint_eqn = equality
 
-#KCL real contribution of a model
+#KCL real contribution of a model. Just an equality constraint annotated as a KCL.
 class KCL_r(Eq):
     def __init__(self, kcl_r) -> None:
         super().__init__(kcl_r)
 
-#KCL imaginary contribution of a model
+#KCL imaginary contribution of a model. Just an equality constraint annotated as a KCL.
 class KCL_i(Eq):
     def __init__(self, kcl_i) -> None:
         super().__init__(kcl_i)    
@@ -181,12 +204,30 @@ class Objective():
 class ModelEquations(LagrangeSegment):
     _ids = count(0)
 
-    def __init__(self, variables: List, constants: List, kcl_r: KCL_r, kcl_i: KCL_i, equalities: List[Eq] = [], objective: Objective = None):
-        if kcl_r == None or kcl_i == None:
+    def __init__(
+        self, 
+        variables: List, 
+        constants: List, 
+        kcl_r_from: KCL_r, 
+        kcl_i_from: KCL_i, 
+        kcl_r_to: KCL_r = None, 
+        kcl_i_to: KCL_i = None, 
+        equalities: List[Eq] = [], 
+        objective: Objective = None
+        ):
+        if kcl_r_from == None or kcl_i_from == None:
             raise Exception("KCL real/imginary must be supplied")
         
-        self.kcl_r = kcl_r
-        self.kcl_i = kcl_i
+        self.kcl_r_from = kcl_r_from
+        self.kcl_i_from = kcl_i_from
+
+        if kcl_r_to != None and kcl_i_to != None:
+            self.kcl_r_to = kcl_r_to
+            self.kcl_i_to = kcl_i_to
+        else:
+            self.kcl_r_to = kcl_r_from
+            self.kcl_i_to = kcl_i_from
+
         self.equalities = equalities
         self.obj = objective
 
@@ -199,15 +240,19 @@ class ModelEquations(LagrangeSegment):
             self.check_missing_symbols(declared_symbols, objective.eqn)
             lagrange += objective.eqn
 
+        self.check_missing_symbols(declared_symbols, self.kcl_r_from.constraint_eqn)
         lambdas.append(Lr_from)
-        lagrange += Lr_from * kcl_r.constraint_eqn
+        lagrange += Lr_from * self.kcl_r_from.constraint_eqn
+        self.check_missing_symbols(declared_symbols, self.kcl_r_from.constraint_eqn)
         lambdas.append(Li_from)
-        lagrange += Li_from * kcl_i.constraint_eqn
+        lagrange += Li_from * self.kcl_i_from.constraint_eqn
 
+        self.check_missing_symbols(declared_symbols, self.kcl_r_to.constraint_eqn)
         lambdas.append(Lr_to)
-        lagrange += Lr_to * -kcl_r.constraint_eqn
+        lagrange += Lr_to * -self.kcl_r_to.constraint_eqn
+        self.check_missing_symbols(declared_symbols, self.kcl_i_to.constraint_eqn)
         lambdas.append(Li_to)
-        lagrange += Li_to * -kcl_i.constraint_eqn
+        lagrange += Li_to * -self.kcl_i_to.constraint_eqn
         
         for equality in equalities:
             self.check_missing_symbols(declared_symbols, equality.constraint_eqn)
@@ -217,7 +262,7 @@ class ModelEquations(LagrangeSegment):
         
         super().__init__(lagrange, constants, variables, lambdas)
         
-    def check_missing_symbols(declared_symbols, eqn):
+    def check_missing_symbols(self, declared_symbols, eqn):
         for symbol in eqn.free_symbols:
             if symbol not in declared_symbols:
                 raise Exception(f"The symbol ({symbol}) in equation {eqn} was not supplied as a variable or constant.")

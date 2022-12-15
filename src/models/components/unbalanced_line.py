@@ -58,6 +58,7 @@ class UnbalancedLine():
         self.impedances = np.array(impedances)
         if not (self.impedances.shape == (3,3) or self.impedances.shape == (2,2) or self.impedances.shape == (1,1)):
             raise Exception("incorrect impedances matrix size, expected a square matrix at most size 3 by 3")
+            
         # Convert the per-meter impedance values to absolute, based on line length (in meters)
         self.impedances *= length
         try:
