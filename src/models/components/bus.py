@@ -32,11 +32,8 @@ class Bus:
         # initialize all nodes
         self.node_Vr: int # real voltage node at a bus
         self.node_Vi: int # imaginary voltage node at a bus
-        self.node_Q: int # reactive power or voltage contstraint node at a bus
-
-        self.node_Vr = None
-        self.node_Vi = None
-        self.node_Q = None
+        self.node_Vr = SKIP
+        self.node_Vi = SKIP
 
         self.Vr_init = Vm_init * math.cos(Va_init)
         self.Vi_init = Vm_init * math.sin(Va_init)
@@ -76,31 +73,16 @@ class Bus:
     def get_Li_init(self):
         return (self.node_lambda_Vr, 1e-4)
 
-    def get_LQ_init(self):
-        if self.Type == 2:
-            return (self.node_lambda_Q, 1e-4)
-        else:
-            return (None, None)
-
     def assign_nodes(self, node_index, optimization_enabled):
         self.node_Vr = next(node_index)
         self.node_Vi = next(node_index)
 
-        # If PV Bus
-        if self.Type == 2:
-            self.node_Q = next(node_index)
-
         if optimization_enabled:
             self.node_lambda_Vr = next(node_index)
             self.node_lambda_Vi = next(node_index)
-
-            # If PV Bus
-            if self.Type == 2:
-                self.node_lambda_Q = next(node_index)
         else:
             self.node_lambda_Vr = SKIP
             self.node_lambda_Vi = SKIP
-            self.node_lambda_Q = SKIP
 
     def get_connections(self):
         return []

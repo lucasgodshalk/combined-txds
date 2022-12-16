@@ -207,7 +207,7 @@ def __build_stamps(stamper: LagrangeStampDetails, expressions: List[StampExpress
         if expression.is_constant_expr:
             col_index = None
         else:
-            col_index = stamper.var_str_map[expression.yth_variable_str]
+            col_index = stamper.get_var_col_index_str(expression.yth_variable_str)
             if col_index == SKIP:
                 continue
 

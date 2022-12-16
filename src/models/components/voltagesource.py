@@ -1,30 +1,23 @@
-import numpy as np
 from sympy import symbols
-from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
+from logic.stamping.lagrangesegment import Eq, KCL_i, KCL_r, ModelEquations
+from logic.stamping.lagrangestampdetails import build_model_stamp_details
 from models.components.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
-from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to, Lr_from, Li_from, Lr_to, Li_to
+from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to
 
 Ir, Ii = symbols('Ir Ii')
 Lir, Lii = symbols('Lir Lii')
 
 constants = Vr_set, Vi_set = symbols("Vr_set Vi_set")
-primals = Vr_from, Vi_from, Vr_to, Vi_to, Ir, Ii
-duals = Lr_from, Li_from, Lr_to, Li_to, Lir, Lii
+variables = Vr_from, Vi_from, Vr_to, Vi_to, Ir, Ii
 
-eqns = [
-    Ir,
-    Ii,
-    -Ir,
-    -Ii,
-    Vr_set - (Vr_from - Vr_to),
-    Vi_set - (Vi_from - Vi_to)
-]
+kcl_r = KCL_r(Ir)
+kcl_i = KCL_i(Ii)
 
-lagrange = np.dot(duals, eqns)
+Vset_r_eqn = Eq(Vr_set - (Vr_from - Vr_to))
+Vset_i_eqn = Eq(Vi_set - (Vi_from - Vi_to))
 
-lh = LagrangeSegment(lagrange, constants, primals, duals)
+lh = ModelEquations(variables, constants, kcl_r, kcl_i, equalities=[Vset_r_eqn, Vset_i_eqn])
 
 class VoltageSource:
     def __init__(self, from_bus: Bus, to_bus: Bus, Vr_set, Vi_set) -> None:
@@ -34,33 +27,7 @@ class VoltageSource:
         self.Vi_set = Vi_set
 
     def assign_nodes(self, node_index, optimization_enabled):
-        self.Ir_index = next(node_index)
-        self.Ii_index = next(node_index)
-
-        if optimization_enabled:
-            self.Lir_index = next(node_index)
-            self.Lii_index = next(node_index)
-        else:
-            self.Lir_index = SKIP
-            self.Lii_index = SKIP
-
-        index_map = {}
-
-        index_map[Vr_from] = self.from_bus.node_Vr
-        index_map[Vi_from] = self.from_bus.node_Vi
-        index_map[Vr_to] = self.to_bus.node_Vr
-        index_map[Vi_to] = self.to_bus.node_Vi
-        index_map[Ir] = self.Ir_index
-        index_map[Ii] = self.Ii_index
-
-        index_map[Lr_from] = self.from_bus.node_lambda_Vr
-        index_map[Li_from] = self.from_bus.node_lambda_Vi
-        index_map[Lr_to] = self.to_bus.node_lambda_Vr
-        index_map[Li_to] = self.to_bus.node_lambda_Vi
-        index_map[Lir] = self.Lir_index
-        index_map[Lii] = self.Lii_index
-
-        self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled)
+        self.stamper = build_model_stamp_details(lh, self.from_bus, self.to_bus, node_index, optimization_enabled)
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]
@@ -69,7 +36,7 @@ class VoltageSource:
         return build_stamps_from_stamper(self, self.stamper, [self.Vr_set, self.Vi_set])
 
     def get_current(self, v):
-        return (v[self.Ir_index], v[self.Ii_index])
+        return (self.stamper.get_var_value(v, Ir), self.stamper.get_var_value(v, Ii))
     
 #Glorified voltage source, just a better name for readability sometimes.
 class CurrentSensor(VoltageSource):

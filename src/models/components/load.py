@@ -2,7 +2,7 @@ from itertools import count
 import numpy as np
 from sympy import symbols
 from logic.stamping.lagrangesegment import ModelEquations, KCL_r, KCL_i
-from logic.stamping.lagrangestampdetails import LagrangeStampDetails
+from logic.stamping.lagrangestampdetails import build_model_stamp_details
 from models.components.bus import Bus
 from models.components.line import build_line_stamper_bus
 from logic.stamping.matrixstamper import build_stamps_from_stampers
@@ -107,25 +107,15 @@ class Load:
             self.B = 0
 
     def assign_nodes(self, node_index, optimization_enabled):
-        index_map = {}
-        index_map[Vr_from] = self.from_bus.node_Vr
-        index_map[Vi_from] = self.from_bus.node_Vi
-        index_map[Lr_from] = self.from_bus.node_lambda_Vr
-        index_map[Li_from] = self.from_bus.node_lambda_Vi
-        index_map[Vr_to] = self.to_bus.node_Vr
-        index_map[Vi_to] = self.to_bus.node_Vi
-        index_map[Lr_to] = self.to_bus.node_lambda_Vr
-        index_map[Li_to] = self.to_bus.node_lambda_Vi
-
         if self.P == 0 and self.Q == 0:
             self.stamper_pq = None
         else:
-            self.stamper_pq = LagrangeStampDetails(lh_pq, index_map, optimization_enabled)
+            self.stamper_pq = build_model_stamp_details(lh_pq, self.from_bus, self.to_bus, node_index, optimization_enabled)
 
         if self.IP == 0 and self.IQ == 0:
             self.stamper_Ic = None
         else:
-            self.stamper_Ic = LagrangeStampDetails(lh_Ic, index_map, optimization_enabled)
+            self.stamper_Ic = build_model_stamp_details(lh_Ic, self.from_bus, self.to_bus, node_index, optimization_enabled)
 
         if self.Z == 0:
             self.stamper_z = None

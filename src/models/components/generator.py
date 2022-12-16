@@ -1,7 +1,7 @@
 from __future__ import division
 from itertools import count
 from sympy import symbols
-from logic.stamping.lagrangesegment import LagrangeSegment
+from logic.stamping.lagrangesegment import SKIP, LagrangeSegment
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.components.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
@@ -61,15 +61,26 @@ class Generator:
         self.Qmin = -Qmin
 
     def assign_nodes(self, node_index, optimization_enabled):
+        # reactive power for the generator
+        self.node_Q = next(node_index)
+
+        if optimization_enabled:
+            self.node_lambda_Q = next(node_index)
+        else:
+            self.node_lambda_Q = SKIP
+
         index_map = {}
         index_map[Vr] = self.bus.node_Vr
         index_map[Vi] = self.bus.node_Vi
-        index_map[Q] = self.bus.node_Q
+        index_map[Q] = self.node_Q
         index_map[Lr] = self.bus.node_lambda_Vr
         index_map[Li] = self.bus.node_lambda_Vi
-        index_map[LQ] = self.bus.node_lambda_Q
+        index_map[LQ] = self.node_lambda_Q
 
         self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled)
+
+    def get_LQ_init(self):
+        return (self.node_lambda_Q, 1e-4)
 
     def get_stamps(self):
         return build_stamps_from_stamper(self, self.stamper, [self.P, self.Vset])
