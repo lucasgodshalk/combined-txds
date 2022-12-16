@@ -1,6 +1,6 @@
 from sympy import symbols
-from logic.stamping.lagrangesegment import Eq, KCL_i, KCL_r, ModelEquations
-from logic.stamping.lagrangestampdetails import build_model_stamp_details
+from logic.stamping.lagrangesegment import Eq, KCL_i, KCL_r, TwoTerminalModelDefinition
+from logic.stamping.lagrangestampdetails import build_two_terminal_stamp_details
 from models.components.bus import Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to
@@ -17,7 +17,7 @@ kcl_i = KCL_i(Ii)
 Vset_r_eqn = Eq(Vr_set - (Vr_from - Vr_to))
 Vset_i_eqn = Eq(Vi_set - (Vi_from - Vi_to))
 
-lh = ModelEquations(variables, constants, kcl_r, kcl_i, equalities=[Vset_r_eqn, Vset_i_eqn])
+lh = TwoTerminalModelDefinition(variables, constants, kcl_r, kcl_i, equalities=[Vset_r_eqn, Vset_i_eqn])
 
 class VoltageSource:
     def __init__(self, from_bus: Bus, to_bus: Bus, Vr_set, Vi_set) -> None:
@@ -27,7 +27,7 @@ class VoltageSource:
         self.Vi_set = Vi_set
 
     def assign_nodes(self, node_index, optimization_enabled):
-        self.stamper = build_model_stamp_details(lh, self.from_bus, self.to_bus, node_index, optimization_enabled)
+        self.stamper = build_two_terminal_stamp_details(lh, self.from_bus, self.to_bus, node_index, optimization_enabled)
 
     def get_connections(self):
         return [(self.from_bus, self.to_bus)]

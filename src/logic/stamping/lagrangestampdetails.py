@@ -1,4 +1,4 @@
-from logic.stamping.lagrangesegment import LagrangeSegment, SKIP, ModelEquations
+from logic.stamping.lagrangesegment import LagrangeSegment, SKIP, TwoTerminalModelDefinition
 from models.components.bus import Bus
 from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to, Lr_from, Li_from, Lr_to, Li_to
 
@@ -39,7 +39,7 @@ class LagrangeStampDetails():
         #associated constraint...
         return self._var_map[self.lsegment.duals[lambda_index]]
 
-def build_model_stamp_details(model_eqns: ModelEquations, from_bus: Bus, to_bus: Bus, node_index, optimization_enabled: bool, index_map = None):
+def build_two_terminal_stamp_details(model: TwoTerminalModelDefinition, from_bus: Bus, to_bus: Bus, node_index, optimization_enabled: bool, index_map = None):
     if index_map == None:
         index_map = {}
     index_map[Vr_from] = from_bus.node_Vr
@@ -51,16 +51,16 @@ def build_model_stamp_details(model_eqns: ModelEquations, from_bus: Bus, to_bus:
     index_map[Lr_to] = to_bus.node_lambda_Vr
     index_map[Li_to] = to_bus.node_lambda_Vi
 
-    for variable in model_eqns.primals:
+    for variable in model.primals:
         if variable not in index_map:
             index_map[variable] = next(node_index)
     
-    for dual in model_eqns.duals:
+    for dual in model.duals:
         if dual not in index_map:
             if optimization_enabled:
                 index_map[dual] = next(node_index)
             else:
                 index_map[dual] = SKIP
 
-    return LagrangeStampDetails(model_eqns, index_map, optimization_enabled)
+    return LagrangeStampDetails(model, index_map, optimization_enabled)
 

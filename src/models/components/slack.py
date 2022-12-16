@@ -1,7 +1,7 @@
 from sympy import symbols
 import math
-from logic.stamping.lagrangesegment import ModelEquations, KCL_r, KCL_i, Eq
-from logic.stamping.lagrangestampdetails import build_model_stamp_details
+from logic.stamping.lagrangesegment import TwoTerminalModelDefinition, KCL_r, KCL_i, Eq
+from logic.stamping.lagrangestampdetails import build_two_terminal_stamp_details
 from models.components.bus import GROUND, Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to
@@ -19,7 +19,7 @@ kcl_i = KCL_i(I_si)
 Vrset_eqn = Eq(Vr - Vrset)
 Viset_eqn = Eq(Vi - Viset)
 
-lh = ModelEquations(variables, constants, kcl_r, kcl_i, equalities=[Vrset_eqn, Viset_eqn])
+lh = TwoTerminalModelDefinition(variables, constants, kcl_r, kcl_i, equalities=[Vrset_eqn, Viset_eqn])
 
 class Slack:
 
@@ -51,7 +51,7 @@ class Slack:
         self.Qinit = Qinit / 100
 
     def assign_nodes(self, node_index, optimization_enabled):
-        self.stamper = build_model_stamp_details(lh, self.bus, GROUND, node_index, optimization_enabled)
+        self.stamper = build_two_terminal_stamp_details(lh, self.bus, GROUND, node_index, optimization_enabled)
 
     def get_stamps(self):
         return build_stamps_from_stamper(self, self.stamper, [self.Vr_set, self.Vi_set])

@@ -1,7 +1,7 @@
 from itertools import count
 from sympy import symbols
-from logic.stamping.lagrangesegment import SKIP, ModelEquations, KCL_r, KCL_i, Eq
-from logic.stamping.lagrangestampdetails import build_model_stamp_details
+from logic.stamping.lagrangesegment import TwoTerminalModelDefinition, KCL_r, KCL_i, Eq
+from logic.stamping.lagrangestampdetails import build_two_terminal_stamp_details
 from models.components.bus import GROUND, Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
 from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to
@@ -17,7 +17,7 @@ kcl_r = KCL_r((P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2))
 kcl_i = KCL_i((P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2))
 F_Q = Eq(Vset ** 2 - Vr ** 2 - Vi ** 2)
 
-lh = ModelEquations(variables, constants, kcl_r, kcl_i, equalities=[F_Q])
+lh = TwoTerminalModelDefinition(variables, constants, kcl_r, kcl_i, equalities=[F_Q])
 
 class Generator:
     _ids = count(0)
@@ -62,7 +62,7 @@ class Generator:
         self.Qmin = -Qmin
 
     def assign_nodes(self, node_index, optimization_enabled):
-        self.stamper = build_model_stamp_details(lh, self.bus, GROUND, node_index, optimization_enabled)
+        self.stamper = build_two_terminal_stamp_details(lh, self.bus, GROUND, node_index, optimization_enabled)
 
     def get_LQ_init(self):
         return (self.stamper.get_lambda_index(4), 1e-4)

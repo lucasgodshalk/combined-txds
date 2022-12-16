@@ -1,8 +1,8 @@
 from itertools import count
 import numpy as np
 from sympy import symbols
-from logic.stamping.lagrangesegment import ModelEquations, KCL_r, KCL_i
-from logic.stamping.lagrangestampdetails import build_model_stamp_details
+from logic.stamping.lagrangesegment import TwoTerminalModelDefinition, KCL_r, KCL_i
+from logic.stamping.lagrangestampdetails import build_two_terminal_stamp_details
 from models.components.bus import Bus
 from models.components.line import build_line_stamper_bus
 from logic.stamping.matrixstamper import build_stamps_from_stampers
@@ -23,7 +23,7 @@ Vi = Vi_from - Vi_to
 kcl_r = KCL_r((P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2))
 kcl_i = KCL_i((P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2))
 
-lh_pq = ModelEquations(variables, constants, kcl_r, kcl_i)
+lh_pq = TwoTerminalModelDefinition(variables, constants, kcl_r, kcl_i)
 
 #Constant Current loads
 constants = IP, IQ = symbols('IP, IQ')
@@ -31,7 +31,7 @@ constants = IP, IQ = symbols('IP, IQ')
 kcl_r = KCL_r(IP)
 kcl_i = KCL_i(IQ)
 
-lh_Ic = ModelEquations(variables, constants, kcl_r, kcl_i)
+lh_Ic = TwoTerminalModelDefinition(variables, constants, kcl_r, kcl_i)
 
 #Zip loads (partially implemented)
 #Eqn 31 & 32, pg 47
@@ -46,7 +46,7 @@ sin_arctan_V = V_ratio / (V_ratio**2 + 1)**0.5
 kcl_r = KCL_r(Ic_mag * (cos_arctan_V * cos_Ipf - sin_arctan_V * sin_Ipf))
 kcl_i = KCL_i(Ic_mag * (sin_arctan_V * cos_Ipf + cos_arctan_V * sin_Ipf))
 
-lh_zip = ModelEquations(variables, constants, kcl_r, kcl_i)
+lh_zip = TwoTerminalModelDefinition(variables, constants, kcl_r, kcl_i)
 
 #Represents a two-terminal load. Can be used for positive sequence or three phase.
 class Load:
@@ -110,12 +110,12 @@ class Load:
         if self.P == 0 and self.Q == 0:
             self.stamper_pq = None
         else:
-            self.stamper_pq = build_model_stamp_details(lh_pq, self.from_bus, self.to_bus, node_index, optimization_enabled)
+            self.stamper_pq = build_two_terminal_stamp_details(lh_pq, self.from_bus, self.to_bus, node_index, optimization_enabled)
 
         if self.IP == 0 and self.IQ == 0:
             self.stamper_Ic = None
         else:
-            self.stamper_Ic = build_model_stamp_details(lh_Ic, self.from_bus, self.to_bus, node_index, optimization_enabled)
+            self.stamper_Ic = build_two_terminal_stamp_details(lh_Ic, self.from_bus, self.to_bus, node_index, optimization_enabled)
 
         if self.Z == 0:
             self.stamper_z = None

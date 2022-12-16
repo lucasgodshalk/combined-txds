@@ -211,9 +211,9 @@ class Objective():
     def __init__(self, obj_eqn) -> None:
         self.eqn = obj_eqn
 
-class ModelEquations(LagrangeSegment):
-    _ids = count(0)
+_lambda_ids = count(0)
 
+class TwoTerminalModelDefinition(LagrangeSegment):
     def __init__(
         self, 
         variables: List, 
@@ -247,34 +247,54 @@ class ModelEquations(LagrangeSegment):
         declared_symbols = constants + variables
         
         if objective != None:
-            self.check_missing_symbols(declared_symbols, objective.eqn)
+            check_missing_symbols(declared_symbols, objective.eqn)
             lagrange += objective.eqn
 
-        self.check_missing_symbols(declared_symbols, self.kcl_r_from.constraint_eqn)
+        check_missing_symbols(declared_symbols, self.kcl_r_from.constraint_eqn)
         lambdas.append(Lr_from)
         lagrange += Lr_from * self.kcl_r_from.constraint_eqn
-        self.check_missing_symbols(declared_symbols, self.kcl_r_from.constraint_eqn)
+        check_missing_symbols(declared_symbols, self.kcl_r_from.constraint_eqn)
         lambdas.append(Li_from)
         lagrange += Li_from * self.kcl_i_from.constraint_eqn
 
-        self.check_missing_symbols(declared_symbols, self.kcl_r_to.constraint_eqn)
+        check_missing_symbols(declared_symbols, self.kcl_r_to.constraint_eqn)
         lambdas.append(Lr_to)
         lagrange += Lr_to * -self.kcl_r_to.constraint_eqn
-        self.check_missing_symbols(declared_symbols, self.kcl_i_to.constraint_eqn)
+        check_missing_symbols(declared_symbols, self.kcl_i_to.constraint_eqn)
         lambdas.append(Li_to)
         lagrange += Li_to * -self.kcl_i_to.constraint_eqn
         
         for equality in equalities:
-            self.check_missing_symbols(declared_symbols, equality.constraint_eqn)
-            lambda_sym = Symbol(f"lambda_{next(self._ids)}")
+            check_missing_symbols(declared_symbols, equality.constraint_eqn)
+            lambda_sym = Symbol(f"lambda_{next(_lambda_ids)}")
             lambdas.append(lambda_sym)
             lagrange += lambda_sym * equality.constraint_eqn
         
         super().__init__(lagrange, constants, variables, lambdas)
-        
-    def check_missing_symbols(self, declared_symbols, eqn):
-        for symbol in eqn.free_symbols:
-            if symbol not in declared_symbols:
-                raise Exception(f"The symbol ({symbol}) in equation {eqn} was not supplied as a variable or constant.")
 
+class ModelDefinition(LagrangeSegment):
+    _ids = count(0)
+
+    def __init__(self, variables, constants, equalities = [], objective = None):
+        declared_symbols = constants + variables
+
+        lambdas = []
+        lagrange = 0
+
+        if objective != None:
+            self.check_missing_symbols(declared_symbols, objective.eqn)
+            lagrange += objective.eqn
+
+        for equality in equalities:
+            self.check_missing_symbols(declared_symbols, equality.constraint_eqn)
+            lambda_sym = Symbol(f"lambda_{next(_lambda_ids)}")
+            lambdas.append(lambda_sym)
+            lagrange += lambda_sym * equality.constraint_eqn
+        
+        super().__init__(lagrange, constants, variables, lambdas)
+
+def check_missing_symbols(declared_symbols, eqn):
+    for symbol in eqn.free_symbols:
+        if symbol not in declared_symbols:
+            raise Exception(f"The symbol ({symbol}) in equation {eqn} was not supplied as a variable or constant.")
 

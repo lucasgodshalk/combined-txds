@@ -1,7 +1,7 @@
 import numpy as np
 from sympy import symbols
 from itertools import count
-from logic.stamping.lagrangesegment import LagrangeSegment, ModelEquations, KCL_r, KCL_i
+from logic.stamping.lagrangesegment import LagrangeSegment, TwoTerminalModelDefinition, KCL_r, KCL_i
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 from models.components.bus import Bus, GROUND
@@ -20,7 +20,7 @@ B = B_orig + TX_LARGE_B * B_orig * tx_factor
 kcl_r = KCL_r(G * Vr_from - G * Vr_to - B * Vi_from + B * Vi_to)
 kcl_i = KCL_i(G * Vi_from - G * Vi_to + B * Vr_from - B * Vr_to)  
 
-line_lh = ModelEquations(variables, constants, kcl_r, kcl_i)
+line_lh = TwoTerminalModelDefinition(variables, constants, kcl_r, kcl_i)
 
 # The only distinction between shunt and line impedance behavior
 # is that when the homotopy factor is at 1,
@@ -33,7 +33,7 @@ B = B_orig * (1 - tx_factor)
 kcl_r = KCL_r(G * Vr_from - G * Vr_to - B * Vi_from + B * Vi_to)
 kcl_i = KCL_i(G * Vi_from - G * Vi_to + B * Vr_from - B * Vr_to)  
 
-shunt_lh = ModelEquations(variables, constants, kcl_r, kcl_i)
+shunt_lh = TwoTerminalModelDefinition(variables, constants, kcl_r, kcl_i)
 
 def build_line_stamper_bus(
     from_bus: Bus, 
