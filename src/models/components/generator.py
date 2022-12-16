@@ -1,22 +1,23 @@
-from __future__ import division
 from itertools import count
 from sympy import symbols
-from logic.stamping.lagrangesegment import SKIP, LagrangeSegment
-from logic.stamping.lagrangestampdetails import LagrangeStampDetails
-from models.components.bus import Bus
+from logic.stamping.lagrangesegment import SKIP, ModelEquations, KCL_r, KCL_i, Eq
+from logic.stamping.lagrangestampdetails import build_model_stamp_details
+from models.components.bus import GROUND, Bus
 from logic.stamping.matrixstamper import build_stamps_from_stamper
+from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to
 
 constants = P, Vset = symbols('P V_set')
-primals = Vr, Vi, Q = symbols('V_r V_i Q')
-duals = Lr, Li, LQ = symbols('lambda_r lambda_i lambda_Q')
+Q = symbols('Q')
+variables = Vr_from, Vi_from, Vr_to, Vi_to, Q
 
-F_Vr = (P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2)
-F_Vi = (P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2)
-F_Q = Vset ** 2 - Vr ** 2 - Vi ** 2
+Vr = Vr_from - Vr_to
+Vi = Vi_from - Vi_to
 
-lagrange = Lr * F_Vr + Li * F_Vi + LQ * F_Q
+kcl_r = KCL_r((P * Vr + Q * Vi) / (Vr ** 2 + Vi ** 2))
+kcl_i = KCL_i((P * Vi - Q * Vr) / (Vr ** 2 + Vi ** 2))
+F_Q = Eq(Vset ** 2 - Vr ** 2 - Vi ** 2)
 
-lh = LagrangeSegment(lagrange, constants, primals, duals)
+lh = ModelEquations(variables, constants, kcl_r, kcl_i, equalities=[F_Q])
 
 class Generator:
     _ids = count(0)
@@ -61,30 +62,17 @@ class Generator:
         self.Qmin = -Qmin
 
     def assign_nodes(self, node_index, optimization_enabled):
-        # reactive power for the generator
-        self.node_Q = next(node_index)
-
-        if optimization_enabled:
-            self.node_lambda_Q = next(node_index)
-        else:
-            self.node_lambda_Q = SKIP
-
-        index_map = {}
-        index_map[Vr] = self.bus.node_Vr
-        index_map[Vi] = self.bus.node_Vi
-        index_map[Q] = self.node_Q
-        index_map[Lr] = self.bus.node_lambda_Vr
-        index_map[Li] = self.bus.node_lambda_Vi
-        index_map[LQ] = self.node_lambda_Q
-
-        self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled)
+        self.stamper = build_model_stamp_details(lh, self.bus, GROUND, node_index, optimization_enabled)
 
     def get_LQ_init(self):
-        return (self.node_lambda_Q, 1e-4)
+        return (self.stamper.get_lambda_index(4), 1e-4)
 
     def get_stamps(self):
         return build_stamps_from_stamper(self, self.stamper, [self.P, self.Vset])
 
     def get_connections(self):
         return []
+    
+    def get_Q_index(self):
+        return self.stamper.get_var_col_index(Q)
 

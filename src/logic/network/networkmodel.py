@@ -140,7 +140,7 @@ class TxNetworkModel(NetworkModel):
                 v_init[Li_idx] = Li_init
 
         for generator in self.generators:
-            v_init[generator.node_Q] = (generator.Qmin + generator.Qmax) / 2 if settings.flat_start else generator.Qinit
+            v_init[generator.get_Q_index()] = (generator.Qmin + generator.Qmax) / 2 if settings.flat_start else generator.Qinit
             if self.optimization != None:
                 LQ_idx, LQ_init = generator.get_LQ_init()
                 v_init[LQ_idx] = LQ_init

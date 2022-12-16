@@ -34,6 +34,10 @@ class LagrangeStampDetails():
     def get_var_value(self, v, variable):
         return v[self._var_map[variable]]
 
+    def get_lambda_index(self, lambda_index):
+        #A bit weird, we have to refer to the lambda as the index of the
+        #associated constraint...
+        return self._var_map[self.lsegment.duals[lambda_index]]
 
 def build_model_stamp_details(model_eqns: ModelEquations, from_bus: Bus, to_bus: Bus, node_index, optimization_enabled: bool, index_map = None):
     if index_map == None:

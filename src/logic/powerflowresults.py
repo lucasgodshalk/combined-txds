@@ -128,7 +128,7 @@ class PowerFlowResults:
             self.bus_results.append(BusResult(bus, V_r, V_i, lambda_r, lambda_i))
 
         for generator in self.network.generators:
-            Q = v_final[generator.node_Q]
+            Q = v_final[generator.get_Q_index()]
             P = generator.P
 
             self.generator_results.append(GeneratorResult(generator, P, Q, GENTYPE.PV))
