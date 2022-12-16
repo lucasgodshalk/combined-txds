@@ -142,8 +142,8 @@ class PowerFlowResults:
         for slack in self.network.slack:
             Vr = v_final[slack.bus.node_Vr]
             Vi = v_final[slack.bus.node_Vi]
-            slack_Ir = v_final[slack.slack_Ir]
-            slack_Ii = v_final[slack.slack_Ii]
+            slack_Ir = v_final[slack.get_slack_Ir_index()]
+            slack_Ii = v_final[slack.get_slack_Ii_index()]
             P = Vr * slack_Ir
             Q = Vi * slack_Ii
             self.generator_results.append(GeneratorResult(slack, P, Q, GENTYPE.Slack)) 

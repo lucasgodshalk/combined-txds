@@ -1,28 +1,25 @@
-from __future__ import division
-import numpy as np
 from sympy import symbols
-from logic.stamping.lagrangesegment import LagrangeSegment
-from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
 import math
+from logic.stamping.lagrangesegment import ModelEquations, KCL_r, KCL_i, Eq
+from logic.stamping.lagrangestampdetails import build_model_stamp_details
 from models.components.bus import GROUND, Bus
-from logic.stamping.matrixstamper import build_stamps_from_stampers
+from logic.stamping.matrixstamper import build_stamps_from_stamper
+from models.wellknownvariables import Vr_from, Vi_from, Vr_to, Vi_to
 
-constants = [Vrset, Viset] = symbols("Vrset Viset")
+constants = Vrset, Viset = symbols("Vrset Viset")
 
-primals = [Vr, Vi, Isr, Isi] = symbols("Vr Vi I_Sr I_Si")
+I_sr, I_si = symbols("I_Sr I_Si")
+variables = Vr_from, Vi_from, Vr_to, Vi_to, I_sr, I_si
 
-duals = [Lr, Li, Lsr, Lsi] = symbols("lambda_Vr lambda_Vi lambda_Sr lambda_Si")
+Vr = Vr_from - Vr_to
+Vi = Vi_from - Vi_to
 
-eqns = [
-    Isr,
-    Isi,
-    Vr - Vrset,
-    Vi - Viset,
-]
+kcl_r = KCL_r(I_sr)
+kcl_i = KCL_i(I_si)
+Vrset_eqn = Eq(Vr - Vrset)
+Viset_eqn = Eq(Vi - Viset)
 
-lagrange = np.dot(duals, eqns)
-
-lh = LagrangeSegment(lagrange, constants, primals, duals)
+lh = ModelEquations(variables, constants, kcl_r, kcl_i, equalities=[Vrset_eqn, Viset_eqn])
 
 class Slack:
 
@@ -54,32 +51,16 @@ class Slack:
         self.Qinit = Qinit / 100
 
     def assign_nodes(self, node_index, optimization_enabled):
-        self.slack_Ir = next(node_index)
-        self.slack_Ii = next(node_index)
-
-        if optimization_enabled:
-            self.slack_lambda_Ir = next(node_index)
-            self.slack_lambda_Ii = next(node_index)
-        else:
-            self.slack_lambda_Ir = SKIP
-            self.slack_lambda_Ii = SKIP
-
-        index_map = {}
-        index_map[Vr] = self.bus.node_Vr
-        index_map[Vi] = self.bus.node_Vi
-        index_map[Isr] = self.slack_Ir
-        index_map[Isi] = self.slack_Ii
-        index_map[Lr] = self.bus.node_lambda_Vr
-        index_map[Li] = self.bus.node_lambda_Vi
-        index_map[Lsr] = self.slack_lambda_Ir
-        index_map[Lsi] = self.slack_lambda_Ii
-
-        self.stamper = LagrangeStampDetails(lh, index_map, optimization_enabled)
+        self.stamper = build_model_stamp_details(lh, self.bus, GROUND, node_index, optimization_enabled)
 
     def get_stamps(self):
-        return build_stamps_from_stampers(self, 
-            (self.stamper, [self.Vr_set, self.Vi_set])
-            )
+        return build_stamps_from_stamper(self, self.stamper, [self.Vr_set, self.Vi_set])
+
+    def get_slack_Ir_index(self):
+        return self.stamper.get_var_col_index(I_sr)
+
+    def get_slack_Ii_index(self):
+        return self.stamper.get_var_col_index(I_si)
 
     def get_connections(self):
         return [(self.bus, GROUND)]

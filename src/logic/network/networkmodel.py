@@ -87,8 +87,8 @@ class NetworkModel():
             self.matrix_map[bus.node_Vi] = f"bus:{bus.NodeName}:{bus.NodePhase}:Vi"
 
         for slack in self.slack:
-            self.matrix_map[slack.slack_Ir] = f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ir"
-            self.matrix_map[slack.slack_Ii] = f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ii"
+            self.matrix_map[slack.get_slack_Ir_index()] = f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ir"
+            self.matrix_map[slack.get_slack_Ii_index()] = f"slack:{slack.bus.NodeName}:{slack.bus.NodePhase}:Ii"
 
         for xfmr in self.transformers:
             if isinstance(xfmr, CenterTapTransformer):
@@ -146,8 +146,8 @@ class TxNetworkModel(NetworkModel):
                 v_init[LQ_idx] = LQ_init
 
         for slack in self.slack:
-            v_init[slack.slack_Ir] = 0 if settings.flat_start else slack.Pinit
-            v_init[slack.slack_Ii] = 0 if settings.flat_start else slack.Qinit
+            v_init[slack.get_slack_Ir_index()] = 0 if settings.flat_start else slack.Pinit
+            v_init[slack.get_slack_Ii_index()] = 0 if settings.flat_start else slack.Qinit
 
         return v_init
 
