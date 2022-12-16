@@ -1,12 +1,9 @@
-from __future__ import division
 from itertools import count
 import numpy as np
-from sympy import symbols
-from sympy import cos
-from sympy import sin
+from sympy import symbols, cos, sin
+import math
 from logic.stamping.lagrangesegment import LagrangeSegment
 from logic.stamping.lagrangestampdetails import SKIP, LagrangeStampDetails
-import math
 from models.components.line import build_line_stamper, build_line_stamper_bus
 from models.components.bus import GROUND, Bus
 from models.wellknownvariables import tx_factor
@@ -33,14 +30,19 @@ Vr_sec = Vr_sec_pos - Vr_sec_neg
 Vi_sec = Vi_sec_pos - Vi_sec_neg
 
 eqns = [
+    #primary side, positive terminal kcl
     Ir_prim,
     Ii_prim,
+    #primary side, negative terminal kcl
     -Ir_prim,
     -Ii_prim,
+    #primary/secondary voltage relationship
     Vr_pri - scaled_trcos * Vr_sec + scaled_trsin * Vi_sec,
     Vi_pri - scaled_trcos * Vi_sec - scaled_trsin * Vr_sec,
+    #secondary side, positive terminal kcl
     secondary_current_r,
     secondary_current_i,
+    #secondary side, negative terminal kcl
     -secondary_current_r,
     -secondary_current_i
 ]
