@@ -302,7 +302,7 @@ class QuasiTimeSeriesResults:
 class TransformerResult:
     def __init__(self, transformer, snapshot_results: PowerFlowResults):
         self.transformer = transformer
-        primal_indices = [self.transformer.xfrmr_stamper.var_map[primal] for primal in self.transformer.xfrmr_stamper.lsegment.primals]
+        primal_indices = [self.transformer.xfrmr_stamper.get_var_col_index(primal) for primal in self.transformer.xfrmr_stamper.lsegment.primals]
         self.Vr_pri_pos, self.Vi_pri_pos, self.Vr_pri_neg, self.Vi_pri_neg, self.Ir_prim, self.Ii_prim, self.Vr_sec_pos, self.Vi_sec_pos, self.Vr_sec_neg, self.Vi_sec_neg = [snapshot_results.v_final[idx] if idx is not None else 0 for idx in primal_indices]
 
     def get_P(self):
@@ -322,7 +322,7 @@ class TransformerResult:
 class CenterTapTransformerResult:
     def __init__(self, transformer: CenterTapTransformer, snapshot_results: PowerFlowResults):
         self.transformer = transformer
-        primal_indices = [self.transformer.center_tap_xfmr_stamper.var_map[primal] for primal in self.transformer.center_tap_xfmr_stamper.lsegment.primals]
+        primal_indices = [self.transformer.center_tap_xfmr_stamper.get_var_col_index(primal) for primal in self.transformer.center_tap_xfmr_stamper.lsegment.primals]
         (self.from_bus, self.to_bus_1), (_, self.to_bus_2) = transformer.get_connections()
         self.Vr_pri, self.Vi_pri, self.Ir_L1, self.Ii_L1, self.Vr_L1, self.Vi_L1, self.Ir_L2, self.Ii_L2, self.Vr_L2, self.Vi_L2 = [snapshot_results.v_final[idx] for idx in primal_indices]
 
