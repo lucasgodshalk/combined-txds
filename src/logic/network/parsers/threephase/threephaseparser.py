@@ -319,7 +319,8 @@ class ThreePhaseParser:
                 shunt_admittances = None
 
             phases = [wire.phase for wire in model.wires if wire.phase != 'N']
+            ampacities = [wire.emergency_ampacity for wire in model.wires if hasattr(wire, "emergency_ampacity")] #  or wire.ampacity ; if hasattr(wire, "ampacity")
             
-            transmission_line = UnbalancedLine(network_model, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases)
+            transmission_line = UnbalancedLine(network_model, impedances, shunt_admittances, model.from_element, model.to_element, model.length, phases, ampacities)
             network_model.lines.append(transmission_line)
 

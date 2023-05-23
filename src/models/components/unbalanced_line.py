@@ -1,9 +1,11 @@
 import typing
+
 import numpy as np
 from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from models.components.bus import GROUND
 from models.components.line import line_lh, shunt_lh
 from logic.network.networkmodel import DxNetworkModel
+from logic.stamping.lagrangestampdetails import LagrangeStampDetails
 from logic.stamping.matrixstamper import build_stamps_from_stampers
 from models.wellknownvariables import Vr_from, Vr_to, Vi_from, Vi_to, Lr_from, Lr_to, Li_from, Li_to
 
@@ -51,7 +53,7 @@ class UnbalancedLinePhase():
 #Line where we have a collection of unbalanced phases (or a neutral wire) with admittance effects across wires.
 class UnbalancedLine():
     
-    def __init__(self, network_model, impedances, shunt_admittances, from_element, to_element, length, phases="ABC"):
+    def __init__(self, network_model, impedances, shunt_admittances, from_element, to_element, length, phases="ABC", ampacities=[]):
         self.lines: typing.List[UnbalancedLinePhase]
         self.lines = []
 
@@ -83,6 +85,7 @@ class UnbalancedLine():
         self.to_element = to_element
         self.length = length
         self.network_model = network_model
+        self.ampacities = ampacities
 
         for phase in phases:
             self.lines.append(UnbalancedLinePhase(self.from_element, self.to_element, phase))
@@ -218,3 +221,10 @@ class UnbalancedLine():
                 is_own_phase = i == j
 
                 yield (is_own_phase, line_stamper, shunt_stamper_from, shunt_stamper_to, g, b, B)
+    
+    def loop_lines(self):
+        # Go through all phases
+        for idx, line in enumerate(self.lines):
+            g = np.real(self.admittances[idx][idx])
+            b = np.imag(self.admittances[idx][idx])
+            yield (idx, g, b, line)

@@ -87,6 +87,7 @@ class Transformer:
         self.B_shunt = B_shunt
 
         self.status = status
+        self.power_rating = rating
 
     def assign_nodes(self, node_index, optimization_enabled):
         self.node_primary_Ir = next(node_index)

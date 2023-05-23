@@ -25,7 +25,12 @@ class GraphAnalyzer:
             if bus.IsVirtual:
                 continue
             self.node_labels[bus.NodeName] = f"{bus.NodeName}"
-            self.G.add_node(bus.NodeName, bus=bus)
+            if self.G.has_node(bus.NodeName):
+                self.G.nodes[bus.NodeName]["bus_list"].append(bus)
+                # bus_list.append(bus)
+                # nx.set_node_attributes(self.G, [bus.NodeName, {"bus_list", bus_list}])
+            else:
+                self.G.add_node(bus.NodeName, bus_list=[bus])
             self.node_color[bus.NodeName] = self.NODE_TYPE_COLOR_MAP[bus.Type]
         
         for element in network.get_all_elements():
@@ -34,8 +39,14 @@ class GraphAnalyzer:
                     self.node_color[from_bus.NodeName]="darkred"
                 elif from_bus == GROUND or to_bus == GROUND or from_bus.NodeName == to_bus.NodeName:
                     continue
+                elif not (self.G.has_node(from_bus.NodeName) or self.G.has_node(to_bus.NodeName)):
+                    continue
                 else:
-                    self.G.add_edge(from_bus.NodeName, to_bus.NodeName, type="none", from_bus=from_bus, to_bus=to_bus, element=element)
+                    if self.G.has_edge(from_bus.NodeName, to_bus.NodeName):
+                        if element not in self.G.edges[from_bus.NodeName, to_bus.NodeName]["element_list"]:
+                            self.G.edges[from_bus.NodeName, to_bus.NodeName]["element_list"].append(element)
+                    else:
+                        self.G.add_edge(from_bus.NodeName, to_bus.NodeName, type="none", from_bus=from_bus, to_bus=to_bus, element_list=[element])
                     
                     self.edge_labels[(from_bus.NodeName, to_bus.NodeName)] += from_bus.NodePhase
                     
@@ -47,7 +58,10 @@ class GraphAnalyzer:
                         self.edge_color[(from_bus.NodeName, to_bus.NodeName)] = "gray"
 
     def get_island_count(self):
-        return len(list(nx.connected_components(self.G)))
+        return len(self.get_islands())
+    
+    def get_islands(self):
+        return list(nx.connected_components(self.G))
 
     def validate_voltage_islands(self):
         vnom_islands = self.get_nominal_voltage_islands()
@@ -55,7 +69,7 @@ class GraphAnalyzer:
         for vnom_island in vnom_islands:
             vnom = None
             for node_idx in vnom_island:
-                bus = self.G.nodes[node_idx]["bus"]
+                bus = self.G.nodes[node_idx]["bus_list"][0]
                 if vnom == None:
                     vnom = round(bus.V_Nominal)
                 else:
@@ -63,7 +77,7 @@ class GraphAnalyzer:
                         raise Exception(f"Node {bus.NodeName} nominal voltage is not consistent with other nominal voltages in voltage region.")
 
     def get_nominal_voltage_islands(self):
-        non_xfmr_edges = [(u,v) for u,v,e in self.G.edges(data=True) if type(e['element']) not in [CenterTapTransformer, Transformer, Regulator]]
+        non_xfmr_edges = [(u,v) for u,v,e in self.G.edges(data=True) if type(e['element_list'][0]) not in [CenterTapTransformer, Transformer, Regulator]]
 
         xfmr_islands = self.G.edge_subgraph(non_xfmr_edges)
 

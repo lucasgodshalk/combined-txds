@@ -149,7 +149,7 @@ class TransformerParser:
                 phase_shift, 
                 g_shunt,
                 b_shunt,
-                None
+                winding1.rated_power
                 )
             
             network_model.transformers.append(xfmr)

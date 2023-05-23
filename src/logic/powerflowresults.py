@@ -2,13 +2,18 @@ import cmath
 import math
 from pathlib import Path
 from typing import List
+
 import numpy as np
 import pandas as pd
+
 from logic.network.networkmodel import NetworkModel
 from logic.powerflowsettings import PowerFlowSettings
-from models.optimization.L2infeasibility import L2InfeasibilityOptimization
-from models.components.bus import Bus
 from logic.residualdetails import ResidualDetails
+from models.components.bus import Bus
+from models.components.center_tap_transformer import CenterTapTransformer
+from models.components.unbalanced_line import UnbalancedLinePhase
+from models.optimization.L2infeasibility import L2InfeasibilityOptimization
+
 
 class GENTYPE:
     PV = "PV"
@@ -82,7 +87,7 @@ class LoadResult:
 
     def csv_string(self) -> str:
         name = self.type_str
-        return f'{self.load.from_bus.Bus},{name},{"{:.2f}".format(self.P)},{"{:.2f}".format(self.Q)}\n'
+        return f'{self.load.from_bus.NodeName},{name},{"{:.2f}".format(self.P)},{"{:.2f}".format(self.Q)}\n'
 
 class PowerFlowResults:
     def __init__(
@@ -115,6 +120,8 @@ class PowerFlowResults:
         self.load_results = []
 
         for bus in network.buses:
+            if bus.IsVirtual:
+                continue
             V_r = v_final[bus.node_Vr]
             V_i = v_final[bus.node_Vi]
 
@@ -193,12 +200,14 @@ class PowerFlowResults:
             for idx in range(len(self.residuals)):
                 print(f'Residual {idx}: {self.residuals[idx]:.3g}')
 
-        if self.infeasibility_totals != None:
+        try:
             results = self.report_infeasible()
             P_sum = sum([result.P for result in results])
             Q_sum = sum([result.Q for result in results])
             print(f'Inf P: {P_sum:.3g}')
             print(f'Inf Q: {Q_sum:.3g}')
+        except:
+            pass
 
         if verbose:
             self.__display_verbose()
@@ -244,18 +253,29 @@ class PowerFlowResults:
         voltagefilepath.parent.mkdir(parents=True, exist_ok=True)
 
         with open(voltagefilepath, "w+") as f:
-            f.write("bus,name,v_magnitude,v_ang_degrees\n")
-            for bus in self.bus_results:
-                f.write(bus.csv_string())
+            if not self.is_success:
+                f.write("FAILURE")
+            else:
+                f.write("bus,name,v_magnitude,v_ang_degrees\n")
+                for bus in self.bus_results:
+                    f.write(bus.csv_string())
+                if (hasattr(self,"violates_equipment_ratings") and self.violates_equipment_ratings):
+                    f.write("VIOLATED EQUIPMENT RATINGS")
 
         powerfilepath.parent.mkdir(parents=True, exist_ok=True)
         
         with open(powerfilepath, "w+") as f:
-            f.write("bus,name,P(MW),Q(MVar)\n")
-            for gen in self.generator_results:
-                f.write(gen.csv_string())
-            for load in self.load_results:
-                f.write(load.csv_string())
+            if not self.is_success:
+                f.write("FAILURE")
+            else:
+                f.write("bus,name,P(MW),Q(MVar)\n")
+                for gen in self.generator_results:
+                    f.write(gen.csv_string())
+                for load in self.load_results:
+                    f.write(load.csv_string())
+
+                if (hasattr(self,"violates_equipment_ratings") and self.violates_equipment_ratings):
+                    f.write("VIOLATED EQUIPMENT RATINGS")
 
 class QuasiTimeSeriesResults:
     def __init__(self):
@@ -278,3 +298,64 @@ class QuasiTimeSeriesResults:
 
         for hour, pf_result in self.powerflow_snapshot_results.items():
             pf_result.output(f"{outputfilepath}_{hour}")
+
+class TransformerResult:
+    def __init__(self, transformer, snapshot_results: PowerFlowResults):
+        self.transformer = transformer
+        primal_indices = [self.transformer.xfrmr_stamper.var_map[primal] for primal in self.transformer.xfrmr_stamper.lsegment.primals]
+        self.Vr_pri_pos, self.Vi_pri_pos, self.Vr_pri_neg, self.Vi_pri_neg, self.Ir_prim, self.Ii_prim, self.Vr_sec_pos, self.Vi_sec_pos, self.Vr_sec_neg, self.Vi_sec_neg = [snapshot_results.v_final[idx] if idx is not None else 0 for idx in primal_indices]
+
+    def get_P(self):
+        Vr_pri = self.Vr_pri_pos - self.Vr_pri_neg
+        return Vr_pri * self.Ir_prim
+
+    def get_Q(self):
+        Vi_pri = self.Vi_pri_pos - self.Vi_pri_neg
+        return Vi_pri * self.Ii_prim
+
+    def __str__(self) -> str:
+        return f'Transformer from bus {self.transformer.from_bus_pos.Bus} and {self.transformer.from_bus_neg.Bus} to {self.transformer.to_bus_pos.Bus} and {self.transformer.to_bus_neg.Bus} P (MW): {"{:.2f}".format(self.get_P())}, Q (MVar): {"{:.2f}".format(self.get_Q())}'
+
+    def csv_string(self) -> str:
+        return f'{self.transformer.from_bus_pos.Bus},Transformer,{"{:.2f}".format(self.get_P())},{"{:.2f}".format(self.get_Q())}\n'
+
+class CenterTapTransformerResult:
+    def __init__(self, transformer: CenterTapTransformer, snapshot_results: PowerFlowResults):
+        self.transformer = transformer
+        primal_indices = [self.transformer.center_tap_xfmr_stamper.var_map[primal] for primal in self.transformer.center_tap_xfmr_stamper.lsegment.primals]
+        (self.from_bus, self.to_bus_1), (_, self.to_bus_2) = transformer.get_connections()
+        self.Vr_pri, self.Vi_pri, self.Ir_L1, self.Ii_L1, self.Vr_L1, self.Vi_L1, self.Ir_L2, self.Ii_L2, self.Vr_L2, self.Vi_L2 = [snapshot_results.v_final[idx] for idx in primal_indices]
+
+    def get_P(self):
+        return self.Vr_L1 * self.Ir_L1 + self.Vi_L1 * self.Ii_L1 + self.Vr_L2 * self.Ir_L2 + self.Vi_L2 * self.Ii_L2
+
+    def get_Q(self):
+        return -self.Vr_L1 * self.Ii_L1 + self.Vi_L1 * self.Ir_L1 - self.Vr_L2 * self.Ii_L2 + self.Vi_L2 * self.Ir_L2
+
+    def __str__(self) -> str:
+        return f'Center-Tap Transformer from bus {self.from_bus.Bus} to {self.to_bus_1} and {self.to_bus_2} P (MW): {"{:.2f}".format(self.get_P())}, Q (MVar): {"{:.2f}".format(self.get_Q())}'
+
+    def csv_string(self) -> str:
+        return f'{self.from_bus.Bus},CenterTapTransformer,{"{:.2f}".format(self.get_P())},{"{:.2f}".format(self.get_Q())}\n'
+
+# BROKEN, THIS HAS TO USE __loop_line_stampers INSTEAD I THINK
+
+class LineResult:
+    def __init__(self, line: UnbalancedLinePhase, snapshot_results: PowerFlowResults, g, b):
+        self.line = line
+        self.v_final = snapshot_results.v_final
+        self.from_bus, self.to_bus = line.get_nodes(snapshot_results.network)
+        self.g = g
+        self.b = b
+
+    def get_Ir(self):
+        return (self.v_final[self.from_bus.node_Vr] - self.v_final[self.to_bus.node_Vr]) * self.g - (self.v_final[self.from_bus.node_Vi] - self.v_final[self.to_bus.node_Vi]) * self.b
+
+    def get_Ii(self):
+        return (self.v_final[self.from_bus.node_Vr] - self.v_final[self.to_bus.node_Vr]) * self.b + (self.v_final[self.from_bus.node_Vi] - self.v_final[self.to_bus.node_Vi]) * self.g
+
+    def __str__(self) -> str:
+        return f'Line from bus {self.from_bus.Bus} to {self.to_bus.Bus} I: complex({"{:.2f}".format(self.get_Ir())}, {"{:.2f}".format(self.get_Ii())})'
+
+    def csv_string(self) -> str:
+        return f'{self.from_bus.Bus},Line,{"{:.2f}".format(self.get_Ir())},{"{:.2f}".format(self.get_Ii())}\n'

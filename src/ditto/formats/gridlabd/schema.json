@@ -2417,6 +2417,12 @@
                     "name": "geometric_mean_radius",
                     "type": "double",
                     "unit": "feet"
+                },
+                {
+                    "description": "The emergency (short time) rating for the conductor during summer month usage. This parameter is unused at this point. Future versions of GridLAB-D may implement this functionality",
+                    "name": "rating.summer.emergency",
+                    "type": "double",
+                    "unit": "Amperes"
                 }
             ]
         },

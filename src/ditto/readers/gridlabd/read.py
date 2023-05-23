@@ -240,7 +240,7 @@ class Reader(AbstractReader):
             if obj_type in shared_config_objects:
                 continue
 
-            if obj_type == "triplex_node" or obj_type == "triplex_meter" and hasattr(obj, "_power_12") or hasattr(obj, "_power_1") or hasattr(obj, "_power_2"):
+            if obj_type == "triplex_node" or obj_type == "triplex_meter" and (hasattr(obj, "_power_12") or hasattr(obj, "_power_1") or hasattr(obj, "_power_2")):
                 # Actually a triplex load. Change obj_type and skip "triplex_node" code, to pick up at "triplex_load" code
                 obj_type = "triplex_load"
 
@@ -1060,6 +1060,19 @@ class Reader(AbstractReader):
                             #     )  # since we converted the length to m already
                         except AttributeError:
                             pass
+
+                        try:
+                            api_wire.ampacity = float(
+                                conductor["rating.summer.continuous"]
+                            )
+                        except AttributeError:
+                            pass
+                        try:
+                            api_wire.emergency_ampacity = float(
+                                conductor["rating.summer.emergency"]
+                            )
+                        except AttributeError:
+                            pass
                 except AttributeError:
                     pass
 
@@ -1188,6 +1201,19 @@ class Reader(AbstractReader):
                         try:
                             api_wire.concentric_neutral_resistance = float(
                                 conductor["neutral_resistance"]
+                            )
+                        except AttributeError:
+                            pass
+                        
+                        try:
+                            api_wire.ampacity = float(
+                                conductor["rating.summer.continuous"]
+                            )
+                        except AttributeError:
+                            pass
+                        try:
+                            api_wire.emergency_ampacity = float(
+                                conductor["rating.summer.emergency"]
                             )
                         except AttributeError:
                             pass
