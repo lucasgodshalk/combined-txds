@@ -13,7 +13,7 @@ from termcolor import colored
 # use Colorama to make Termcolor work on Windows too
 init()
 
-def main(raw_args=None):
+def main():
 
     parser = argparse.ArgumentParser()
 
@@ -30,7 +30,7 @@ def main(raw_args=None):
     parser.add_argument("--load_factor", required=False, default=-1)
     parser.add_argument("--tx_stepping", required=False, default=False, action='store_true')
     parser.add_argument("--select_island", required=False, default=False)
-    args = parser.parse_args(raw_args)
+    args = parser.parse_args()
 
     case = args.case
     loadfile = args.loadfile
@@ -85,7 +85,7 @@ def main(raw_args=None):
         if results is not None:
             results.display(verbose=False)
             # results.output(outputfile)
-        return
+            return
     except Exception as e:
         print(e)
         pass

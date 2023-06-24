@@ -13,6 +13,7 @@ from models.components.bus import Bus
 from models.components.center_tap_transformer import CenterTapTransformer
 from models.components.unbalanced_line import UnbalancedLinePhase
 from models.optimization.L2infeasibility import L2InfeasibilityOptimization
+from models.optimization.L1infeasibility import L1InfeasibilityOptimization
 
 
 class GENTYPE:
@@ -162,7 +163,7 @@ class PowerFlowResults:
     def try_load_infeasibility_data(self):
         self.infeasibility_totals = None
 
-        if self.network.optimization == None or not isinstance(self.network.optimization, L2InfeasibilityOptimization):
+        if self.network.optimization == None or not (isinstance(self.network.optimization, L2InfeasibilityOptimization) or isinstance(self.network.optimization, L1InfeasibilityOptimization)):
             return
 
         total_P = 0
@@ -170,8 +171,12 @@ class PowerFlowResults:
         for infeasibility_current in self.network.optimization.infeasibility_currents:
             Vr = self.v_final[infeasibility_current.bus.node_Vr]
             Vi = self.v_final[infeasibility_current.bus.node_Vi]
-            inf_Ir = self.v_final[infeasibility_current.node_Ir_inf]
-            inf_Ii = self.v_final[infeasibility_current.node_Ii_inf]
+            if isinstance(self.network.optimization, L2InfeasibilityOptimization):
+                inf_Ir = self.v_final[infeasibility_current.node_Ir_inf]
+                inf_Ii = self.v_final[infeasibility_current.node_Ii_inf]
+            elif isinstance(self.network.optimization, L1InfeasibilityOptimization):
+                inf_Ir = self.v_final[infeasibility_current.node_Ir_plus_inf] - self.v_final[infeasibility_current.node_Ir_minus_inf]
+                inf_Ii = self.v_final[infeasibility_current.node_Ii_plus_inf] - self.v_final[infeasibility_current.node_Ii_minus_inf]
             P = Vr * inf_Ir
             if P < 1e-5:
                 P = 0

@@ -1,3 +1,6 @@
 [submodule "test/data/Taxonomy_Feeders"]
 	path = test/data/Taxonomy_Feeders
 	url = https://github.com/gridlab-d/Taxonomy_Feeders.git
+[submodule "test/data/TPIA-Experiment-Testcases"]
+	path = test/data/TPIA-Experiment-Testcases
+	url = https://github.com/emfoster/TPIA-Experiment-Testcases
